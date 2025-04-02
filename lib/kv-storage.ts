@@ -92,12 +92,29 @@ export async function saveMenu(menuId: string, menuData: any) {
  * 指定されたIDのメニューデータを取得する
  */
 export async function getMenu(menuId: string) {
-  // KVからメニューデータのURLを取得
-  const menuDataUrl = await kv.get<string>(`menu:${menuId}`);
-  if (!menuDataUrl) return null;
-
-  // Blobからメニューデータを取得
-  return handleBlobError(() => getJsonFromBlob(menuDataUrl));
+  try {
+    // インデックスファイルからメニューデータのURLを取得
+    const indexData = await getIndexData();
+    const menuEntry = indexData.menus.find(menu => menu.id === menuId);
+    
+    // メニューが見つからない場合
+    if (!menuEntry || !menuEntry.menuDataUrl) {
+      console.warn(`Menu ID ${menuId} not found in index`);
+      return null;
+    }
+    
+    console.log(`Found menu ${menuId}, URL: ${menuEntry.menuDataUrl}`);
+    
+    // Blobからメニューデータを取得
+    const menuData = await handleBlobError(() => getJsonFromBlob(menuEntry.menuDataUrl));
+    if (!menuData) {
+      console.error(`Menu data not found in Blob storage: ${menuEntry.menuDataUrl}`);
+    }
+    return menuData;
+  } catch (error) {
+    console.error(`Error fetching menu ${menuId}:`, error);
+    return null;
+  }
 }
 
 /**
