@@ -430,47 +430,180 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
       // 時間の整合性チェック
       menuData.totalTime = calculatedTotal
       
-      // 時間超過の場合、自動調整機能
+      // 時間超過の場合、高度な自動調整機能
       if (calculatedTotal > duration) {
         console.warn(`生成されたメニューが時間超過（${calculatedTotal}分 > ${duration}分）。自動調整を試みます。`);
         
-        // 調整係数を計算（例: 90分の制限に対して114分のメニューなら、0.789の係数）
-        const adjustmentFactor = duration / calculatedTotal;
+        // セクションの重要度を定義（高い数字ほど優先的に削減）
+        const sectionPriorities: {[key: string]: number} = {
+          "W-up": 2,    // ウォームアップは比較的重要だが、多少削減可能
+          "Kick": 3,    // 技術練習は重要だが調整可能
+          "Pull": 3,    // 技術練習は重要だが調整可能
+          "Main": 4,    // メインセットは最も削減対象になりやすい
+          "Drill": 3,   // 技術練習は重要だが調整可能
+          "Down": 1     // クールダウンは短くなりすぎないよう保護
+        };
         
-        // 各項目の時間を調整係数に応じて削減
-        let adjustedTotal = 0;
-        
+        // 各セクションをカテゴリ分け
+        const categorizedSections: {[priority: number]: MenuSection[]} = {};
         for (const section of menuData.menu) {
-          let adjustedSectionTotal = 0;
+          const priority = sectionPriorities[section.name] || 2; // デフォルト優先度は2
+          if (!categorizedSections[priority]) {
+            categorizedSections[priority] = [];
+          }
+          categorizedSections[priority].push(section);
+        }
+        
+        // 繰り返し調整を行う関数
+        const adjustMenuTime = (targetDuration: number): number => {
+          // 目標時間より1分短い値を目標とし、余裕を持たせる
+          const safetyTargetDuration = targetDuration - 1;
           
-          // 各アイテムを調整
-          for (const item of section.items) {
-            if (item.time) {
-              // 時間を調整（切り上げて最低1分は確保）
-              const originalTime = item.time;
-              item.time = Math.max(1, Math.ceil(item.time * adjustmentFactor));
+          // 現在の合計時間を計算
+          let currentTotal = 0;
+          for (const section of menuData.menu) {
+            currentTotal += section.totalTime || 0;
+          }
+          
+          if (currentTotal <= safetyTargetDuration) {
+            return currentTotal; // すでに目標時間内ならそのまま終了
+          }
+          
+          // 優先度の高い順（数字が大きい順）に調整
+          const priorities = Object.keys(categorizedSections)
+            .map(Number)
+            .sort((a, b) => b - a); // 降順ソート
+          
+          for (const priority of priorities) {
+            const sectionsToAdjust = categorizedSections[priority];
+            
+            // この優先度のセクションの合計時間を計算
+            let priorityTotalTime = 0;
+            for (const section of sectionsToAdjust) {
+              priorityTotalTime += section.totalTime || 0;
+            }
+            
+            // 必要な削減量を計算
+            const excessTime = currentTotal - safetyTargetDuration;
+            const reductionFactor = Math.max(0.5, (priorityTotalTime - excessTime) / priorityTotalTime);
+            
+            // 各セクションの項目を調整
+            let adjustedPriorityTotal = 0;
+            for (const section of sectionsToAdjust) {
+              let adjustedSectionTotal = 0;
               
-              // デバッグログ
-              if (originalTime !== item.time) {
-                console.log(`調整: ${section.name} - ${item.description} (${originalTime}分 → ${item.time}分)`);
+              // 各項目を調整
+              for (const item of section.items) {
+                if (item.time) {
+                  const originalTime = item.time;
+                  // 重要度によって異なる最小値を設定（重要なセクションは短くなりすぎないように）
+                  const minTime = 5 - priority; // 優先度4→最小1分、優先度1→最小4分
+                  item.time = Math.max(minTime, Math.floor(item.time * reductionFactor));
+                  
+                  if (originalTime !== item.time) {
+                    console.log(`優先調整: ${section.name} - ${item.description} (${originalTime}分 → ${item.time}分)`);
+                  }
+                  
+                  adjustedSectionTotal += item.time;
+                }
               }
               
-              adjustedSectionTotal += item.time;
+              // セクション合計を更新
+              section.totalTime = adjustedSectionTotal;
+              adjustedPriorityTotal += adjustedSectionTotal;
+            }
+            
+            // 全体の合計を再計算
+            currentTotal = 0;
+            for (const section of menuData.menu) {
+              currentTotal += section.totalTime || 0;
+            }
+            
+            if (currentTotal <= safetyTargetDuration) {
+              break; // 目標達成したらループを抜ける
             }
           }
           
-          // セクション合計を更新
-          section.totalTime = adjustedSectionTotal;
-          adjustedTotal += adjustedSectionTotal;
+          return currentTotal;
+        };
+        
+        // 最大5回まで繰り返し調整を試みる
+        let adjustedDuration = calculatedTotal;
+        let adjustmentAttempts = 0;
+        const maxAttempts = 5;
+        
+        while (adjustedDuration > duration && adjustmentAttempts < maxAttempts) {
+          adjustmentAttempts++;
+          adjustedDuration = adjustMenuTime(duration);
+          console.log(`調整試行 ${adjustmentAttempts}: ${adjustedDuration}分`);
         }
         
-        // 最終的な合計時間を更新
-        menuData.totalTime = adjustedTotal;
-        console.log(`メニュー調整完了: ${calculatedTotal}分 → ${adjustedTotal}分`);
-        
-        // 最終チェック - 調整後も時間オーバーの場合（通常起こらないが念のため）
-        if (adjustedTotal > duration) {
-          throw new Error(`調整後もメニューが時間超過（${adjustedTotal}分 > ${duration}分）`);
+        // 最終的に調整がうまくいかなかった場合は、強制的に時間を削減
+        if (adjustedDuration > duration) {
+          console.warn(`通常の調整で目標達成できず。強制調整を適用します。`);
+          
+          // 残りの超過時間
+          let remainingExcess = adjustedDuration - duration + 1; // 1分の余裕
+          
+          // メイン → ドリル/キック/プル → ウォームアップ → クールダウンの順で1分ずつ削減
+          const reductionOrder = ["Main", "Drill", "Kick", "Pull", "W-up", "Down"];
+          
+          while (remainingExcess > 0) {
+            let reducedInThisPass = false;
+            
+            for (const sectionName of reductionOrder) {
+              if (remainingExcess <= 0) break;
+              
+              // 該当するセクションを探す
+              const section = menuData.menu.find(s => s.name === sectionName);
+              if (!section || !section.items.length) continue;
+              
+              // 最も時間の長い項目を見つける
+              section.items.sort((a, b) => (b.time || 0) - (a.time || 0));
+              
+              // 最も長い項目を1分削減（最低1分は保証）
+              const item = section.items[0];
+              if (item.time && item.time > 1) {
+                const originalTime = item.time;
+                item.time -= 1;
+                remainingExcess -= 1;
+                reducedInThisPass = true;
+                console.log(`強制削減: ${section.name} - ${item.description} (${originalTime}分 → ${item.time}分)`);
+                
+                // セクション合計を更新
+                section.totalTime = (section.totalTime || 0) - 1;
+              }
+            }
+            
+            // もう削減できない場合はループを抜ける
+            if (!reducedInThisPass) {
+              console.warn(`これ以上削減できません。最終結果: ${adjustedDuration - remainingExcess}分`);
+              break;
+            }
+          }
+          
+          // 最終的な時間を再計算
+          let finalTotal = 0;
+          for (const section of menuData.menu) {
+            let sectionTotal = 0;
+            for (const item of section.items) {
+              sectionTotal += item.time || 0;
+            }
+            section.totalTime = sectionTotal;
+            finalTotal += sectionTotal;
+          }
+          
+          menuData.totalTime = finalTotal;
+          console.log(`強制調整完了: ${adjustedDuration}分 → ${finalTotal}分`);
+          
+          // 最終チェック
+          if (finalTotal > duration) {
+            throw new Error(`調整不可: 全ての調整を試みましたが、時間制限内に収めることができませんでした（${finalTotal}分 > ${duration}分）`);
+          }
+        } else {
+          // 通常の調整が成功
+          menuData.totalTime = adjustedDuration;
+          console.log(`メニュー調整完了: ${calculatedTotal}分 → ${adjustedDuration}分`);
         }
       }
     } catch (error: unknown) {
