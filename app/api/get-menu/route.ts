@@ -17,9 +17,9 @@ export async function GET(request: Request) {
     
     if (!menuData) {
       console.warn(`[API] Menu not found: ${menuId}`);
-      return NextResponse.json({ 
-        error: "Menu not found", 
-        menuId: menuId 
+      return NextResponse.json({
+        error: "Menu not found",
+        menuId: menuId
       }, { status: 404 });
     }
 
@@ -33,8 +33,8 @@ export async function GET(request: Request) {
       name: error.name
     });
     
-    return NextResponse.json({ 
-      error: "Failed to fetch menu data", 
+    return NextResponse.json({
+      error: "Failed to fetch menu data",
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     }, { status: 500 });
   }

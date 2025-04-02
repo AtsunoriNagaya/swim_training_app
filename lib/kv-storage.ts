@@ -96,23 +96,28 @@ export async function getMenu(menuId: string) {
     // インデックスファイルからメニューデータのURLを取得
     const indexData = await getIndexData();
     const menuEntry = indexData.menus.find(menu => menu.id === menuId);
-    
+
     // メニューが見つからない場合
     if (!menuEntry || !menuEntry.menuDataUrl) {
       console.warn(`[KV] Menu ID ${menuId} not found in index`);
       return null;
     }
-    
+
     console.log(`[KV] Found menu ${menuId}, URL: ${menuEntry.menuDataUrl}`);
-    
+
     // Blobからメニューデータを取得
     const menuData = await handleBlobError(() => getJsonFromBlob(menuEntry.menuDataUrl));
     if (!menuData) {
       console.error(`[KV] Menu data not found in Blob storage: ${menuEntry.menuDataUrl}`);
+      return null;
     }
     return menuData;
-  } catch (error) {
-    console.error(`[KV] Error fetching menu ${menuId}:`, error);
+  } catch (error: any) {
+    console.error(`[KV] Error fetching menu ${menuId}:`, {
+      error: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return null;
   }
 }

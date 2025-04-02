@@ -27,10 +27,10 @@ export default function ResultContent() {
         const data = await response.json();
         setMenuData(data);
         setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching menu data:", error);
         setLoading(false);
-        setError(true);
+        setError(error);
       }
     }
 
@@ -47,13 +47,26 @@ export default function ResultContent() {
     );
   }
 
-  if (error || !menuData) {
+  if (error) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col items-center justify-center text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-4">エラー</h1>
           <p className="text-lg text-muted-foreground max-w-3xl">
-            メニューの取得に失敗しました。
+            メニューの取得に失敗しました: {error.message}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!menuData) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex flex-col items-center justify-center text-center mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-4">メニューが見つかりません</h1>
+          <p className="text-lg text-muted-foreground max-w-3xl">
+            指定されたIDのメニューが見つかりませんでした。
           </p>
         </div>
       </div>
