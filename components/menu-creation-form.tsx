@@ -20,6 +20,11 @@ const formSchema = z.object({
   aiModel: z.string({
     required_error: "AIモデルを選択してください",
   }),
+  apiKey: z.string({
+    required_error: "APIキーを入力してください",
+  }).min(1, {
+    message: "APIキーを入力してください",
+  }),
   loadLevels: z.array(z.string()).min(1, {
     message: "少なくとも1つの負荷レベルを選択してください",
   }),
@@ -50,6 +55,7 @@ export default function MenuCreationForm() {
       loadLevels: [],
       duration: 90,
       notes: "",
+      apiKey: "",
     },
   })
 
@@ -119,6 +125,30 @@ export default function MenuCreationForm() {
                     </SelectContent>
                   </Select>
                   <FormDescription>メニュー生成に使用するAIモデルを選択してください</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="apiKey"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base">APIキー</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="sk-..."
+                      className="border-primary/20 focus:ring-primary/30"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {form.watch("aiModel") === "openai" && "OpenAIのAPIキーを入力してください"}
+                    {form.watch("aiModel") === "google" && "GoogleのAPIキーを入力してください"}
+                    {form.watch("aiModel") === "anthropic" && "AnthropicのAPIキーを入力してください"}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

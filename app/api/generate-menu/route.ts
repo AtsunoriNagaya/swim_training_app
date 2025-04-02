@@ -43,16 +43,18 @@ interface GeneratedMenuData {
 }
 
 
-// AI設定
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
+// AIモデルの設定
+const AI_MODEL_CONFIGS = {
+  openai: {
+    model: "gpt-4",
+  },
+  google: {
+    model: "gemini-pro",
+  },
+  anthropic: {
+    model: "claude-3-opus-20240229",
+  },
+}
 
 // エラー型の定義
 interface APIError extends Error {
@@ -61,6 +63,20 @@ interface APIError extends Error {
     data?: any;
   };
   status?: number;
+}
+
+// AIクライアントの初期化関数
+function initializeAIClient(aiModel: string, apiKey: string) {
+  switch (aiModel) {
+    case "openai":
+      return new OpenAI({ apiKey });
+    case "google":
+      return new GoogleGenerativeAI(apiKey);
+    case "anthropic":
+      return new Anthropic({ apiKey });
+    default:
+      throw new Error("不正なAIモデルが指定されました");
+  }
 }
 
 
@@ -84,10 +100,10 @@ function calculateItemTime(distance: number, circle: string, sets: number, rest:
 // AIモデル設定
 const AI_MODELS = {
   openai: {
-    model: process.env.OPENAI_MODEL || "gpt-4",
-    generate: async (prompt: string, systemPrompt: string) => {
-      const response = await openai.chat.completions.create({
-        model: process.env.OPENAI_MODEL || "gpt-4",
+    generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
+      const client = initializeAIClient("openai", apiKey) as OpenAI;
+      const response = await client.chat.completions.create({
+        model: AI_MODEL_CONFIGS.openai.model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
@@ -98,23 +114,18 @@ const AI_MODELS = {
     }
   },
   google: {
-    model: process.env.GEMINI_MODEL || "gemini-pro",
-    generate: async (prompt: string, systemPrompt: string) => {
+    generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
       try {
-        const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || "gemini-pro" })
+        const client = initializeAIClient("google", apiKey) as GoogleGenerativeAI;
+        const model = client.getGenerativeModel({ model: AI_MODEL_CONFIGS.google.model })
         const response = await model.generateContent([systemPrompt, prompt])
         
-        // Geminiの応答を文字列として取得
         let content = ""
-        
         try {
-          const genResponse = response.response // Assuming generateContent returns { response: GenerateContentResponse }
-          
-          // 応答からテキストを抽出
+          const genResponse = response.response
           if (typeof genResponse.text === 'function') {
             content = genResponse.text() || ""
           } 
-          // フォールバック: candidatesから抽出
           else if (genResponse.candidates && genResponse.candidates.length > 0) {
             const candidate = genResponse.candidates[0]
             if (candidate.content && candidate.content.parts && Array.isArray(candidate.content.parts)) {
@@ -138,31 +149,37 @@ const AI_MODELS = {
     }
   },
   anthropic: {
-    model: process.env.CLAUDE_MODEL || "claude-3-opus-20240229",
-    generate: async (prompt: string, systemPrompt: string) => {
-      const response = await anthropic.messages.create({
-        model: process.env.CLAUDE_MODEL || "claude-3-opus-20240229",
+    generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
+      const client = initializeAIClient("anthropic", apiKey) as Anthropic;
+      const response = await client.messages.create({
+        model: AI_MODEL_CONFIGS.anthropic.model,
         max_tokens: 4000,
         system: systemPrompt,
-         messages: [{ role: "user", content: prompt }],
-       })
-       // Check if the first content block is a TextBlock before accessing text
-       if (response.content[0] && response.content[0].type === 'text') {
-         return response.content[0].text
-       }
-       throw new Error("Anthropic APIからテキスト応答を受け取れませんでした")
-     }
-     }
+        messages: [{ role: "user", content: prompt }],
+      })
+      if (response.content[0] && response.content[0].type === 'text') {
+        return response.content[0].text
+      }
+      throw new Error("Anthropic APIからテキスト応答を受け取れませんでした")
+    }
+  }
 }
 
 type AIModelKey = keyof typeof AI_MODELS;
 
 export async function POST(req: NextRequest) {
   try {
-    const { aiModel, loadLevels, duration, notes } = await req.json()
+    const { aiModel, apiKey, loadLevels, duration, notes } = await req.json()
+
+    if (!apiKey) {
+      throw new Error("APIキーが提供されていません")
+    }
 
     // AIモデルの選択
-    const selectedModel = AI_MODELS[aiModel as AIModelKey] || AI_MODELS.openai
+    const selectedModel = AI_MODELS[aiModel as AIModelKey]
+    if (!selectedModel) {
+      throw new Error("不正なAIモデルが指定されました")
+    }
 
     // 負荷レベルの文字列化
     const loadLevelStr = loadLevels
@@ -269,7 +286,7 @@ ${notes ? `特記事項：${notes}` : ""}
 ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMenus}` : ""}`
 
     // AIによるメニュー生成
-    const text = await selectedModel.generate(userPrompt, systemPrompt) || ""
+    const text = await selectedModel.generate(userPrompt, systemPrompt, apiKey) || ""
     if (!text) {
       throw new Error("AIモデルからの応答が空でした")
     }

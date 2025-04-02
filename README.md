@@ -26,24 +26,26 @@
 *   jsPDF
 *   csv-stringify
 
-## 環境変数の設定
+## APIキーの準備
 
-以下の環境変数を`.env.local`ファイルに設定してください。
+本アプリケーションでは、以下のAIサービスのいずれかのAPIキーが必要です：
+
+- OpenAI API (GPT-4)
+- Google API (Gemini)
+- Anthropic API (Claude)
+
+APIキーは環境変数ではなく、アプリケーション内のフォームで直接入力する形式となっています。各APIキーは、それぞれの公式サイトで取得してください。
+
+## Vercel KV設定
+
+Vercelにデプロイする場合、以下の環境変数が自動で設定されます：
 
 ```
-# AI API設定
-OPENAI_API_KEY=YOUR_OPENAI_API_KEY
-GOOGLE_API_KEY=YOUR_GOOGLE_API_KEY (Gemini API を使用する場合)
-ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY (Claude API を使用する場合)
-
-# Vercel KV設定 (Vercelにデプロイする場合は自動で設定されます)
 KV_URL=YOUR_KV_URL
 KV_REST_API_URL=YOUR_KV_REST_API_URL
 KV_REST_API_TOKEN=YOUR_KV_REST_API_TOKEN
 KV_REST_API_READ_ONLY_TOKEN=YOUR_KV_REST_API_READ_ONLY_TOKEN
 ```
-
-各APIキーは、それぞれの公式サイトで取得してください。
 
 ## 開発者
 
@@ -63,17 +65,7 @@ KV_REST_API_READ_ONLY_TOKEN=YOUR_KV_REST_API_READ_ONLY_TOKEN
     ```bash
     npm install
     ```
-3.  **環境変数の設定:**
-    *   `.env.local` ファイルを作成し、以下の環境変数を設定します。
-
-        ```
-        OPENAI_API_KEY=YOUR_OPENAI_API_KEY
-        GOOGLE_API_KEY=YOUR_GOOGLE_API_KEY (Gemini API を使用する場合)
-        ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY (Claude API を使用する場合)
-        ```
-        各APIキーは、それぞれの公式サイトで取得してください。
-
-4.  **ローカル開発時のデータストレージ:**
+3.  **ローカル開発時のデータストレージ:**
     *   ローカル開発時は、Vercel KVの代わりにChromaDBを使用することもできます。
     *   その場合は、ChromaDBをローカルにインストールし、起動してください。
 
@@ -93,11 +85,7 @@ npm run dev
 
 1. [Vercel](https://vercel.com)にアカウントを作成し、ログインします。
 2. GitHubリポジトリと連携し、このプロジェクトをインポートします。
-3. 環境変数を設定します：
-   - `OPENAI_API_KEY`
-   - `GOOGLE_API_KEY` (Gemini APIを使用する場合)
-   - `ANTHROPIC_API_KEY` (Claude APIを使用する場合)
-4. Vercel KVをセットアップします：
+3. Vercel KVをセットアップします：
    - Vercelダッシュボードで「Storage」タブを選択
    - 「KV」を選択し、新しいKVデータベースを作成
    - プロジェクトにKVデータベースを接続すると、必要な環境変数が自動的に設定されます
