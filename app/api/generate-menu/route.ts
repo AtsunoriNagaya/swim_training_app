@@ -171,9 +171,36 @@ type AIModelKey = keyof typeof AI_MODELS;
 
 export async function POST(req: NextRequest) {
   try {
-    const { aiModel, apiKey, loadLevels, duration, notes } = await req.json()
+    // リクエストボディの詳細をログに記録
+    const requestBody = await req.json()
+    console.log("リクエストデータ:", JSON.stringify({ 
+      aiModel: requestBody.aiModel,
+      loadLevelsType: Array.isArray(requestBody.loadLevels) ? 'array' : typeof requestBody.loadLevels,
+      loadLevelsValue: requestBody.loadLevels,
+      duration: requestBody.duration,
+      hasNotes: !!requestBody.notes
+    }))
+
+    const { aiModel, apiKey, loadLevels, duration, notes } = requestBody
+    
+    // 入力値の検証
     if (!apiKey) {
       throw new Error("APIキーが提供されていません")
+    }
+    
+    if (!aiModel) {
+      throw new Error("AIモデルが選択されていません")
+    }
+
+    // loadLevelsのバリデーション
+    if (!loadLevels) {
+      throw new Error("負荷レベルが指定されていません")
+    }
+    
+    // loadLevelsが配列でない場合は配列に変換
+    const loadLevelsArray = Array.isArray(loadLevels) ? loadLevels : [loadLevels]
+    if (loadLevelsArray.length === 0) {
+      throw new Error("少なくとも1つの負荷レベルを選択してください")
     }
 
     // AIモデルの選択
@@ -183,7 +210,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 負荷レベルの文字列化
-    const loadLevelStr = loadLevels
+    const loadLevelStr = loadLevelsArray
       .map((level: string) => {
         switch (level) {
           case "A":
@@ -202,7 +229,7 @@ export async function POST(req: NextRequest) {
     let relevantMenus = ""
     try {
       // 検索クエリを構築
-      const queryText = loadLevels.join(" ") + " " + duration + "分"
+      const queryText = loadLevelsArray.join(" ") + " " + duration + "分"
       const notesText = notes ? " " + notes.toString() : ""
       
       // 類似メニューを検索
@@ -349,7 +376,7 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
     try {
       await saveMenu(menuId, {
         ...menuData,
-        loadLevels,
+        loadLevels: loadLevelsArray, // 変換済みの配列を使用
         duration,
         notes,
         createdAt: new Date().toISOString()
@@ -369,13 +396,13 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
       title: menuData.title,
       createdAt: new Date().toISOString(),
       aiModel: aiModel,
-      loadLevels: loadLevels,
+      loadLevels: loadLevelsArray, // 変換済みの配列を使用
       duration: duration,
       notes: notes,
       menu: menuData.menu,
       totalTime: menuData.totalTime,
-      intensity: responseIntensity, // Use the prepared variable
-      targetSkills: responseTargetSkills, // Use the prepared variable
+      intensity: responseIntensity,
+      targetSkills: responseTargetSkills,
       remainingTime: duration - menuData.totalTime,
     })
   } catch (error: unknown) {

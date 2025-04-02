@@ -84,7 +84,7 @@ export default function MenuCreationForm() {
       // ここでAPIリクエストを行い、メニューを生成する
       console.log("フォーム送信値:", values)
 
-      // 実際のAPIリクエスト（実装時にコメントアウトを解除）
+      // APIリクエスト
       const response = await fetch("/api/generate-menu", {
         method: "POST",
         headers: {
@@ -93,11 +93,18 @@ export default function MenuCreationForm() {
         body: JSON.stringify(values),
       });
 
+      // レスポンスデータを取得
+      const data = await response.json();
+
+      // エラーチェック
       if (!response.ok) {
-        throw new Error("メニュー生成に失敗しました");
+        // APIから返されたエラーメッセージを使用
+        const errorMessage = data.error || "メニュー生成に失敗しました";
+        console.error("API エラー詳細:", data);
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      // 成功時の処理
       router.push(`/result?id=${data.menuId}`);
 
       // 開発用のモックデータ
