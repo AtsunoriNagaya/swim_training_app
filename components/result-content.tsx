@@ -1,23 +1,17 @@
 'use client';
 
 import React from "react";
+import { useSearchParams } from 'next/navigation';
 import TrainingMenuResult from "@/components/training-menu-result"
 
-type SearchParams = {
-  id?: string;
-};
-
-type ResultContentProps = {
-  searchParams: SearchParams;
-};
-
-export default function ResultContent({ searchParams }: ResultContentProps) {
+export default function ResultContent() {
   const [menuData, setMenuData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const searchParams = useSearchParams();
 
   React.useEffect(() => {
-    const menuId = searchParams?.id;
+    const menuId = searchParams.get('id');
     if (!menuId) {
       setLoading(false);
       setError(true);

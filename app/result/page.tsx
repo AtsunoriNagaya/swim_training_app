@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "AIによって生成された水泳部の練習メニュー",
 }
 
-export default function ResultPage({ searchParams }: { searchParams: { id?: string } }) {
-  return <ResultContent searchParams={searchParams} />;
+export const dynamic = 'force-static'
+
+export default function ResultPage() {
+  return <ResultContent />;
 }
