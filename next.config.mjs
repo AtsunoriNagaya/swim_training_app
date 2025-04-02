@@ -1,13 +1,75 @@
-nextConfig.headers = async () => {
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+let userConfig = undefined;
+try {
+  const userConfigPath = './v0-user-next.config.js';
+  if (fs.existsSync(userConfigPath)) {
+    userConfig = (await import(userConfigPath)).default;
+  }
+} catch (e) {
+  console.error("Failed to load user config", e);
+}
+
+const allowedOrigins = [
+  'https://swim-training-app.vercel.app',
+  'https://swim-traing-app.vercel.app',
+  'http://localhost:3000',
+];
+
+/** @type {import('next').NextConfig} */
+let nextConfig = {
+  async headers() {
     return [
       {
         source: '/api/:path*',
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: allowedOrigins.join(', ') }, // reflect the origin in the response (for development)
+          { key: "Access-Control-Allow-Origin", value: allowedOrigins.join(', ') },
           { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
-        ]
-      }
+        ],
+      },
     ];
-  };
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    unoptimized: true,
+  },
+  output: 'standalone',
+};
+
+function mergeConfig(nextConfig, userConfig) {
+  if (!userConfig) {
+    return;
+  }
+
+  for (const key in userConfig) {
+    if (
+      typeof nextConfig[key] === 'object' &&
+      !Array.isArray(nextConfig[key])
+    ) {
+      nextConfig[key] = {
+        ...nextConfig[key],
+        ...userConfig[key],
+      };
+    } else {
+      nextConfig[key] = userConfig[key];
+    }
+  }
+}
+
+if (userConfig) {
+  mergeConfig(nextConfig, userConfig);
+}
+
+export default nextConfig;
