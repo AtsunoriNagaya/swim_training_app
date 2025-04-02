@@ -7,5 +7,10 @@
   "outputDirectory": ".next",
   "github": {
     "silent": true
+  },
+  "functions": {
+    "app/api/generate-menu/route.ts": {
+      "maxDuration": 60
+    }
   }
 }

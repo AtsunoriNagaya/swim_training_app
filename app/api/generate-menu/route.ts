@@ -1,4 +1,6 @@
-          import { type NextRequest, NextResponse } from "next/server"
+          export const runtime = 'edge';
+
+import { type NextRequest, NextResponse } from "next/server"
 import OpenAI from "openai"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import Anthropic from "@anthropic-ai/sdk"
