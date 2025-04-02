@@ -20,7 +20,7 @@ export default function ResultContent() {
 
     async function fetchData() {
       try {
-        const response = await fetch(`/api/get-menu?id=${menuId}`);
+        const response = await fetch(`https://swim-traing-app.vercel.app/api/get-menu?id=${menuId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch menu data");
         }

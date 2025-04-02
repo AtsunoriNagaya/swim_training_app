@@ -49,7 +49,7 @@ export default function MenuHistoryList() {
   useEffect(() => {
     const fetchMenuHistory = async () => {
       try {
-        const response = await fetch("/api/get-menu-history");
+        const response = await fetch("https://swim-traing-app.vercel.app/api/get-menu-history");
         if (!response.ok) {
           throw new Error("Failed to fetch menu history");
         }
