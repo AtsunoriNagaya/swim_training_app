@@ -46,13 +46,13 @@ interface GeneratedMenuData {
 // AIモデルの設定
 const AI_MODEL_CONFIGS = {
   openai: {
-    model: "gpt-4",
+    model: "gpt-4o",
   },
   google: {
-    model: "gemini-pro",
+    model: "gemini-1.5-pro",
   },
   anthropic: {
-    model: "claude-3-opus-20240229",
+    model: "claude-3.5-sonnet",
   },
 }
 
@@ -392,11 +392,6 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
       return NextResponse.json(
         { error: "AIサービスの認証に失敗しました。システム管理者に連絡してください。" },
         { status: 401 }
-      )
-    } else if (apiError.message?.includes("ChromaDB")) {
-      return NextResponse.json(
-        { error: "データベース接続エラーが発生しました。システム管理者に連絡してください。" },
-        { status: 503 }
       )
     } else if (apiError.message?.includes("超過")) {
       return NextResponse.json(
