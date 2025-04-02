@@ -51,7 +51,7 @@ const AI_MODEL_CONFIGS = {
     model: "gpt-4o",
   },
   google: {
-    model: "gemini-1.5-pro",
+    model: "gemini-2.0-flash", // gemini-1.5-proからgemini-2.0-flashに更新
   },
   anthropic: {
     model: "claude-3.5-sonnet",
@@ -286,9 +286,11 @@ export async function POST(req: NextRequest) {
 
 また、以下の点に注意してください：
 1. 各項目の所要時間と合計時間を正確に計算すること
-2. 指定された総時間（${duration}分）内に収まるようにすること
+2. 【最重要】指定された総時間（${duration}分）内に収まるようにすること - この条件を満たさないメニューは無効です
 3. 選手の疲労度を考慮した適切な休憩時間を設定すること
 4. 練習の強度が徐々に上がり、最後に下がるような流れを作ること
+
+必ず合計時間が${duration}分以内になるようにメニューを作成してください。それを超えるものは受け入れられません。
 
 【重要: 出力形式について】
 必ず生のJSONのみを返してください。コードブロック('json')やマークダウン形式は使用しないでください。
@@ -427,8 +429,49 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
       
       // 時間の整合性チェック
       menuData.totalTime = calculatedTotal
+      
+      // 時間超過の場合、自動調整機能
       if (calculatedTotal > duration) {
-        throw new Error(`生成されたメニュー（${calculatedTotal}分）が指定時間（${duration}分）を超過しています`)
+        console.warn(`生成されたメニューが時間超過（${calculatedTotal}分 > ${duration}分）。自動調整を試みます。`);
+        
+        // 調整係数を計算（例: 90分の制限に対して114分のメニューなら、0.789の係数）
+        const adjustmentFactor = duration / calculatedTotal;
+        
+        // 各項目の時間を調整係数に応じて削減
+        let adjustedTotal = 0;
+        
+        for (const section of menuData.menu) {
+          let adjustedSectionTotal = 0;
+          
+          // 各アイテムを調整
+          for (const item of section.items) {
+            if (item.time) {
+              // 時間を調整（切り上げて最低1分は確保）
+              const originalTime = item.time;
+              item.time = Math.max(1, Math.ceil(item.time * adjustmentFactor));
+              
+              // デバッグログ
+              if (originalTime !== item.time) {
+                console.log(`調整: ${section.name} - ${item.description} (${originalTime}分 → ${item.time}分)`);
+              }
+              
+              adjustedSectionTotal += item.time;
+            }
+          }
+          
+          // セクション合計を更新
+          section.totalTime = adjustedSectionTotal;
+          adjustedTotal += adjustedSectionTotal;
+        }
+        
+        // 最終的な合計時間を更新
+        menuData.totalTime = adjustedTotal;
+        console.log(`メニュー調整完了: ${calculatedTotal}分 → ${adjustedTotal}分`);
+        
+        // 最終チェック - 調整後も時間オーバーの場合（通常起こらないが念のため）
+        if (adjustedTotal > duration) {
+          throw new Error(`調整後もメニューが時間超過（${adjustedTotal}分 > ${duration}分）`);
+        }
       }
     } catch (error: unknown) {
       const validationError = error as Error
