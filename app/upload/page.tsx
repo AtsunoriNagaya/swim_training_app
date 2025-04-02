@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import FileUploadForm from "@/components/file-upload-form"
 import UploadedFilesList from "@/components/uploaded-files-list"
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "過去メニュー管理 - 水泳部練習メニュー作成アプリ",
   description: "過去の練習メニューをアップロードして管理します",
@@ -32,4 +34,3 @@ export default function UploadPage() {
     </div>
   )
 }
-
