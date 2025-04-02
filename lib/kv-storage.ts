@@ -44,13 +44,26 @@ async function handleBlobError<T>(fn: () => Promise<T>): Promise<T | null> {
  * インデックスファイルの取得処理を共通化
  */
 async function getIndexData(): Promise<IndexData> {
-  const indexFileUrl = await kv.get<string>('menu:indexUrl');
-  if (!indexFileUrl) {
+  try {
+    const indexFileUrl = await kv.get<string>('menu:indexUrl');
+    console.log("[KV] Index file URL:", indexFileUrl); // デバッグログ
+
+    if (!indexFileUrl) {
+      console.warn("[KV] Index file URL not found in KV");
+      return { menus: [] };
+    }
+
+    const indexData = await handleBlobError(() => getJsonFromBlob(indexFileUrl)) as IndexData | null;
+    console.log("[KV] Index data from Blob:", indexData); // デバッグログ
+    return indexData || { menus: [] };
+  } catch (error: any) {
+    console.error("[KV] Error fetching index data:", {
+      error: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return { menus: [] };
   }
-
-  const indexData = await handleBlobError(() => getJsonFromBlob(indexFileUrl)) as IndexData | null;
-  return indexData || { menus: [] };
 }
 
 /**
@@ -95,6 +108,8 @@ export async function getMenu(menuId: string) {
   try {
     // インデックスファイルからメニューデータのURLを取得
     const indexData = await getIndexData();
+    console.log("[KV] Index data:", indexData); // デバッグログ
+
     const menuEntry = indexData.menus.find(menu => menu.id === menuId);
 
     // メニューが見つからない場合
