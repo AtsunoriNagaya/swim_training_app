@@ -283,7 +283,10 @@ export async function POST(req: NextRequest) {
 3. 選手の疲労度を考慮した適切な休憩時間を設定すること
 4. 練習の強度が徐々に上がり、最後に下がるような流れを作ること
 
-出力形式は以下のJSON形式で返してください：
+【重要: 出力形式について】
+必ず生のJSONのみを返してください。コードブロック('json')やマークダウン形式は使用しないでください。
+以下の形式に従って応答してください：
+
 {
   "title": "メニュータイトル",
   "menu": [
@@ -307,7 +310,9 @@ export async function POST(req: NextRequest) {
   "totalTime": "メニュー合計時間（分）",
   "intensity": "メニュー全体の負荷レベル（A/B/C）",
   "targetSkills": ["強化される技術や能力の配列"]
-}`
+}
+
+JSONオブジェクトのみを返し、JSONの前後に余分なテキストや説明を含めないでください。`
 
     const userPrompt = `${loadLevelStr}の${duration}分練習メニューを作成してください。
 ${notes ? `特記事項：${notes}` : ""}
@@ -322,8 +327,37 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
     // メニューデータの検証と時間計算
     let menuData: GeneratedMenuData
     try {
-      // AIからの応答をパースし、型キャスト
-      menuData = JSON.parse(text) as GeneratedMenuData
+      // AIからの応答をクリーニング (不要なテキストとMarkdownコードブロックの除去)
+      let cleanedText = text;
+      
+      console.log("AIモデルからの生の応答:", text.substring(0, 200) + "...");
+      
+      // ```json などのコードブロックを検出してクリーニング
+      const jsonBlockRegex = /```(?:json)?\s*\n([\s\S]*?)\n```/;
+      const match = text.match(jsonBlockRegex);
+      if (match && match[1]) {
+        cleanedText = match[1].trim();
+        console.log("マークダウンコードブロックを検出してクリーニングしました");
+      }
+      
+      // 先頭と末尾の余分なテキストを除去 (JSON以外のテキストを取り除く試み)
+      const jsonStartIndex = cleanedText.indexOf('{');
+      const jsonEndIndex = cleanedText.lastIndexOf('}');
+      
+      if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+        cleanedText = cleanedText.substring(jsonStartIndex, jsonEndIndex + 1);
+        console.log("JSONオブジェクトのみを抽出しました");
+      }
+      
+      console.log("クリーニング後のテキスト:", cleanedText.substring(0, 100) + "...");
+      
+      try {
+        // AIからの応答をパースし、型キャスト
+        menuData = JSON.parse(cleanedText) as GeneratedMenuData;
+      } catch (parseError) {
+        console.error("JSON解析エラー:", parseError);
+        throw new Error("AIモデルの応答が有効なJSON形式ではありません");
+      }
       
       // 基本的なバリデーション (キャスト後に行う)
       if (!menuData || !menuData.title || !Array.isArray(menuData.menu) || typeof menuData.totalTime !== 'number') {
