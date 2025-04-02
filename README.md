@@ -22,7 +22,7 @@
 *   OpenAI API
 *   Google Gemini API
 *   Anthropic Claude API
-*   ChromaDB
+*   Vercel KV (データストレージ)
 *   jsPDF
 *   csv-stringify
 
@@ -31,9 +31,16 @@
 以下の環境変数を`.env.local`ファイルに設定してください。
 
 ```
+# AI API設定
 OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 GOOGLE_API_KEY=YOUR_GOOGLE_API_KEY (Gemini API を使用する場合)
 ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY (Claude API を使用する場合)
+
+# Vercel KV設定 (Vercelにデプロイする場合は自動で設定されます)
+KV_URL=YOUR_KV_URL
+KV_REST_API_URL=YOUR_KV_REST_API_URL
+KV_REST_API_TOKEN=YOUR_KV_REST_API_TOKEN
+KV_REST_API_READ_ONLY_TOKEN=YOUR_KV_REST_API_READ_ONLY_TOKEN
 ```
 
 各APIキーは、それぞれの公式サイトで取得してください。
@@ -66,9 +73,9 @@ ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY (Claude API を使用する場合)
         ```
         各APIキーは、それぞれの公式サイトで取得してください。
 
-4.  **ChromaDB のセットアップ:**
-    *   ChromaDB をローカルにインストールし、起動してください。
-    *   または、Docker などで ChromaDB を起動することも可能です。
+4.  **ローカル開発時のデータストレージ:**
+    *   ローカル開発時は、Vercel KVの代わりにChromaDBを使用することもできます。
+    *   その場合は、ChromaDBをローカルにインストールし、起動してください。
 
 ## 開発サーバーの起動
 
@@ -82,7 +89,23 @@ npm run dev
 
 ## デプロイ
 
-Vercel などにデプロイできます。
+### Vercelへのデプロイ
+
+1. [Vercel](https://vercel.com)にアカウントを作成し、ログインします。
+2. GitHubリポジトリと連携し、このプロジェクトをインポートします。
+3. 環境変数を設定します：
+   - `OPENAI_API_KEY`
+   - `GOOGLE_API_KEY` (Gemini APIを使用する場合)
+   - `ANTHROPIC_API_KEY` (Claude APIを使用する場合)
+4. Vercel KVをセットアップします：
+   - Vercelダッシュボードで「Storage」タブを選択
+   - 「KV」を選択し、新しいKVデータベースを作成
+   - プロジェクトにKVデータベースを接続すると、必要な環境変数が自動的に設定されます
+5. デプロイを実行します。
+
+### その他のプラットフォームへのデプロイ
+
+他のプラットフォームにデプロイする場合は、Vercel KVの代わりに別のデータストレージソリューションを使用する必要があります。`app/api/chromadb-alternative.md`ファイルに記載されている代替案を参照してください。
 
 ## 今後の展望
 

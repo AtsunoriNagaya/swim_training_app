@@ -2,7 +2,7 @@
 import OpenAI from "openai"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import Anthropic from "@anthropic-ai/sdk"
-import { ChromaClient, OpenAIEmbeddingFunction } from "chromadb"
+import { saveMenu, searchSimilarMenus } from "@/lib/kv-storage"
 
 // 型定義
 type GeminiResponse = {
@@ -63,23 +63,6 @@ interface APIError extends Error {
   status?: number;
 }
 
-// ChromaDB設定の初期化関数
-async function initializeChromaDB() {
-  try {
-    const chromaClient = new ChromaClient()
-    const embedder = new OpenAIEmbeddingFunction({
-      openai_api_key: process.env.OPENAI_API_KEY!,
-    })
-    const collection = await chromaClient.getOrCreateCollection({
-      name: "swim_menus",
-      embeddingFunction: embedder,
-    })
-    return { chromaClient, embedder, collection }
-  } catch (error) {
-    console.error("ChromaDB初期化エラー:", error)
-    throw new Error("データベースの初期化に失敗しました")
-  }
-}
 
 // 所要時間計算関数
 function calculateItemTime(distance: number, circle: string, sets: number, rest: number): number {
@@ -197,53 +180,29 @@ export async function POST(req: NextRequest) {
       })
       .join("・")
 
-    // ChromaDBの初期化
-    const { embedder, collection } = await initializeChromaDB()
-
-    // RAGによる過去メニュー参照
+    // 過去の類似メニューを検索
     let relevantMenus = ""
     try {
-      // ChromaDBのクエリを実行
+      // 検索クエリを構築
       const queryText = loadLevels.join(" ") + " " + duration + "分"
       const notesText = notes ? " " + notes.toString() : ""
       
-      // 型安全なクエリ実行
-      const results = await (async () => {
-        try {
-          // ChromaDBのクエリパラメータを構築
-          const queryParams = {
-            queryTexts: [queryText + notesText],
-            nResults: 5
-          } as any
-          
-          // 時間範囲の条件を追加
-          if (duration) {
-            const minDuration = Math.floor(duration * 0.8).toString()
-            const maxDuration = Math.ceil(duration * 1.2).toString()
-            queryParams.where = {
-              duration: { $gte: minDuration, $lte: maxDuration }
-            }
-          }
-          
-                    return await collection.query(queryParams)
-        } catch (e) {
-          console.error("ChromaDB クエリエラー:", e)
-          return { documents: [[]] }
-        }
-      })()
+      // 類似メニューを検索
+      const results = await searchSimilarMenus(queryText + notesText, duration)
       
       // 関連メニューの抽出と整形
-      if (results.documents[0]?.length > 0) {
-        relevantMenus = results.documents[0]
+      if (results.length > 0) {
+        relevantMenus = results
           .map(menu => {
             try {
-              const parsed = JSON.parse(menu)
-              const skills = Array.isArray(parsed.targetSkills) ? parsed.targetSkills : []
-              return `- ${parsed.title} (${parsed.totalTime}分): ${skills.join(", ")}`
-            } catch {
-              return menu
+              const skills = Array.isArray(menu.targetSkills) ? menu.targetSkills : []
+              return `- ${menu.title} (${menu.totalTime}分): ${skills.join(", ")}`
+            } catch (e) {
+              console.error("メニュー整形エラー:", e)
+              return ""
             }
           })
+          .filter(Boolean)
           .join("\n")
       }
     } catch (error) {
@@ -310,7 +269,10 @@ ${notes ? `特記事項：${notes}` : ""}
 ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMenus}` : ""}`
 
     // AIによるメニュー生成
-    const text = await selectedModel.generate(userPrompt, systemPrompt)
+    const text = await selectedModel.generate(userPrompt, systemPrompt) || ""
+    if (!text) {
+      throw new Error("AIモデルからの応答が空でした")
+    }
 
     // メニューデータの検証と時間計算
     let menuData: GeneratedMenuData
@@ -365,25 +327,14 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
     // メニューIDの生成と保存
     const menuId = `menu-${Date.now()}`
     
-    // メニューをChromaDBに保存
+    // メニューをVercel KVに保存
     try {
-       // メタデータ用に値を準備 (より厳密な型安全性)
-       const finalIntensity = menuData.intensity ?? "";
-       const finalTargetSkillsString = Array.isArray(menuData.targetSkills) ?
-        menuData.targetSkills.join(",") : "";
-
-      await collection.add({
-        ids: [menuId],
-        documents: [JSON.stringify(menuData)],
-        metadatas: [{
-          loadLevels: loadLevels.join(","),
-          duration: duration.toString(),
-          notes: notes ? notes.toString() : "",
-          createdAt: new Date().toISOString(),
-          totalTime: menuData.totalTime.toString(),
-          intensity: finalIntensity,
-          targetSkills: finalTargetSkillsString
-        }]
+      await saveMenu(menuId, {
+        ...menuData,
+        loadLevels,
+        duration,
+        notes,
+        createdAt: new Date().toISOString()
       })
     } catch (error) {
       console.error("メニュー保存エラー:", error)
