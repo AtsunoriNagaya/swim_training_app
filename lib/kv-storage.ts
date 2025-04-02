@@ -1,4 +1,5 @@
 import { kv } from '@vercel/kv';
+import { saveJsonToBlob, getJsonFromBlob } from './blob-storage';
 
 // メニューメタデータの型定義
 interface MenuMetadata {
@@ -16,15 +17,54 @@ interface MenuHistoryItem extends MenuMetadata {
   id: string;
 }
 
+// インデックスファイルの型定義
+interface IndexData {
+  menus: {
+    id: string;
+    metadata: MenuMetadata;
+    menuDataUrl: string;
+  }[];
+}
+
+const INDEX_FILE_NAME = 'menus/index.json';
+
 /**
- * メニューデータをVercel KVに保存する
+ * エラーハンドリングを共通化
+ */
+async function handleBlobError<T>(fn: () => Promise<T>): Promise<T | null> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error('Blob storage error:', error);
+    return null;
+  }
+}
+
+/**
+ * インデックスファイルの取得処理を共通化
+ */
+async function getIndexData(): Promise<IndexData> {
+  const indexFileUrl = await kv.get<string>('menu:indexUrl');
+  if (!indexFileUrl) {
+    return { menus: [] };
+  }
+
+  const indexData = await handleBlobError(() => getJsonFromBlob(indexFileUrl)) as IndexData | null;
+  return indexData || { menus: [] };
+}
+
+/**
+ * メニューデータをVercel Blobに保存する
  */
 export async function saveMenu(menuId: string, menuData: any) {
-  // メニューデータを保存
-  await kv.set(`menu:${menuId}`, JSON.stringify(menuData));
-  
-  // メタデータを別のキーに保存
-  await kv.set(`menu:${menuId}:metadata`, {
+  // メニューデータをBlobに保存
+  const menuDataUrl = await saveJsonToBlob(menuData, `menus/${menuId}.json`);
+
+  // インデックスファイルを取得
+  const indexData = await getIndexData();
+
+  // メタデータを生成
+  const metadata: MenuMetadata = {
     loadLevels: Array.isArray(menuData.loadLevels) ? menuData.loadLevels.join(",") : "",
     duration: menuData.duration?.toString() || "",
     notes: menuData.notes || "",
@@ -32,46 +72,46 @@ export async function saveMenu(menuId: string, menuData: any) {
     totalTime: menuData.totalTime?.toString() || "",
     intensity: menuData.intensity || "",
     targetSkills: Array.isArray(menuData.targetSkills) ? menuData.targetSkills.join(",") : ""
+  };
+
+  // インデックスファイルにメニューを追加
+  indexData.menus.push({
+    id: menuId,
+    metadata: metadata,
+    menuDataUrl: menuDataUrl
   });
-  
-  // メニューIDのリストを更新
-  const menuIds = await kv.get<string[]>('menu:ids') || [];
-  menuIds.push(menuId);
-  await kv.set('menu:ids', menuIds);
+
+  // インデックスファイルをBlobに保存
+  const indexFileUrl = await saveJsonToBlob(indexData, INDEX_FILE_NAME);
+
+  // KVにインデックスファイルのURLを保存
+  await kv.set('menu:indexUrl', indexFileUrl);
 }
 
 /**
  * 指定されたIDのメニューデータを取得する
  */
 export async function getMenu(menuId: string) {
-  const menuData = await kv.get(`menu:${menuId}`);
-  if (!menuData) return null;
-  
-  try {
-    return typeof menuData === 'string' ? JSON.parse(menuData) : menuData;
-  } catch (error) {
-    console.error('メニューデータのパースエラー:', error);
-    return null;
-  }
+  // KVからメニューデータのURLを取得
+  const menuDataUrl = await kv.get<string>(`menu:${menuId}`);
+  if (!menuDataUrl) return null;
+
+  // Blobからメニューデータを取得
+  return handleBlobError(() => getJsonFromBlob(menuDataUrl));
 }
 
 /**
  * すべてのメニュー履歴を取得する
  */
 export async function getMenuHistory() {
-  const menuIds = await kv.get<string[]>('menu:ids') || [];
-  const menus: MenuHistoryItem[] = [];
-  
-  for (const id of menuIds) {
-    const metadata = await kv.get<MenuMetadata>(`menu:${id}:metadata`);
-    if (metadata) {
-      menus.push({
-        id,
-        ...metadata
-      });
-    }
-  }
-  
+  // インデックスファイルを取得
+  const indexData = await getIndexData();
+
+  const menus: MenuHistoryItem[] = indexData.menus.map((menu) => ({
+    id: menu.id,
+    ...menu.metadata
+  }));
+
   // 作成日時の降順でソート（新しい順）
   return menus.sort((a, b) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -82,22 +122,24 @@ export async function getMenuHistory() {
  * 類似メニューを検索する（簡易実装）
  */
 export async function searchSimilarMenus(query: string, duration: number) {
-  const menuIds = await kv.get<string[]>('menu:ids') || [];
-  const results = [];
-  
-  for (const id of menuIds) {
-    const metadata = await kv.get<MenuMetadata>(`menu:${id}:metadata`);
+  // インデックスファイルを取得
+  const indexData = await getIndexData();
+
+  const results: any[] = [];
+
+  for (const menu of indexData.menus) {
+    const metadata = menu.metadata;
     if (metadata) {
       // 時間範囲で絞り込み
       const menuDuration = parseInt(metadata.duration);
       if (menuDuration >= duration * 0.8 && menuDuration <= duration * 1.2) {
-        const menuData = await getMenu(id);
+        const menuData = await handleBlobError(() => getJsonFromBlob(menu.menuDataUrl));
         if (menuData) {
           results.push(menuData);
         }
       }
     }
   }
-  
+
   return results;
 }

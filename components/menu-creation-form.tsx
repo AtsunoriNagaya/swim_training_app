@@ -16,6 +16,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
 
+// 型エイリアス
+type FormSchemaType = z.infer<typeof formSchema>
+
 const formSchema = z.object({
   aiModel: z.string({
     required_error: "AIモデルを選択してください",
@@ -39,17 +42,30 @@ const formSchema = z.object({
   notes: z.string().optional(),
 })
 
+// コンポーネントの外で定義
 const loadLevelOptions = [
   { id: "A", label: "A（高負荷）" },
   { id: "B", label: "B（中負荷）" },
   { id: "C", label: "C（低負荷）" },
 ]
 
+// FormDescription の内容を生成する関数
+const getApiKeyFormDescription = (aiModel: string) => {
+  if (aiModel === "openai") {
+    return "OpenAIのAPIキーを入力してください"
+  } else if (aiModel === "google") {
+    return "GoogleのAPIキーを入力してください"
+  } else if (aiModel === "anthropic") {
+    return "AnthropicのAPIキーを入力してください"
+  }
+  return ""
+}
+
 export default function MenuCreationForm() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       loadLevels: [],
@@ -61,7 +77,7 @@ export default function MenuCreationForm() {
 
   const { toast } = useToast()
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormSchemaType) {
     setIsLoading(true)
 
     try {
@@ -145,9 +161,8 @@ export default function MenuCreationForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    {form.watch("aiModel") === "openai" && "OpenAIのAPIキーを入力してください"}
-                    {form.watch("aiModel") === "google" && "GoogleのAPIキーを入力してください"}
-                    {form.watch("aiModel") === "anthropic" && "AnthropicのAPIキーを入力してください"}
+                    {/* 関数を使用 */}
+                    {getApiKeyFormDescription(form.watch("aiModel"))}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { uploadFileToBlob } from "@/lib/blob-storage"
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,6 +22,10 @@ export async function POST(req: NextRequest) {
     if (file.size > maxSize) {
       return NextResponse.json({ error: "ファイルサイズは5MB以下にしてください" }, { status: 400 })
     }
+
+    // ファイルをBlobにアップロード
+    const filename = `menus/${Date.now()}-${file.name}`
+    const fileUrl = await uploadFileToBlob(file, filename)
 
     // ファイルの処理
     // 実際の実装では、ここでファイルを保存し、内容を解析してベクトルDBに保存する
@@ -52,10 +57,10 @@ export async function POST(req: NextRequest) {
       fileSize: `${(file.size / 1024).toFixed(1)} KB`,
       description: description,
       uploadedAt: new Date().toISOString(),
+      fileUrl: fileUrl, // BlobのURLを追加
     })
   } catch (error) {
     console.error("ファイルアップロードエラー:", error)
     return NextResponse.json({ error: "ファイルアップロード中にエラーが発生しました" }, { status: 500 })
   }
 }
-

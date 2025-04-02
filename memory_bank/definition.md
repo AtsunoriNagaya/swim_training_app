@@ -42,7 +42,7 @@
 
 | 要件ID | 分類 | 要件内容 | 備考 |
 |--------|------|----------|------|
-| NF-01 | 使用技術 | バックエンド：Python<br>フロントエンド：TypeScript | フレームワーク例：FastAPI, React/Vue |
+| NF-01 | 使用技術 | バックエンド：Next.js API Routes (TypeScript)<br>フロントエンド：Next.js App Router + React (v19.x) | - App Router による最新のページルーティング<br>- サーバー/クライアントコンポーネントの適切な分離 |
 | NF-02 | コスト | 無料/低コストなツールを優先 | - Vercel, Renderなど無料枠活用<br>- ChromaDB, FAISS, Sentence Transformersなど<br>- ユーザー自身のAPIキーを使用することで、サービス提供者側のAPIコスト負担なし |
 | NF-03 | パフォーマンス | 応答時間は数秒〜数十秒以内 | RAG・生成AIの速度に配慮 |
 | NF-04 | ユーザビリティ | 直感的UIを提供 | 水泳知識がなくても利用可能 |
@@ -52,37 +52,50 @@
 
 ---
 
-## 5. システム構成案（検討）
+## 5. システム構成
 
-- **フロントエンド**：TypeScript + React / Vue / SvelteKit  
-  - 静的ホスティング：Vercel / Netlify 等  
-- **バックエンド**：Python + FastAPI / Flask  
-  - サーバー：Render / Fly.io / Cloud Run / Lambda など  
-- **データベース**：  
-  - ベクトルDB：ChromaDB / FAISS（埋め込み：Sentence Transformers）  
-  - メタデータ：SQLite / PostgreSQL（無料プラン）  
-- **AI連携**：  
-  - Google AI API / OpenAI API / Anthropic API / Hugging Face Transformers  
-- **ドキュメント処理**：  
-  - PDF：PyPDF2 / pdfminer.six  
-  - CSV：csv / pandas  
+- **フロントエンド & バックエンド**：Next.js (v15.2.4)
+  - App Router によるページルーティング
+  - API Routes によるサーバーサイド処理
+  - TypeScript による型安全性の確保
+  - Vercel でのホスティング
+
+- **データベース**：
+  - Vercel KV（メニューメタデータ、インデックス情報）
+  - Vercel Blob（メニューデータ本体）
+
+- **AI連携**：
+  - OpenAI API (GPT-4)
+  - Google Gemini API
+  - Anthropic Claude API
+  - APIキーはユーザー提供方式
+
+- **ドキュメント処理**：
+  - PDF生成：jsPDF + jspdf-autotable
+  - CSV生成：csv-stringify
+  - ファイルアップロード：Next.js API Routes
 
 ---
 
 ## 6. その他・考慮事項
 
-- **プロンプトエンジニアリング**：  
-  - W-up, Kick, Pull, Drill, Main, Down などの構成を明示  
+- **プロンプトエンジニアリング**：
+  - W-up, Kick, Pull, Drill, Main, Down などの構成を明示
   - 出力形式もプロンプトで指定
+  - RAGによる過去メニューの参照機能
 
-- **データ構造**：  
-  - 多様なCSV/PDFフォーマットから正確に練習情報を抽出できる柔軟なパーサーが必要  
+- **データ構造**：
+  - 多様なCSV/PDFフォーマットから正確に練習情報を抽出できる柔軟なパーサーが必要
+  - アップロードされたファイルの適切なバリデーション
 
-- **所要時間計算ロジック**：  
-  - 各練習項目の距離・サークルタイム・休憩時間から現実的に算出  
+- **所要時間計算ロジック**：
+  - 各練習項目の距離・サークルタイム・休憩時間から現実的に算出
+  - クライアントサイドでの即時計算
 
-- **エラーハンドリング**：  
-  - ファイル不正、AI APIエラー等への対応とユーザーへの明確なフィードバックを実装  
+- **エラーハンドリング**：
+  - ファイル不正、AI APIエラー等への対応とユーザーへの明確なフィードバックを実装
+  - サーバーサイドレンダリングに関する問題への対処（`dynamic = 'force-dynamic'` など）
+  - クライアント/サーバーコンポーネントの適切な分離による安定性確保
 
 
 ---
