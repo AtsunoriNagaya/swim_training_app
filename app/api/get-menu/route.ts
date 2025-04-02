@@ -12,11 +12,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Menu ID is required" }, { status: 400 });
     }
 
-    console.log(`Fetching menu: ${menuId}`);
+    console.log(`[API] Fetching menu: ${menuId}`);
     const menuData = await getMenu(menuId);
     
     if (!menuData) {
-      console.warn(`Menu not found: ${menuId}`);
+      console.warn(`[API] Menu not found: ${menuId}`);
       return NextResponse.json({ 
         error: "Menu not found", 
         menuId: menuId 

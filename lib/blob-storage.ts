@@ -54,8 +54,13 @@ export async function deleteFileFromBlob(url: string): Promise<void> {
  * @returns 取得した JSON データ
  */
 export async function getJsonFromBlob<T>(url: string): Promise<T | null> {
+  console.log(`[Blob] Fetching JSON from: ${url}`);
   return handleBlobError(async () => {
     const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`[Blob] Failed to fetch JSON from: ${url}, status: ${response.status}`);
+      return null;
+    }
     return await response.json() as T;
   });
 }
