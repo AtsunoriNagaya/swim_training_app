@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   description: "AIによって生成された水泳部の練習メニュー",
 }
 
+// Propsの型を定義
+type ResultPageProps = {
+  searchParams: { id: string };
+};
+
 async function getMenuData(menuId: string) {
   try {
     const response = await fetch(`/api/get-menu?id=${menuId}`);
@@ -20,7 +25,7 @@ async function getMenuData(menuId: string) {
   }
 }
 
-export default async function ResultPage({ searchParams }: { searchParams: { id: string } }) {
+export default async function ResultPage({ searchParams }: ResultPageProps) {
   const menuId = searchParams.id;
   const menuData = await getMenuData(menuId);
 
