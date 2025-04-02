@@ -99,27 +99,33 @@ function calculateItemTime(distance: number, circle: string, sets: number, rest:
 }
 
 // メニュー生成関数
-// AIモデル設定
-const AI_MODELS = {
-  openai: {
-    generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
-      const client = initializeAIClient("openai", apiKey) as OpenAI;
-      const response = await client.chat.completions.create({
-        model: AI_MODEL_CONFIGS.openai.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.7,
-      })
-      return response.choices[0].message.content
-    }
+    // AIモデル設定
+    const AI_MODELS = {
+      openai: {
+        generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
+          const client = initializeAIClient("openai", apiKey) as OpenAI;
+          const response = await client.chat.completions.create({
+            model: AI_MODEL_CONFIGS.openai.model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.5, // より一貫した応答を得るために温度を下げる
+            response_format: { type: "json_object" }, // JSONレスポンスを強制
+          })
+          return response.choices[0].message.content
+        }
   },
   google: {
     generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
       try {
         const client = initializeAIClient("google", apiKey) as GoogleGenerativeAI;
-        const model = client.getGenerativeModel({ model: AI_MODEL_CONFIGS.google.model })
+        const model = client.getGenerativeModel({ 
+          model: AI_MODEL_CONFIGS.google.model,
+          generationConfig: {
+            temperature: 0.4, // より一貫した応答を得るために温度を下げる
+          }
+        })
         const response = await model.generateContent([systemPrompt, prompt])
         
         let content = ""
@@ -157,6 +163,7 @@ const AI_MODELS = {
         model: AI_MODEL_CONFIGS.anthropic.model,
         max_tokens: 4000,
         system: systemPrompt,
+        temperature: 0.5, // より一貫した応答を得るために温度を下げる
         messages: [{ role: "user", content: prompt }],
       })
       if (response.content[0] && response.content[0].type === 'text') {
@@ -285,32 +292,37 @@ export async function POST(req: NextRequest) {
 
 【重要: 出力形式について】
 必ず生のJSONのみを返してください。コードブロック('json')やマークダウン形式は使用しないでください。
-以下の形式に従って応答してください：
+以下の形式に厳密に従って応答してください。必須フィールドを必ず含めてください：
 
 {
-  "title": "メニュータイトル",
-  "menu": [
+  "title": "メニュータイトル",  // 文字列：必須
+  "menu": [                    // 配列：必須
     {
       "name": "セクション名（例：W-up）",
-      "items": [
+      "items": [               // 配列：必須
         {
-          "description": "項目の詳細説明",
-          "distance": "総距離（m）",
-          "sets": "セット数",
-          "circle": "サークルタイム",
-          "rest": "休憩時間",
+          "description": "項目の詳細説明",  // 文字列：必須
+          "distance": "総距離（m）",        // 文字列：必須
+          "sets": 3,                      // 数値：必須
+          "circle": "2:00",               // 文字列：必須
+          "rest": 1,                      // 数値または文字列：必須
           "equipment": "使用器具（オプション）",
           "notes": "特記事項（オプション）",
-          "time": "所要時間（分）"
+          "time": 10                      // 数値：自動計算します
         }
       ],
-      "totalTime": "セクション合計時間（分）"
+      "totalTime": 15                     // 数値：自動計算します
     }
   ],
-  "totalTime": "メニュー合計時間（分）",
-  "intensity": "メニュー全体の負荷レベル（A/B/C）",
-  "targetSkills": ["強化される技術や能力の配列"]
+  "totalTime": 90,             // 数値：必須（練習の合計時間 - 分単位）
+  "intensity": "B",            // 文字列：任意
+  "targetSkills": ["キック", "持久力"]  // 文字列配列：任意
 }
+
+重要な点：
+- title（文字列）：メニュータイトルは必須です
+- menu（配列）：メニューセクションの配列は必須です
+- totalTime（数値）：合計時間（分）は必須で、必ず数値型で返してください
 
 JSONオブジェクトのみを返し、JSONの前後に余分なテキストや説明を含めないでください。`
 
@@ -359,9 +371,33 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
         throw new Error("AIモデルの応答が有効なJSON形式ではありません");
       }
       
-      // 基本的なバリデーション (キャスト後に行う)
-      if (!menuData || !menuData.title || !Array.isArray(menuData.menu) || typeof menuData.totalTime !== 'number') {
-        throw new Error("必須フィールドが不足しています")
+      // フィールドの存在チェックとフォールバック処理
+      if (!menuData) {
+        throw new Error("AIモデルの応答が有効なメニューデータを含んでいません");
+      }
+      
+      // 必須フィールドのチェックとデフォルト値の設定
+      if (!menuData.title) {
+        console.warn("メニュータイトルが不足しているためデフォルト値を設定します");
+        menuData.title = `${loadLevelStr}の${duration}分トレーニングメニュー`;
+      }
+      
+      if (!Array.isArray(menuData.menu) || menuData.menu.length === 0) {
+        throw new Error("menuフィールドが不足しているか空の配列です");
+      }
+      
+      if (typeof menuData.totalTime !== 'number') {
+        console.warn("totalTimeが数値ではないためデフォルト値を設定します");
+        // 実際の計算値で後で上書きされるため、ここでは仮の値を設定
+        menuData.totalTime = 0;
+      }
+      
+      // 各セクションの検証
+      for (const section of menuData.menu) {
+        if (!Array.isArray(section.items)) {
+          section.items = [];
+          console.warn(`セクション「${section.name}」のitemsが配列ではないため、空の配列に設定しました`);
+        }
       }
       
       // 各項目の所要時間を計算して更新
