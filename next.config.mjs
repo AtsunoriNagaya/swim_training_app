@@ -1,48 +1,13 @@
-let userConfig = undefined
-try {
-  userConfig = await import('./v0-user-next.config')
-} catch (e) {
-  // ignore error
-}
-
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  eslint: {
-    // ignoreDuringBuilds: true, // 削除
-  },
-  typescript: {
-    // ignoreBuildErrors: true,  // 削除
-  },
-  images: {
-    unoptimized: false, // false に変更
-  },
-  experimental: {
-    // webpackBuildWorker: true, // 削除
-    // parallelServerBuildTraces: true, // 削除
-    // parallelServerCompiles: true,  // 削除
-  },
-}
-
-mergeConfig(nextConfig, userConfig)
-
-function mergeConfig(nextConfig, userConfig) {
-  if (!userConfig) {
-    return
-  }
-
-  for (const key in userConfig) {
-    if (
-      typeof nextConfig[key] === 'object' &&
-      !Array.isArray(nextConfig[key])
-    ) {
-      nextConfig[key] = {
-        ...nextConfig[key],
-        ...userConfig[key],
+nextConfig.headers = async () => {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Allow-Origin", value: allowedOrigins.join(', ') }, // reflect the origin in the response (for development)
+          { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+          { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
+        ]
       }
-    } else {
-      nextConfig[key] = userConfig[key]
-    }
-  }
-}
-
-export default nextConfig
+    ];
+  };
