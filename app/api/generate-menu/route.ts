@@ -170,7 +170,6 @@ type AIModelKey = keyof typeof AI_MODELS;
 export async function POST(req: NextRequest) {
   try {
     const { aiModel, apiKey, loadLevels, duration, notes } = await req.json()
-
     if (!apiKey) {
       throw new Error("APIキーが提供されていません")
     }
