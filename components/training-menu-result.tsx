@@ -38,7 +38,13 @@ import { useToast } from "@/hooks/use-toast";
 
 interface MenuItem {
   description: string;
-  time: number;
+  distance: string;
+  sets: number;
+  circle: string;
+  rest: string | number;
+  equipment?: string;
+  notes?: string;
+  time?: number;
 }
 
 interface MenuSection {
@@ -110,24 +116,38 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         doc.text(menuData.title, 10, 10);
 
         (doc as any).autoTable({
-          head: [["内容", "時間"]],
+          head: [["内容", "距離", "本数", "サイクル", "所要時間"]],
           body: menuData.menu.flatMap((section) =>
-            section.items.map((item) => [item.description, item.time])
+            section.items.map((item) => [
+              item.description,
+              item.distance,
+              item.sets,
+              item.circle,
+              `${item.time}分`
+            ])
           ),
         });
 
         doc.save(`swimming-menu-${menuData.id}.pdf`);
       } else if (format === "csv") {
         const csvData = [
-          ["内容", "時間"],
+          ["内容", "距離", "本数", "サイクル", "所要時間"],
           ...menuData.menu.flatMap((section) =>
-            section.items.map((item) => [item.description, item.time])
+            section.items.map((item) => [
+              item.description,
+              item.distance,
+              item.sets,
+              item.circle,
+              `${item.time}分`
+            ])
           ),
         ];
 
         stringify(csvData, (err, output) => {
           if (err) throw err;
-          const blob = new Blob([output]);
+          // UTF-8 BOMを付与
+          const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+          const blob = new Blob([BOM, output], { type: 'text/csv;charset=utf-8' });
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -221,14 +241,20 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[80%]">内容</TableHead>
-                    <TableHead className="text-right">所要時間</TableHead>
+                    <TableHead className="w-[40%]">内容</TableHead>
+                    <TableHead className="w-[15%]">距離</TableHead>
+                    <TableHead className="w-[10%]">本数</TableHead>
+                    <TableHead className="w-[15%]">サイクル</TableHead>
+                    <TableHead className="text-right w-[20%]">所要時間</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {section.items.map((item, itemIndex) => (
                     <TableRow key={itemIndex} className="hover:bg-primary/5">
                       <TableCell className="font-medium">{item.description}</TableCell>
+                      <TableCell>{item.distance}</TableCell>
+                      <TableCell>{item.sets}</TableCell>
+                      <TableCell>{item.circle}</TableCell>
                       <TableCell className="text-right">{item.time}分</TableCell>
                     </TableRow>
                   ))}
