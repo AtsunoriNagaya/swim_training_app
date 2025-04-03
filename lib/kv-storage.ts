@@ -47,16 +47,27 @@ async function handleBlobError<T>(fn: () => Promise<T>): Promise<T | null> {
  */
 async function getIndexData(): Promise<IndexData> {
   try {
+    console.log("[KV] 🔍 Getting index URL from KV store");
     const indexFileUrl = await kv.get<string>('menu:indexUrl');
-    console.log("[KV] Index file URL:", indexFileUrl); // デバッグログ
-
+    
     if (!indexFileUrl) {
-      console.warn("[KV] Index file URL not found in KV");
+      console.warn("[KV] ⚠️ Index file URL not found in KV store");
       return { menus: [] };
     }
+    
+    console.log("[KV] ✅ Retrieved index URL from KV:", indexFileUrl?.substring(0, 50) + "...");
 
+    console.log("[KV] 🔍 Fetching index data from Blob storage");
     const indexData = await handleBlobError(() => getJsonFromBlob(indexFileUrl)) as IndexData | null;
-    console.log("[KV] Index data from Blob:", indexData); // デバッグログ
+    
+    if (!indexData) {
+      console.warn("[KV] ⚠️ Failed to retrieve index data from Blob");
+      return { menus: [] };
+    }
+    
+    const menuCount = indexData.menus?.length || 0;
+    console.log(`[KV] ✅ Retrieved index data from Blob with ${menuCount} menus`);
+    
     return indexData || { menus: [] };
   } catch (error: any) {
     console.error("[KV] Error fetching index data:", {
@@ -110,26 +121,41 @@ export async function saveMenu(menuId: string, menuData: any) {
  */
 export async function getMenu(menuId: string) {
   try {
+    console.log(`[KV] 🔍 Searching for menu with ID: ${menuId}`);
+    
     // インデックスファイルからメニューデータのURLを取得
     const indexData = await getIndexData();
-    console.log("[KV] Index data:", indexData); // デバッグログ
-
+    
+    if (!indexData.menus || indexData.menus.length === 0) {
+      console.warn(`[KV] ⚠️ Index contains no menus, cannot find menu ID: ${menuId}`);
+      return null;
+    }
+    
     const menuEntry = indexData.menus.find(menu => menu.id === menuId);
 
     // メニューが見つからない場合
-    if (!menuEntry || !menuEntry.menuDataUrl) {
-      console.warn(`[KV] Menu ID ${menuId} not found in index`);
+    if (!menuEntry) {
+      console.warn(`[KV] ⚠️ Menu ID ${menuId} not found in index`);
+      return null;
+    }
+    
+    if (!menuEntry.menuDataUrl) {
+      console.warn(`[KV] ⚠️ Menu entry found but menuDataUrl is missing for ID: ${menuId}`);
       return null;
     }
 
-    console.log(`[KV] Found menu ${menuId}, URL: ${menuEntry.menuDataUrl}`);
+    console.log(`[KV] ✅ Found menu ${menuId} in index, menuDataUrl: ${menuEntry.menuDataUrl.substring(0, 50)}...`);
 
     // Blobからメニューデータを取得
+    console.log(`[KV] 🔍 Fetching menu data from Blob storage`);
     const menuData = await handleBlobError(() => getJsonFromBlob(menuEntry.menuDataUrl));
+    
     if (!menuData) {
-      console.error(`[KV] Menu data not found in Blob storage: ${menuEntry.menuDataUrl}`);
+      console.error(`[KV] 🚨 Menu data not found in Blob storage: ${menuEntry.menuDataUrl}`);
       return null;
     }
+    
+    console.log(`[KV] ✅ Successfully retrieved menu data from Blob storage for ID: ${menuId}`);
     return menuData;
   } catch (error: any) {
     console.error(`[KV] Error fetching menu ${menuId}:`, {

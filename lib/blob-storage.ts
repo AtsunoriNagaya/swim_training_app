@@ -54,14 +54,39 @@ export async function deleteFileFromBlob(url: string): Promise<void> {
  * @returns 取得した JSON データ
  */
 export async function getJsonFromBlob<T>(url: string): Promise<T | null> {
-  console.log(`[Blob] Fetching JSON from: ${url}`);
+  console.log(`[Blob] 🔍 Fetching JSON from: ${url}`);
   return handleBlobError(async () => {
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.error(`[Blob] Failed to fetch JSON from: ${url}, status: ${response.status}`);
+    try {
+      console.log(`[Blob] 🔄 Sending HTTP request to fetch data`);
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      console.log(`[Blob] 📡 Response status: ${response.status} ${response.statusText}`);
+      
+      if (!response.ok) {
+        console.error(`[Blob] 🚨 Failed to fetch JSON. Status: ${response.status}, URL: ${url}`);
+        // レスポンス本文をログに記録（デバッグ用）
+        try {
+          const errorText = await response.text();
+          console.error(`[Blob] 🚨 Error response body: ${errorText.substring(0, 200)}${errorText.length > 200 ? '...' : ''}`);
+        } catch (textError) {
+          console.error(`[Blob] 🚨 Could not read error response body`);
+        }
+        return null;
+      }
+      
+      console.log(`[Blob] ✅ Received OK response, parsing JSON`);
+      const jsonData = await response.json() as T;
+      console.log(`[Blob] ✅ Successfully parsed JSON data`);
+      return jsonData;
+    } catch (fetchError: any) {
+      console.error(`[Blob] 🚨 Fetch or parse error: ${fetchError.message}`, fetchError);
       return null;
     }
-    return await response.json() as T;
   });
 }
 
