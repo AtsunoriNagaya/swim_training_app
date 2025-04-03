@@ -140,6 +140,23 @@ export async function getMenu(menuId: string) {
   try {
     console.log(`[KV] 🔍 Searching for menu with ID: ${menuId}`);
     
+    // 直接BlobからJSONを取得を試みる（形式が予測可能な場合のフォールバック）
+    try {
+      console.log(`[KV] 🔄 Attempting direct access pattern`);
+      const directUrl = `https://jf4nttkr91b0.blob.vercel-storage.com/menus/${menuId}.json`;
+      console.log(`[KV] 🔍 Trying direct URL: ${directUrl}`);
+      const directData = await handleBlobError(() => getJsonFromBlob(directUrl));
+      
+      if (directData) {
+        console.log(`[KV] ✅ Successfully retrieved menu data directly from Blob for ID: ${menuId}`);
+        return directData;
+      } else {
+        console.log(`[KV] ⚠️ Direct access failed, falling back to index`);
+      }
+    } catch (directError) {
+      console.error(`[KV] Direct access error:`, directError);
+    }
+    
     // インデックスファイルからメニューデータのURLを取得
     const indexData = await getIndexData();
     
@@ -148,7 +165,10 @@ export async function getMenu(menuId: string) {
       return null;
     }
     
-    const menuEntry = indexData.menus.find(menu => menu.id === menuId);
+    // 部分一致や関連IDも探す
+    const menuEntry = indexData.menus.find(menu => 
+      menu.id === menuId || menu.id.includes(menuId) || menuId.includes(menu.id)
+    );
 
     // メニューが見つからない場合
     if (!menuEntry) {
@@ -157,11 +177,11 @@ export async function getMenu(menuId: string) {
     }
     
     if (!menuEntry.menuDataUrl) {
-      console.warn(`[KV] ⚠️ Menu entry found but menuDataUrl is missing for ID: ${menuId}`);
+      console.warn(`[KV] ⚠️ Menu entry found but menuDataUrl is missing for ID: ${menuEntry.id}`);
       return null;
     }
 
-    console.log(`[KV] ✅ Found menu ${menuId} in index, menuDataUrl: ${menuEntry.menuDataUrl.substring(0, 50)}...`);
+    console.log(`[KV] ✅ Found menu ${menuEntry.id} in index, menuDataUrl: ${menuEntry.menuDataUrl.substring(0, 50)}...`);
 
     // Blobからメニューデータを取得
     console.log(`[KV] 🔍 Fetching menu data from Blob storage`);
@@ -169,10 +189,25 @@ export async function getMenu(menuId: string) {
     
     if (!menuData) {
       console.error(`[KV] 🚨 Menu data not found in Blob storage: ${menuEntry.menuDataUrl}`);
+      
+      // 代替のファイルパターンを試す（別のパス規則が使われている可能性）
+      try {
+        const alternativeUrl = menuEntry.menuDataUrl.replace("menus/", "");
+        console.log(`[KV] 🔄 Trying alternative URL pattern: ${alternativeUrl.substring(0, 50)}...`);
+        const altData = await handleBlobError(() => getJsonFromBlob(alternativeUrl));
+        
+        if (altData) {
+          console.log(`[KV] ✅ Successfully retrieved menu data from alternative URL for ID: ${menuEntry.id}`);
+          return altData;
+        }
+      } catch (altError) {
+        console.error(`[KV] Alternative URL error:`, altError);
+      }
+      
       return null;
     }
     
-    console.log(`[KV] ✅ Successfully retrieved menu data from Blob storage for ID: ${menuId}`);
+    console.log(`[KV] ✅ Successfully retrieved menu data from Blob storage for ID: ${menuEntry.id}`);
     return menuData;
   } catch (error: any) {
     console.error(`[KV] Error fetching menu ${menuId}:`, {
