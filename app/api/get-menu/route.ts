@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getMenu } from "@/lib/kv-storage";
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { getJsonFromBlob } from '@/lib/blob-storage';
+
+// Upstash Redis クライアントの初期化
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+});
 
 export async function GET(request: Request) {
   try {
@@ -20,8 +26,8 @@ export async function GET(request: Request) {
     
     // インデックスからメニューのメタデータを取得
     try {
-      console.log(`[API] 🔄 Attempting to get index URL from KV`);
-      const indexData = await kv.get<string>('menu:indexUrl');
+      console.log(`[API] 🔄 Attempting to get index URL from Redis`);
+      const indexData = await redis.get<string>('menu:indexUrl');
       
       if (!indexData) {
         console.warn(`[API] ⚠️ No index URL found in KV store`);
@@ -86,10 +92,10 @@ export async function GET(request: Request) {
       error: error.message,
       stack: error.stack,
       name: error.name,
-      // 環境変数の状態を確認（KVとBlobのトークンが設定されているか、値は表示しない）
+      // 環境変数の状態を確認（RedisとBlobのトークンが設定されているか、値は表示しない）
       env: {
-        hasKvToken: !!process.env.KV_REST_API_TOKEN,
-        hasKvUrl: !!process.env.KV_REST_API_URL,
+        hasUpstashRedisUrl: !!process.env.UPSTASH_REDIS_REST_URL,
+        hasUpstashRedisToken: !!process.env.UPSTASH_REDIS_REST_TOKEN,
         hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN
       }
     });

@@ -618,15 +618,17 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
     // メニューIDの生成と保存
     const menuId = `menu-${Date.now()}`
     
-    // メニューをVercel KVに保存
+    // メニューをRedisとBlobに保存
     try {
+      console.log(`[Generate] ℹ️ メニューIDの生成: ${menuId}`);
       await saveMenu(menuId, {
         ...menuData,
         loadLevels: loadLevelsArray, // 変換済みの配列を使用
         duration,
         notes,
         createdAt: new Date().toISOString()
-      })
+      });
+      console.log(`[Generate] ✅ メニューの保存成功: ${menuId}`);
     } catch (error) {
       console.error("メニュー保存エラー:", error)
       // エラーをログに記録するが、ユーザーには通知しない（ユーザビリティ重視）

@@ -1,5 +1,11 @@
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 import { saveJsonToBlob, getJsonFromBlob } from './blob-storage';
+
+// Upstash Redis クライアントの初期化
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+});
 
 // メニューメタデータの型定義
 interface MenuMetadata {
@@ -47,8 +53,8 @@ async function handleBlobError<T>(fn: () => Promise<T>): Promise<T | null> {
  */
 async function getIndexData(): Promise<IndexData> {
   try {
-    console.log("[KV] 🔍 Getting index URL from KV store");
-    const indexFileUrl = await kv.get<string>('menu:indexUrl');
+    console.log("[KV] 🔍 Getting index URL from Redis store");
+    const indexFileUrl = await redis.get<string>('menu:indexUrl');
     
     if (!indexFileUrl) {
       console.warn("[KV] ⚠️ Index file URL not found in KV store");
@@ -112,8 +118,8 @@ export async function saveMenu(menuId: string, menuData: any) {
   // インデックスファイルをBlobに保存
   const indexFileUrl = await saveJsonToBlob(indexData, INDEX_FILE_NAME);
 
-  // KVにインデックスファイルのURLを保存
-  await kv.set('menu:indexUrl', indexFileUrl);
+  // RedisにインデックスファイルのURLを保存
+  await redis.set('menu:indexUrl', indexFileUrl);
 }
 
 /**
