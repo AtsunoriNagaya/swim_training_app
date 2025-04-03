@@ -91,10 +91,22 @@ export default function ResultContent() {
             <h3 className="text-lg font-medium text-yellow-800 mb-2">考えられる原因</h3>
             <ul className="list-disc list-inside mt-2 text-sm text-yellow-700 space-y-1">
               <li>メニューIDが無効または存在しない</li>
-              <li>Vercel KVストアから正しいインデックスデータを取得できない</li>
+              <li>ストレージから正しいインデックスデータを取得できない</li>
               <li>Blobストレージからメニューデータを取得できない</li>
               <li>URLパラメータが正しくない（例: <code>?id=menu-12345678</code>の形式であるべき）</li>
             </ul>
+            <div className="mt-4 p-3 bg-white rounded border border-yellow-200">
+              <h4 className="text-md font-medium text-yellow-800 mb-2">解決方法</h4>
+              <p className="text-sm text-yellow-700 mb-2">
+                最近のVercelストレージサービスの変更により、既存のメニューデータにアクセスできなくなった可能性があります。
+              </p>
+              <a 
+                href="/create"
+                className="inline-block mt-2 px-4 py-2 bg-blue-600 text-white font-medium text-xs leading-tight rounded shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out"
+              >
+                新しいメニューを作成する
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -2,10 +2,21 @@ import { Redis } from '@upstash/redis';
 import { saveJsonToBlob, getJsonFromBlob } from './blob-storage';
 
 // Upstash Redis クライアントの初期化
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
+let redis: Redis;
+try {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL || '',
+    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+  });
+  console.log("[Redis] ✅ クライアント初期化成功");
+} catch (error) {
+  console.error("[Redis] 🚨 初期化エラー:", error);
+  // フォールバック: インメモリのスタブを使用
+  redis = {
+    get: async () => null,
+    set: async () => "OK",
+  } as unknown as Redis;
+}
 
 // メニューメタデータの型定義
 interface MenuMetadata {
