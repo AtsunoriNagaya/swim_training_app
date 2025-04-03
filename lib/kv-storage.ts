@@ -9,7 +9,9 @@ interface MenuMetadata {
   createdAt: string;
   totalTime: string;
   intensity: string;
-  targetSkills: string;
+  targetSkills: string[];
+  title: string;
+  aiModel: string;
 }
 
 // メニュー履歴項目の型定義
@@ -78,13 +80,15 @@ export async function saveMenu(menuId: string, menuData: any) {
 
   // メタデータを生成
   const metadata: MenuMetadata = {
-    loadLevels: Array.isArray(menuData.loadLevels) ? menuData.loadLevels.join(",") : "",
-    duration: menuData.duration?.toString() || "",
+    loadLevels: menuData.loadLevels ? menuData.loadLevels.join(',') : "",
+    duration: menuData.duration ? menuData.duration.toString() : "0",
     notes: menuData.notes || "",
     createdAt: new Date().toISOString(),
-    totalTime: menuData.totalTime?.toString() || "",
+    totalTime: menuData.totalTime ? menuData.totalTime.toString() : "0",
     intensity: menuData.intensity || "",
-    targetSkills: Array.isArray(menuData.targetSkills) ? menuData.targetSkills.join(",") : ""
+    targetSkills: menuData.targetSkills || [],
+    title: menuData.title || "Untitled",
+    aiModel: menuData.aiModel || "Unknown",
   };
 
   // インデックスファイルにメニューを追加
@@ -146,7 +150,7 @@ export async function getMenuHistory() {
 
   const menus: MenuHistoryItem[] = indexData.menus.map((menu) => ({
     id: menu.id,
-    ...menu.metadata
+    ...menu.metadata,
   }));
 
   // 作成日時の降順でソート（新しい順）
