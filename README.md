@@ -2,30 +2,34 @@
 
 ## 概要
 
-水泳部員向けの練習メニューを、AIを活用して効率的に作成するWebアプリケーションです。OpenAI, Gemini, ClaudeのAIモデルを使用し、負荷レベルや時間、特記事項に基づいて最適なメニューを生成します。生成されたメニューデータは Vercel Blob に保存されます。
-過去のメニューをアップロードしてAIの学習データとして活用することも可能です。
+水泳部員向けの練習メニューを、AIを活用して効率的に作成するWebアプリケーションです。OpenAI (gpt-4o), Google (gemini-2.0-flash), Anthropic (claude-3.5-sonnet) のAIモデルを使用し、負荷レベルや時間、特記事項に基づいて最適なメニューを生成します。生成されたメニューデータは Vercel KV と Vercel Blob に保存されます。
+過去のメニューデータ（時間情報）をAI生成時の参考にしたり、AIが生成したメニューが指定時間を超過した場合に自動調整する機能も備えています。
 
 ## 特徴
 
-*   **AIによるメニュー自動生成**: OpenAI, Gemini, ClaudeのAIモデルから選択し、負荷レベルや時間、特記事項に基づいて練習メニューを自動生成します。
-*   **過去メニューの活用**: 過去の練習メニューをCSVやPDF形式でアップロードし、AIがメニュー生成時の参考データとして活用します。
+*   **AIによるメニュー自動生成**: OpenAI (gpt-4o), Google (gemini-2.0-flash), Anthropic (claude-3.5-sonnet) のAIモデルから選択し、負荷レベルや時間、特記事項に基づいて練習メニューを自動生成します。
+*   **過去メニューの参照 (RAG)**: 指定された時間に近い過去の練習メニュー情報を検索し、AIがメニュー生成時の参考データとして活用します（簡易的な時間ベースのフィルタリング）。
+*   **自動時間調整**: AIが生成したメニューが指定時間を超過した場合、自動的に内容を調整して時間内に収めます。
 *   **メニュー履歴**: 過去に生成したメニューの履歴を確認し、再利用や参考にすることができます。
-*   **柔軟な出力形式**: 生成したメニューをPDFやCSV形式でダウンロードできます。PDFはテーブルレイアウトで見やすく整形されます。
+*   **柔軟な出力形式**: 生成したメニューをクライアントサイドでPDFやCSV形式でダウンロードできます。
 
 ## 技術スタック
 
 *   Next.js (v15.2.4)
-*   React (v19.x)
-*   TypeScript
+*   React (v19)
+*   TypeScript (v5)
 *   Tailwind CSS
 *   Radix UI
-*   OpenAI API
-*   Google Gemini API
-*   Anthropic Claude API
-*   Vercel KV (メニューメタデータ、インデックス情報)
-*   Vercel Blob (メニューデータ本体)
-*   jsPDF + jspdf-autotable (PDF生成)
-*   csv-stringify (CSV生成)
+*   AI Models:
+    *   OpenAI API (gpt-4o)
+    *   Google Gemini API (gemini-2.0-flash)
+    *   Anthropic Claude API (claude-3.5-sonnet)
+*   Data Storage:
+    *   Vercel KV (インデックスURL)
+    *   Vercel Blob (メニューデータ本体、インデックスファイル)
+*   File Generation (Client-side):
+    *   jsPDF + jspdf-autotable (PDF生成)
+    *   csv-stringify (CSV生成)
 
 ## APIキーの準備
 
@@ -37,7 +41,7 @@
 
 APIキーは環境変数ではなく、アプリケーション内のフォームで直接入力する形式となっています。各APIキーは、それぞれの公式サイトで取得してください。
 
-## Vercel KV設定
+## Vercel KV & Blob 設定
 
 Vercelにデプロイする場合、以下の環境変数が自動で設定されます：
 
@@ -52,7 +56,7 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
 ## セットアップ
 
 1.  **環境構築:**
-    *   Node.js (v20.x 以上)
+    *   Node.js (v22.x 推奨)
     *   pnpm (推奨) または npm
 
 2.  **依存関係のインストール:**
@@ -86,11 +90,11 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
 
 ## 今後の展望
 
-*   メニューのカスタマイズ機能
-*   練習メニューの共有機能
+*   メニューのカスタマイズ機能（手動編集など）
+*   より高度なRAG機能（ベクトル検索など）の実装
+*   ファイルアップロード機能の改善（多様なフォーマット対応、解析精度向上）
 *   UI/UX の改善
 *   多言語対応
-*   メニュー生成のAIモデル選択機能の拡充
 *   PDFテンプレートのカスタマイズ機能
 
 ## 開発者
