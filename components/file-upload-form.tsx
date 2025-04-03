@@ -51,18 +51,18 @@ export default function FileUploadForm() {
       console.log("説明:", values.description)
 
       // 実際のAPIリクエスト（実装時にコメントアウトを解除）
-      // const formData = new FormData();
-      // formData.append("file", values.file[0]);
-      // formData.append("description", values.description || "");
+      const formData = new FormData();
+      formData.append("file", values.file[0]);
+      formData.append("description", values.description || "");
 
-      // const response = await fetch("/api/upload-menu", {
-      //   method: "POST",
-      //   body: formData,
-      // });
+      const response = await fetch("/api/upload-menu", {
+        method: "POST",
+        body: formData,
+      });
 
-      // if (!response.ok) {
-      //   throw new Error("ファイルアップロードに失敗しました");
-      // }
+      if (!response.ok) {
+        throw new Error("ファイルアップロードに失敗しました");
+      }
 
       // 開発用のモックデータ
       await new Promise((resolve) => setTimeout(resolve, 1500))
@@ -195,4 +195,3 @@ export default function FileUploadForm() {
     </Card>
   )
 }
-

@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { uploadFileToBlob } from "@/lib/blob-storage"
+import pdf from 'pdf-parse';
+import { parse as csvParse } from 'csv-parse';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,25 +30,38 @@ export async function POST(req: NextRequest) {
     const fileUrl = await uploadFileToBlob(file, filename)
 
     // ファイルの処理
-    // 実際の実装では、ここでファイルを保存し、内容を解析してベクトルDBに保存する
-    // const fileBuffer = await file.arrayBuffer();
-    // const fileContent = new Uint8Array(fileBuffer);
+    const fileBuffer = await file.arrayBuffer();
+    const fileContent = new Uint8Array(fileBuffer);
 
     // PDFの場合
-    // if (file.type === "application/pdf") {
-    //   // PDFパーサーを使用してテキスト抽出
-    //   // const pdfText = await extractTextFromPdf(fileContent);
-    //   // ベクトル化してDBに保存
-    //   // await saveToVectorDB(pdfText, description, file.name);
-    // }
+    if (file.type === "application/pdf") {
+      // PDFパーサーを使用してテキスト抽出
+      const pdfData = await pdf(fileContent);
+      const pdfText = pdfData.text;
+      // ベクトル化してDBに保存
+      // await saveToVectorDB(pdfText, description, file.name);
+      console.log("PDFテキスト:", pdfText.substring(0, 200) + "...");
+    }
 
     // CSVの場合
-    // if (file.type === "text/csv") {
-    //   // CSVパーサーを使用してデータ抽出
-    //   // const csvData = await parseCSV(fileContent);
-    //   // ベクトル化してDBに保存
-    //   // await saveToVectorDB(JSON.stringify(csvData), description, file.name);
-    // }
+    if (file.type === "text/csv") {
+      // CSVパーサーを使用してデータ抽出
+      const csvData = await new Promise((resolve, reject) => {
+        csvParse(fileContent.toString(), {
+          columns: true,
+          skip_empty_lines: true
+        }, (err, records) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(records);
+          }
+        });
+      });
+      // ベクトル化してDBに保存
+      // await saveToVectorDB(JSON.stringify(csvData), description, file.name);
+      console.log("CSVデータ:", JSON.stringify(csvData).substring(0, 200) + "...");
+    }
 
     // 仮実装：成功レスポンスを返す
     return NextResponse.json({

@@ -95,24 +95,28 @@ function calculateItemTime(distance: number, circle: string, sets: number, rest:
     const setTimeSeconds = circleSeconds * sets;
     
     // 休憩時間を分から秒に変換
-    const restMinutes = typeof rest === 'string' ? parseInt(rest) : rest;
-    if (isNaN(restMinutes)) {
-      console.error(`Invalid rest time: ${rest}`);
-      throw new Error("休憩時間の形式が不正です");
-    }
-    const restSeconds = restMinutes * 60;
-    
-    // 合計時間（秒）= セット時間 + 休憩時間
-    const totalSeconds = setTimeSeconds + restSeconds;
-    
-    // 分に変換して返す（切り上げ）
-    return Math.ceil(totalSeconds / 60);
-  } catch (error) {
-    console.error("Time calculation error:", error);
-    // エラー時は概算値を返す（安全側に倒して多めに見積もる）
-    return Math.ceil((distance * sets) / 50) + (typeof rest === 'number' ? rest : 1);
-  }
-}
+            const restMinutes = typeof rest === 'string' ? parseInt(rest) : rest;
+            if (isNaN(restMinutes)) {
+              console.error(`Invalid rest time: ${rest}`);
+              throw new Error("休憩時間の形式が不正です");
+            }
+            const restSeconds = restMinutes * 60;
+            
+            // 合計時間（秒）= セット時間 + 休憩時間
+            const totalSeconds = setTimeSeconds + restSeconds;
+            
+            // 分に変換して返す（切り上げ）
+            const calculatedTime = Math.ceil(totalSeconds / 60);
+            console.log(`calculateItemTime: distance=${distance}, circle=${circle}, sets=${sets}, rest=${rest}, calculatedTime=${calculatedTime}`);
+            return calculatedTime;
+          } catch (error) {
+            console.error("Time calculation error:", error);
+            // エラー時は概算値を返す（安全側に倒して多めに見積もる）
+            const estimatedTime = Math.ceil((distance * sets) / 50) + (typeof rest === 'number' ? rest : 1);
+            console.log(`calculateItemTime (estimated): distance=${distance}, circle=${circle}, sets=${sets}, rest=${rest}, estimatedTime=${estimatedTime}`);
+            return estimatedTime;
+          }
+        }
 
 // メニュー生成関数
 const AI_MODELS = {
@@ -387,6 +391,7 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
       try {
         // AIからの応答をパースし、型キャスト
         menuData = JSON.parse(cleanedText) as GeneratedMenuData;
+        console.log("menuData:", JSON.stringify(menuData, null, 2));
       } catch (parseError) {
         console.error("JSON解析エラー:", parseError);
         throw new Error("AIモデルの応答が有効なJSON形式ではありません");
