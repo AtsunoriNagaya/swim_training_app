@@ -1,23 +1,24 @@
 import { Redis } from '@upstash/redis';
 import { saveJsonToBlob, getJsonFromBlob } from './blob-storage';
 
-// Upstash Redis クライアントの初期化 (Vercel環境変数を想定)
+// Redis クライアントの初期化 (Vercel KV または Upstash Redis を想定)
 let redis: Redis;
 try {
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Vercel KV またはカスタム名の環境変数を優先
+  const redisUrl = process.env.KV_REST_API_URL || process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!redisUrl || !redisToken) {
-    throw new Error("Missing Upstash Redis environment variables (UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN)");
+    throw new Error("Missing Redis environment variables (KV_REST_API_URL/REDIS_URL/UPSTASH_REDIS_REST_URL and KV_REST_API_TOKEN/UPSTASH_REDIS_REST_TOKEN)");
   }
 
   redis = new Redis({
     url: redisUrl,
     token: redisToken,
   });
-  console.log("[Redis] ✅ Upstash Redis クライアント初期化成功");
+  console.log(`[Redis] ✅ Redis クライアント初期化成功 (URL: ${redisUrl.substring(0, 20)}...)`);
 } catch (error) {
-  console.error("[Redis] 🚨 Upstash Redis 初期化エラー:", error);
+  console.error("[Redis] 🚨 Redis 初期化エラー:", error);
   // フォールバック: インメモリのスタブを使用
   redis = {
     get: async () => null,
