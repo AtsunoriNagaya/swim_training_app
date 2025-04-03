@@ -36,23 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 
-interface MenuItem {
-  description: string;
-  distance: string;
-  sets: number;
-  circle: string;
-  rest: string | number;
-  equipment?: string;
-  notes?: string;
-  time?: number;
-}
-
-interface MenuSection {
-  name: string;
-  items: MenuItem[];
-  totalTime: number;
-}
-
+// メニューデータの型定義
 interface MenuData {
   id: string;
   title: string;
@@ -61,7 +45,20 @@ interface MenuData {
   loadLevels: string[];
   duration: number;
   notes?: string;
-  menu: MenuSection[];
+  menu: Array<{
+    name: string;
+    items: Array<{
+      description: string;
+      distance: string;
+      sets: number;
+      circle: string;
+      rest: string | number;
+      equipment?: string;
+      notes?: string;
+      time?: number;
+    }>;
+    totalTime: number;
+  }>;
   totalTime: number;
   cooldown: number;
 }
@@ -112,36 +109,291 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
 
     try {
       if (format === "pdf") {
-        const doc = new jsPDF();
-        doc.text(menuData.title, 10, 10);
-
-        (doc as any).autoTable({
-          head: [["内容", "距離", "本数", "サイクル", "所要時間"]],
-          body: menuData.menu.flatMap((section) =>
-            section.items.map((item) => [
-              item.description,
-              item.distance,
-              item.sets,
-              item.circle,
-              `${item.time}分`
-            ])
-          ),
+        // 日本語対応のPDF設定
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+          putOnlyUsedFonts: true,
+          compress: true,
+          hotfixes: ["px_scaling"],
+          floatPrecision: 16
         });
+
+        // フォントの設定
+        const fontStyles = {
+          normal: {
+            fontSize: 10,
+            lineHeight: 1.2
+          },
+          title: {
+            fontSize: 16,
+            lineHeight: 1.5
+          },
+          small: {
+            fontSize: 8,
+            lineHeight: 1.1
+          }
+        };
+
+        // テキスト描画の補助関数
+        const drawText = (text: string, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
+          doc.setFontSize(fontStyles[style].fontSize);
+          const lines = doc.splitTextToSize(
+            processJapaneseText(text), 
+            doc.internal.pageSize.width - x * 2
+          );
+          doc.text(lines, x, y);
+          return y + lines.length * fontStyles[style].fontSize * fontStyles[style].lineHeight;
+        };
+
+        // 日本語文字列の処理
+        const processJapaneseText = (text: string) => {
+          return text.split('').map(char => {
+            const code = char.charCodeAt(0);
+            if (code > 127) {
+              // 日本語文字の場合は半角に変換
+              if (code >= 0xFF01 && code <= 0xFF5E) {
+                return String.fromCharCode(code - 0xFEE0);
+              }
+              // その他の日本語文字はそのまま
+              return char;
+            }
+            return char;
+          }).join('');
+        };
+        
+        // タイトルと基本情報
+        let yPos = 20;
+        yPos = drawText(menuData.title, 14, yPos, 'title');
+        yPos += 10;
+        
+        yPos = drawText(`作成日時: ${formatDate(menuData.createdAt)}`, 14, yPos);
+        yPos = drawText(`負荷レベル: ${menuData.loadLevels.map(l => `${l}(${getLoadLevelLabel(l)})`).join(', ')}`, 14, yPos + 5);
+        yPos = drawText(`予定時間: ${menuData.duration}分 / 実際の時間: ${menuData.totalTime}分`, 14, yPos + 5);
+        
+        if (menuData.notes) {
+          yPos = drawText('備考:', 14, yPos + 5);
+          yPos = drawText(menuData.notes, 14, yPos + 3, 'small');
+        }
+
+        yPos = menuData.notes ? yPos + 10 : yPos + 5;
+
+        // 各セクションのメニュー
+        menuData.menu.forEach((section, index) => {
+          yPos = drawText(`${section.name} (${section.totalTime}分)`, 14, yPos);
+          yPos += 5;
+
+          (doc as any).autoTable({
+            startY: yPos,
+            head: [["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間", "備考"].map(processJapaneseText)],
+            body: [
+              ...section.items.map((item) => ({
+                content: [
+                  processJapaneseText(item.description),
+                  processJapaneseText(item.distance),
+                  processJapaneseText(`${item.sets}本`),
+                  processJapaneseText(`${parseInt(item.distance) * item.sets}m`),
+                  processJapaneseText(item.circle),
+                  processJapaneseText(typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-'),
+                  processJapaneseText(`${item.time}分`),
+                  processJapaneseText([
+                    item.equipment ? `器具: ${item.equipment}` : '',
+                    item.notes || ''
+                  ].filter(Boolean).join('\n'))
+                ]
+              })),
+              // セクション合計行
+              {
+                content: [
+                  processJapaneseText(`${section.name}合計`),
+                  '',
+                  '',
+                  processJapaneseText(`${section.items.reduce((sum, item) => sum + parseInt(item.distance) * item.sets, 0)}m`),
+                  '',
+                  '',
+                  processJapaneseText(`${section.totalTime}分`),
+                  ''
+                ],
+                styles: {
+                  fillColor: [245, 245, 245],
+                  textColor: [80, 80, 80],
+                  fontStyle: 'bold',
+                  fontSize: 8,
+                  cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
+                  halign: 'right'
+                }
+              }
+            ],
+            theme: 'grid',
+            styles: { 
+              fontSize: 9,
+              cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
+              lineColor: [220, 220, 220],
+              lineWidth: 0.1,
+              font: 'helvetica',
+              overflow: 'linebreak',
+              cellWidth: 'wrap',
+              valign: 'middle',
+              minCellHeight: 8
+            },
+            headStyles: { 
+              fillColor: [40, 40, 40],
+              textColor: [255, 255, 255],
+              fontStyle: 'bold',
+              font: 'helvetica',
+              halign: 'center',
+              fontSize: 9,
+              cellPadding: { top: 5, right: 3, bottom: 5, left: 3 }
+            },
+            bodyStyles: {
+              halign: 'left'
+            },
+            alternateRowStyles: {
+              fillColor: [252, 252, 252]
+            },
+            willDrawCell: function(data: any) {
+              // セクション合計行のスタイル調整
+              if (data.row.raw && data.row.raw.styles && data.row.raw.styles.fillColor) {
+                data.cell.styles.fillColor = data.row.raw.styles.fillColor;
+                data.cell.styles.textColor = data.row.raw.styles.textColor;
+                data.cell.styles.fontStyle = data.row.raw.styles.fontStyle;
+                data.cell.styles.fontSize = data.row.raw.styles.fontSize;
+                data.cell.styles.cellPadding = data.row.raw.styles.cellPadding;
+                data.cell.styles.halign = data.row.raw.styles.halign;
+              }
+            },
+            columnStyles: {
+              0: { cellWidth: 45 },          // 内容
+              1: { cellWidth: 18 },          // 距離
+              2: { cellWidth: 15 },          // 本数
+              3: { cellWidth: 22 },          // 合計距離
+              4: { cellWidth: 18 },          // サイクル
+              5: { cellWidth: 15 },          // 休憩
+              6: { cellWidth: 18, halign: 'right' }, // 所要時間
+              7: { cellWidth: 35 }           // 備考
+            },
+            tableWidth: 'auto',
+            margin: { top: 8, right: 14, bottom: 8, left: 14 },
+            didDrawCell: function(data: any) {
+              // セル内のテキストが日本語を含む場合、位置を微調整
+              if (data.cell.text && /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]/.test(data.cell.text)) {
+                const fontSize = data.row.section === 'head' ? 9 : 8;
+                data.cell.styles.fontSize = fontSize;
+                // 備考欄の場合は左寄せ
+                if (data.column === 7) {
+                  data.cell.styles.halign = 'left';
+                }
+              }
+            },
+            didParseCell: function(data: any) {
+              // 数値を含むセルは右寄せ
+              if (data.cell.text && /^[\d,]+[^\u3000-\u9faf]*$/.test(data.cell.text)) {
+                data.cell.styles.halign = 'right';
+              }
+            },
+          });
+
+          yPos = (doc as any).lastAutoTable.finalY + 10;
+        });
+
+        // 総合計テーブル
+        (doc as any).autoTable({
+          startY: yPos + 5,
+          head: [],
+          body: [
+            [
+              {
+                colSpan: 8,
+                content: [
+                  processJapaneseText('総合計'),
+                  processJapaneseText(`${menuData.menu.reduce((sum, section) => 
+                    sum + section.items.reduce((sectionSum, item) => 
+                      sectionSum + parseInt(item.distance) * item.sets, 0), 0)}m`),
+                  processJapaneseText(`練習時間: ${menuData.totalTime}分`),
+                  processJapaneseText(`指定時間との差: ${menuData.cooldown}分`)
+                ].join('    '),
+                styles: {
+                  fillColor: [235, 235, 235],
+                  textColor: [50, 50, 50],
+                  fontStyle: 'bold',
+                  fontSize: 10,
+                  cellPadding: { top: 8, right: 6, bottom: 8, left: 6 },
+                  halign: 'right',
+                  valign: 'middle'
+                }
+              }
+            ]
+          ],
+          theme: 'grid',
+          styles: {
+            lineColor: [220, 220, 220],
+            lineWidth: 0.1,
+            font: 'helvetica'
+          },
+          margin: { left: 14, right: 14 },
+          tableWidth: 'auto',
+          columnStyles: {
+            0: { cellWidth: 186 } // 全体の幅を合わせる
+          }
+        });
+
+        yPos = (doc as any).lastAutoTable.finalY + 5;
+
+        // フッター
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          drawText(
+            `${menuData.title} - ${formatDate(menuData.createdAt)} - ページ ${i} / ${pageCount}`,
+            14,
+            doc.internal.pageSize.height - 10,
+            'small'
+          );
+        }
 
         doc.save(`swimming-menu-${menuData.id}.pdf`);
       } else if (format === "csv") {
         const csvData = [
-          ["内容", "距離", "本数", "サイクル", "所要時間"],
-          ...menuData.menu.flatMap((section) =>
-            section.items.map((item) => [
+          ["水泳練習メニュー"],
+          [menuData.title],
+          ["作成日時", formatDate(menuData.createdAt)],
+          ["負荷レベル", menuData.loadLevels.map(l => `${l}(${getLoadLevelLabel(l)})`).join(', ')],
+          ["予定時間", `${menuData.duration}分`],
+          ["実際の時間", `${menuData.totalTime}分`],
+          ["備考", menuData.notes || ""],
+          [""],
+          // ヘッダー行
+          ["セクション", "内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間", "使用器具", "備考"]
+        ];
+
+        // メニューデータ
+        menuData.menu.forEach(section => {
+          section.items.forEach(item => {
+            csvData.push([
+              section.name,
               item.description,
               item.distance,
-              item.sets,
+              item.sets.toString(),
+              (parseInt(item.distance) * item.sets).toString() + "m",
               item.circle,
-              `${item.time}分`
-            ])
-          ),
-        ];
+              typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-',
+              `${item.time}分`,
+              item.equipment || '',
+              item.notes || ''
+            ]);
+          });
+          // セクション合計
+          csvData.push(["", `${section.name}合計`, "", "", "", "", "", `${section.totalTime}分`, "", ""]);
+          // 空行
+          csvData.push([]);
+        });
+
+        // 総合計
+        csvData.push(
+          ["総合計", "", "", "", "", "", "", `${menuData.totalTime}分`, "", ""],
+          ["指定時間との差", "", "", "", "", "", "", `${menuData.cooldown}分`, "", ""]
+        );
 
         stringify(csvData, (err, output) => {
           if (err) throw err;
@@ -159,13 +411,13 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         });
       }
       toast({
-        title: "Download started",
-        description: `Downloading ${menuData.title} in ${format} format.`,
+        title: "ダウンロードを開始しました",
+        description: `${menuData.title}を${format.toUpperCase()}形式でダウンロードしています。`,
       });
     } catch (error: any) {
       console.error("Download error:", error);
       toast({
-        title: "Download failed",
+        title: "ダウンロードに失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -179,20 +431,20 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
       if (navigator.share) {
         await navigator.share({
           title: menuData.title,
-          text: "Check out this swimming workout menu!",
+          text: "水泳練習メニューを共有します",
           url: window.location.href,
         });
       } else {
         await navigator.clipboard.writeText(window.location.href);
         toast({
-          title: "Copied to clipboard!",
-          description: "URL copied to clipboard",
+          title: "URLをコピーしました",
+          description: "クリップボードにURLをコピーしました",
         });
       }
     } catch (error: any) {
       console.error("Share error:", error);
       toast({
-        title: "Share failed",
+        title: "共有に失敗しました",
         description: error.message,
         variant: "destructive",
       });
@@ -251,11 +503,41 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                 <TableBody>
                   {section.items.map((item, itemIndex) => (
                     <TableRow key={itemIndex} className="hover:bg-primary/5">
-                      <TableCell className="font-medium">{item.description}</TableCell>
-                      <TableCell>{item.distance}</TableCell>
-                      <TableCell>{item.sets}</TableCell>
-                      <TableCell>{item.circle}</TableCell>
-                      <TableCell className="text-right">{item.time}分</TableCell>
+                      <TableCell className="font-medium">
+                        {item.description}
+                        {item.equipment && (
+                          <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-800 border-blue-200">
+                            {item.equipment}
+                          </Badge>
+                        )}
+                        {item.notes && (
+                          <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">
+                          {item.distance}
+                          <span className="text-muted-foreground"> × </span>
+                          {item.sets}本
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          計: {parseInt(item.distance) * item.sets}m
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono">{item.sets}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">{item.circle}</div>
+                        {typeof item.rest === 'number' && item.rest > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            休憩: {item.rest}分
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="font-mono font-medium">{item.time}分</div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

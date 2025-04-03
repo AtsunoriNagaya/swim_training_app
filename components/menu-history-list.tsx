@@ -51,13 +51,45 @@ export default function MenuHistoryList() {
       try {
         const response = await fetch("/api/get-menu-history");
         if (!response.ok) {
-          throw new Error("Failed to fetch menu history");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "メニュー履歴の取得に失敗しました");
         }
+        
         const data = await response.json();
-        setMenuHistory(data.menuHistory);
+        
+        // データの検証
+        if (!data || !Array.isArray(data.menuHistory)) {
+          console.error("Invalid menu history format:", data);
+          throw new Error("メニュー履歴のデータ形式が不正です");
+        }
+
+        // 各メニューアイテムの型を検証
+        const validatedHistory = data.menuHistory.map((item: any) => {
+          if (!item || typeof item !== 'object') {
+            console.warn("Invalid menu item:", item);
+            return null;
+          }
+
+          return {
+            id: item.id || "",
+            title: item.title || "無題のメニュー",
+            menu: Array.isArray(item.menu) ? item.menu : [],
+            totalTime: Number(item.totalTime) || 0,
+            intensity: item.intensity || null,
+            targetSkills: Array.isArray(item.targetSkills) ? item.targetSkills : [],
+            createdAt: item.createdAt || new Date().toISOString(),
+            aiModel: item.aiModel || "unknown",
+            loadLevels: Array.isArray(item.loadLevels) ? item.loadLevels : [],
+            duration: Number(item.duration) || 0,
+            notes: item.notes || ""
+          };
+        }).filter(Boolean) as MenuHistoryItem[];
+
+        setMenuHistory(validatedHistory);
       } catch (error: any) {
+        console.error("Menu history error:", error);
         toast({
-          title: "Error fetching menu history",
+          title: "メニュー履歴の取得に失敗しました",
           description: error.message,
           variant: "destructive",
         });
