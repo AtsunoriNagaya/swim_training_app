@@ -35,32 +35,51 @@ export async function POST(req: NextRequest) {
 
     // PDFの場合
     if (file.type === "application/pdf") {
-      // PDFパーサーを使用してテキスト抽出
-      const pdfData = await pdf(fileContent);
-      const pdfText = pdfData.text;
-      // ベクトル化してDBに保存
-      // await saveToVectorDB(pdfText, description, file.name);
-      console.log("PDFテキスト:", pdfText.substring(0, 200) + "...");
+      try {
+        // PDFパーサーを使用してテキスト抽出
+        const pdfData = await pdf(Buffer.from(fileContent));
+        const pdfText = pdfData.text;
+        // ベクトル化してDBに保存
+        // await saveToVectorDB(pdfText, description, file.name);
+        console.log("PDFテキスト:", pdfText.substring(0, 200) + "...");
+      } catch (error) {
+        console.error("PDFパースエラー:", error);
+        return NextResponse.json(
+          { error: "PDFファイルの解析中にエラーが発生しました。ファイルが破損していないか確認してください。" },
+          { status: 400 }
+        );
+      }
     }
 
     // CSVの場合
     if (file.type === "text/csv") {
-      // CSVパーサーを使用してデータ抽出
-      const csvData = await new Promise((resolve, reject) => {
-        csvParse(fileContent.toString(), {
-          columns: true,
-          skip_empty_lines: true
-        }, (err, records) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(records);
-          }
+      try {
+        // CSVパーサーを使用してデータ抽出
+        const csvData = await new Promise((resolve, reject) => {
+          csvParse(fileContent.toString(), {
+            columns: true,
+            skip_empty_lines: true,
+            delimiter: ',', // カンマ区切りを明示的に指定
+          }, (err, records) => {
+            if (err) {
+              reject(new Error(`CSVパースエラー: ${err.message}`));
+            } else if (!Array.isArray(records) || records.length === 0) {
+              reject(new Error('CSVファイルにデータが含まれていません'));
+            } else {
+              resolve(records);
+            }
+          });
         });
-      });
-      // ベクトル化してDBに保存
-      // await saveToVectorDB(JSON.stringify(csvData), description, file.name);
-      console.log("CSVデータ:", JSON.stringify(csvData).substring(0, 200) + "...");
+        // ベクトル化してDBに保存
+        // await saveToVectorDB(JSON.stringify(csvData), description, file.name);
+        console.log("CSVデータ:", JSON.stringify(csvData).substring(0, 200) + "...");
+      } catch (error) {
+        console.error("CSVパースエラー:", error);
+        return NextResponse.json(
+          { error: `CSVファイルの解析中にエラーが発生しました。ファイルの形式が正しいか確認してください。${error instanceof Error ? ` (${error.message})` : ''}` },
+          { status: 400 }
+        );
+      }
     }
 
     // 仮実装：成功レスポンスを返す
