@@ -151,14 +151,38 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         };
 
         // テキスト描画の補助関数
-        const drawText = (text: string, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
+        const drawText = (text: string | null | undefined, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
+          const safeText = text || ""; // textがnull/undefinedなら空文字列を使用
+          doc.setFont('helvetica', 'normal'); // Explicitly set font
           doc.setFontSize(fontStyles[style].fontSize);
-          const lines = doc.splitTextToSize(
-            processJapaneseText(text), 
-            doc.internal.pageSize.width - x * 2
-          );
-          doc.text(lines, x, y);
-          return y + lines.length * fontStyles[style].fontSize * fontStyles[style].lineHeight;
+
+          const processedText = processJapaneseText(safeText); // Restore Japanese processing
+
+          let lines: string[] | null = null;
+          try {
+            lines = doc.splitTextToSize(
+              processedText,
+              doc.internal.pageSize.width - x * 2
+            );
+          } catch (splitError) {
+            console.error("Error in doc.splitTextToSize:", splitError, "Input text:", processedText);
+            return y; // エラー発生時は描画せず、元のy座標を返す
+          }
+
+          // linesが有効な文字列配列か確認
+          if (Array.isArray(lines) && lines.length > 0 && lines.every(line => typeof line === 'string')) {
+            try {
+              doc.text(lines, x, y);
+              return y + lines.length * fontStyles[style].fontSize * fontStyles[style].lineHeight;
+            } catch (textError) {
+              console.error("Error in doc.text:", textError, "Input lines:", lines);
+              return y; // エラー発生時は元のy座標を返す
+            }
+          } else {
+            // linesが無効な場合はログを出力（デバッグ用）
+            console.warn("doc.splitTextToSize returned invalid lines:", lines, "Input text:", processedText);
+            return y; // テキストが描画されなかった場合は元のy座標を返す
+          }
         };
 
         // 日本語文字列の処理
