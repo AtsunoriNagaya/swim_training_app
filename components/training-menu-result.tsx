@@ -121,6 +121,12 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         const { jsPDF } = await import("jspdf");
         const { default: autoTable } = await import("jspdf-autotable");
 
+        // 日本語フォントの読み込み
+        const fontUrl = 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.16/files/noto-sans-jp-japanese-400-normal.woff';
+        const fontResponse = await fetch(fontUrl);
+        const fontArrayBuffer = await fontResponse.arrayBuffer();
+        const fontBase64 = btoa(String.fromCharCode(...new Uint8Array(fontArrayBuffer)));
+
         // 日本語対応のPDF設定
         const doc = new jsPDF({
           orientation: "portrait",
@@ -132,19 +138,27 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
           floatPrecision: 16
         });
 
+        // フォントの追加
+        doc.addFileToVFS('NotoSansJP-Regular.ttf', fontBase64);
+        doc.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
+        doc.setFont('NotoSansJP');
+
         // フォントの設定
         const fontStyles = {
           normal: {
             fontSize: 10,
-            lineHeight: 1.2
+            lineHeight: 1.2,
+            font: 'NotoSansJP'
           },
           title: {
             fontSize: 16,
-            lineHeight: 1.5
+            lineHeight: 1.5,
+            font: 'NotoSansJP'
           },
           small: {
             fontSize: 8,
-            lineHeight: 1.1
+            lineHeight: 1.1,
+            font: 'NotoSansJP'
           }
         };
 
@@ -152,7 +166,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         const drawText = (text: string | null | undefined, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
           try {
             const safeText = text || "";
-            doc.setFont('helvetica');
+            doc.setFont('NotoSansJP');
             doc.setFontSize(fontStyles[style].fontSize);
 
             // テキストを処理
@@ -284,7 +298,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               cellPadding: 2,
               lineColor: [200, 200, 200],
               lineWidth: 0.1,
-              font: 'helvetica',
+              font: 'NotoSansJP',
               overflow: 'linebreak',
               cellWidth: 'wrap',
               valign: 'middle',
@@ -294,7 +308,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               fillColor: [40, 40, 40],
               textColor: [255, 255, 255],
               fontStyle: 'bold',
-              font: 'helvetica',
+              font: 'NotoSansJP',
               halign: 'center',
               fontSize: 9,
               cellPadding: { top: 5, right: 3, bottom: 5, left: 3 }
@@ -389,7 +403,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
             cellPadding: 2,
             lineColor: [200, 200, 200],
             lineWidth: 0.1,
-            font: 'helvetica',
+            font: 'NotoSansJP',
             overflow: 'linebreak',
             cellWidth: 'wrap',
             valign: 'middle'
@@ -406,7 +420,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
           const footerText = `${menuData.title} - ${formatDate(menuData.createdAt)} - ページ ${i} / ${pageCount}`;
-          doc.setFont('helvetica');
+          doc.setFont('NotoSansJP');
           doc.setFontSize(fontStyles.small.fontSize);
           doc.text(processJapaneseText(footerText), 14, doc.internal.pageSize.height - 10, {
             align: 'left',
