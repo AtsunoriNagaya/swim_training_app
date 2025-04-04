@@ -1,5 +1,10 @@
 import pdfParse from 'pdf-parse';
 
+// デバッグモードを環境変数で制御
+if (process.env.PDF_PARSE_DEBUG === 'false') {
+  (global as any).module = { parent: {} };
+}
+
 /**
  * PDFファイルをパースしてテキストを抽出するラッパー関数
  * pdf-parseライブラリのデバッグモードを回避し、より安定した処理を提供します
