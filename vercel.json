@@ -11,6 +11,9 @@
   "functions": {
     "app/api/generate-menu/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/upload-menu/route.ts": {
+      "maxDuration": 60
     }
   }
 }
