@@ -2,7 +2,17 @@
 
 import { useState, useCallback } from "react";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import 'jspdf-autotable';
+import { UserOptions } from 'jspdf-autotable';
+
+// jsPDFWithAutoTableを定義 - anyを使用して型エラーを回避
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDFWithAutoTable;
+  lastAutoTable: {
+    finalY: number;
+  };
+  internal: any;
+}
 import { stringify } from "csv-stringify";
 import { calculateTotalDistance } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -185,7 +195,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
           yPos = drawText(`${section.name} (${section.totalTime}分)`, 14, yPos);
           yPos += 5;
 
-          (doc as any).autoTable({
+          (doc as jsPDFWithAutoTable).autoTable({
             startY: yPos,
             head: [["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間", "備考"].map(processJapaneseText)],
             body: [
@@ -295,11 +305,11 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
             },
           });
 
-          yPos = (doc as any).lastAutoTable.finalY + 10;
+          yPos = (doc as jsPDFWithAutoTable).lastAutoTable.finalY + 10;
         });
 
         // 総合計テーブル
-        (doc as any).autoTable({
+        (doc as jsPDFWithAutoTable).autoTable({
           startY: yPos + 5,
           head: [],
           body: [
@@ -339,10 +349,10 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
           }
         });
 
-        yPos = (doc as any).lastAutoTable.finalY + 5;
+        yPos = (doc as jsPDFWithAutoTable).lastAutoTable.finalY + 5;
 
         // フッター
-        const pageCount = (doc as any).internal.getNumberOfPages();
+        const pageCount = (doc.internal as any).getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
           drawText(
