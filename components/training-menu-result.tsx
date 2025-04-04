@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { jsPDF } from "jspdf";
-import 'jspdf-autotable';
-import { UserOptions } from 'jspdf-autotable';
+import { jsPDF } from "jspdf"; // jsPDFをインポート
 
 // jsPDFWithAutoTableを定義 - anyを使用して型エラーを回避
+// 型定義のみを残し、実際のインポートは動的に行う
 interface jsPDFWithAutoTable extends jsPDF {
   autoTable: (options: any) => jsPDFWithAutoTable;
   lastAutoTable: {
@@ -120,6 +119,10 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
 
     try {
       if (format === "pdf") {
+        // Dynamic Import で jspdf と jspdf-autotable を読み込む
+        const { jsPDF } = await import("jspdf");
+        const autoTable = (await import("jspdf-autotable")).default;
+
         // 日本語対応のPDF設定
         const doc = new jsPDF({
           orientation: "portrait",
@@ -195,47 +198,50 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
           yPos = drawText(`${section.name} (${section.totalTime}分)`, 14, yPos);
           yPos += 5;
 
-          (doc as jsPDFWithAutoTable).autoTable({
+          let tableFinalY = yPos; // テーブルの最終Y座標を保存する変数
+
+          const sectionRows = section.items.map((item) => ({
+            content: [
+              processJapaneseText(item.description),
+              processJapaneseText(item.distance),
+              processJapaneseText(`${item.sets}本`),
+              processJapaneseText(`${calculateTotalDistance(item.distance, item.sets)}m`),
+              processJapaneseText(item.circle),
+              processJapaneseText(typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-'),
+              processJapaneseText(`${item.time}分`),
+              processJapaneseText([
+                item.equipment ? `器具: ${item.equipment}` : '',
+                item.notes || ''
+              ].filter(Boolean).join('\n'))
+            ]
+          }));
+
+          // セクション合計行
+          const sectionTotalRow = {
+            content: [
+              processJapaneseText(`${section.name}合計`),
+              '',
+              '',
+              processJapaneseText(`${section.items.reduce((sum, item) => sum + calculateTotalDistance(item.distance, item.sets), 0).toString()}m`),
+              '',
+              '',
+              processJapaneseText(`${section.totalTime}分`),
+              ''
+            ],
+            styles: {
+              fillColor: [245, 245, 245],
+              textColor: [80, 80, 80],
+              fontStyle: 'bold',
+              fontSize: 8,
+              cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
+              halign: 'right'
+            }
+          };
+
+          autoTable(doc, {
             startY: yPos,
             head: [["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間", "備考"].map(processJapaneseText)],
-            body: [
-              ...section.items.map((item) => ({
-                content: [
-                  processJapaneseText(item.description),
-                  processJapaneseText(item.distance),
-                  processJapaneseText(`${item.sets}本`),
-                  processJapaneseText(`${calculateTotalDistance(item.distance, item.sets)}m`),
-                  processJapaneseText(item.circle),
-                  processJapaneseText(typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-'),
-                  processJapaneseText(`${item.time}分`),
-                  processJapaneseText([
-                    item.equipment ? `器具: ${item.equipment}` : '',
-                    item.notes || ''
-                  ].filter(Boolean).join('\n'))
-                ]
-              })),
-              // セクション合計行
-              {
-                content: [
-                  processJapaneseText(`${section.name}合計`),
-                  '',
-                  '',
-                  processJapaneseText(`${section.items.reduce((sum, item) => sum + calculateTotalDistance(item.distance, item.sets), 0)}m`),
-                  '',
-                  '',
-                  processJapaneseText(`${section.totalTime}分`),
-                  ''
-                ],
-                styles: {
-                  fillColor: [245, 245, 245],
-                  textColor: [80, 80, 80],
-                  fontStyle: 'bold',
-                  fontSize: 8,
-                  cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
-                  halign: 'right'
-                }
-              }
-            ],
+            body: [...sectionRows, sectionTotalRow],
             theme: 'grid',
             styles: { 
               fontSize: 9,
@@ -265,13 +271,13 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
             },
             willDrawCell: function(data: any) {
               // セクション合計行のスタイル調整
-              if (data.row.raw && data.row.raw.styles && data.row.raw.styles.fillColor) {
-                data.cell.styles.fillColor = data.row.raw.styles.fillColor;
-                data.cell.styles.textColor = data.row.raw.styles.textColor;
-                data.cell.styles.fontStyle = data.row.raw.styles.fontStyle;
-                data.cell.styles.fontSize = data.row.raw.styles.fontSize;
-                data.cell.styles.cellPadding = data.row.raw.styles.cellPadding;
-                data.cell.styles.halign = data.row.raw.styles.halign;
+              if (data.row.raw === sectionTotalRow) {
+                data.cell.styles.fillColor = sectionTotalRow.styles.fillColor;
+                data.cell.styles.textColor = sectionTotalRow.styles.textColor;
+                data.cell.styles.fontStyle = sectionTotalRow.styles.fontStyle;
+                data.cell.styles.fontSize = sectionTotalRow.styles.fontSize;
+                data.cell.styles.cellPadding = sectionTotalRow.styles.cellPadding;
+                data.cell.styles.halign = sectionTotalRow.styles.halign;
               }
             },
             columnStyles: {
@@ -303,24 +309,26 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                 data.cell.styles.halign = 'right';
               }
             },
+            didDrawPage: function(data: any) {
+              tableFinalY = data.table.finalY; // 最終Y座標を更新
+            }
           });
 
-          yPos = (doc as jsPDFWithAutoTable).lastAutoTable.finalY + 10;
+          yPos = tableFinalY + 10;
         });
 
         // 総合計テーブル
-        (doc as jsPDFWithAutoTable).autoTable({
+        autoTable(doc, {
           startY: yPos + 5,
           head: [],
           body: [
             [
               {
-                colSpan: 8,
                 content: [
                   processJapaneseText('総合計'),
-                  processJapaneseText(`${menuData.menu.reduce((sum, section) => 
-                    sum + section.items.reduce((sectionSum, item) => 
-                      sectionSum + calculateTotalDistance(item.distance, item.sets), 0), 0)}m`),
+                  processJapaneseText(`${menuData.menu.reduce((sum, section) =>
+                    sum + section.items.reduce((sectionSum, item) =>
+                      sectionSum + calculateTotalDistance(item.distance, item.sets), 0), 0)}m`), // Add initial value 0 for outer reduce
                   processJapaneseText(`練習時間: ${menuData.totalTime}分`),
                   processJapaneseText(`指定時間との差: ${menuData.cooldown}分`)
                 ].join('    '),
@@ -348,8 +356,6 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
             0: { cellWidth: 186 } // 全体の幅を合わせる
           }
         });
-
-        yPos = (doc as jsPDFWithAutoTable).lastAutoTable.finalY + 5;
 
         // フッター
         const pageCount = (doc.internal as any).getNumberOfPages();
