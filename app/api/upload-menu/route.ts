@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { uploadFileToBlob } from "@/lib/blob-storage"
-import pdf from 'pdf-parse';
+import { parsePdf } from "@/lib/pdf-parser"
 import { parse as csvParse } from 'csv-parse';
 
 export async function POST(req: NextRequest) {
@@ -36,9 +36,8 @@ export async function POST(req: NextRequest) {
     // PDFの場合
     if (file.type === "application/pdf") {
       try {
-        // PDFパーサーを使用してテキスト抽出
-        const pdfData = await pdf(Buffer.from(fileContent));
-        const pdfText = pdfData.text;
+        // カスタムPDFパーサーを使用してテキスト抽出
+        const pdfText = await parsePdf(fileContent);
         // ベクトル化してDBに保存
         // await saveToVectorDB(pdfText, description, file.name);
         console.log("PDFテキスト:", pdfText.substring(0, 200) + "...");
