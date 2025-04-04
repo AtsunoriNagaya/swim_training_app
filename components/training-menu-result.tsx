@@ -151,7 +151,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         // テキスト描画の補助関数
         const drawText = (text: string | null | undefined, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
           const safeText = text || ""; // textがnull/undefinedなら空文字列を使用
-          doc.setFont('helvetica', style); // フォントを設定
+          doc.setFont('helvetica'); // フォントを設定
           doc.setFontSize(fontStyles[style].fontSize);
 
           const processedText = processJapaneseText(safeText);
@@ -159,23 +159,29 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
 
           try {
             // テキストを行に分割
-            const lines = processedText.split('\n').flatMap(line => 
-              doc.splitTextToSize(
-                line,
-                doc.internal.pageSize.width - x * 2
-              )
-            );
+            const maxWidth = doc.internal.pageSize.width - x * 2;
+            const textLines = processedText.split('\n');
 
-            // 各行を個別に描画
-            for (const line of lines) {
-              if (typeof line === 'string' && line.trim().length > 0) {
-                try {
-                  doc.text(line, x, currentY, { align: 'left' });
-                  currentY += fontStyles[style].fontSize * fontStyles[style].lineHeight;
-                } catch (textError) {
-                  console.error("Error in doc.text:", textError, "Input line:", line);
-                  // エラーが発生しても処理を継続
+            for (const textLine of textLines) {
+              try {
+                // 各行を最大幅に合わせて分割
+                const splitLines = doc.splitTextToSize(textLine, maxWidth);
+                
+                // 各分割行を描画
+                for (const line of splitLines) {
+                  if (typeof line === 'string' && line.trim().length > 0) {
+                    // テキストの描画（位置とアラインメントを明示的に指定）
+                    doc.text(String(line), x, currentY, {
+                      align: 'left',
+                      baseline: 'top'
+                    });
+                    currentY += fontStyles[style].fontSize * fontStyles[style].lineHeight;
+                  }
                 }
+              } catch (lineError) {
+                console.error("Error processing line:", textLine, lineError);
+                // エラーが発生した行をスキップして次の行へ
+                currentY += fontStyles[style].fontSize * fontStyles[style].lineHeight;
               }
             }
 
@@ -280,14 +286,15 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
             theme: 'grid',
             styles: { 
               fontSize: 9,
-              cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
+              cellPadding: 3,
               lineColor: [220, 220, 220],
-              lineWidth: 0.1,
+              lineWidth: 0.5,
               font: 'helvetica',
               overflow: 'linebreak',
-              cellWidth: 'wrap',
+              cellWidth: 'auto',
               valign: 'middle',
-              minCellHeight: 8
+              minCellHeight: 10,
+              halign: 'left'
             },
             headStyles: { 
               fillColor: [40, 40, 40],
@@ -316,17 +323,20 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               }
             },
             columnStyles: {
-              0: { cellWidth: 45 },          // 内容
-              1: { cellWidth: 18 },          // 距離
+              0: { cellWidth: 40 },          // 内容
+              1: { cellWidth: 20 },          // 距離
               2: { cellWidth: 15 },          // 本数
-              3: { cellWidth: 22 },          // 合計距離
-              4: { cellWidth: 18 },          // サイクル
+              3: { cellWidth: 25 },          // 合計距離
+              4: { cellWidth: 20 },          // サイクル
               5: { cellWidth: 15 },          // 休憩
-              6: { cellWidth: 18, halign: 'right' }, // 所要時間
-              7: { cellWidth: 35 }           // 備考
+              6: { cellWidth: 20 },          // 所要時間
+              7: { cellWidth: 30 }           // 備考
             },
-            tableWidth: 186,
-            margin: { top: 8, right: 14, bottom: 8, left: 14 },
+            tableWidth: 'auto',
+            margin: { left: 14, right: 14, top: 8, bottom: 8 },
+            showHead: true,
+            showFoot: false,
+            useCss: true,
             didDrawCell: function(data: any) {
               // セル内のテキストが日本語を含む場合、位置を微調整
               if (data.cell.text && /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]/.test(data.cell.text)) {
@@ -396,12 +406,13 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         const pageCount = (doc.internal as any).getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
-          drawText(
-            `${menuData.title} - ${formatDate(menuData.createdAt)} - ページ ${i} / ${pageCount}`,
-            14,
-            doc.internal.pageSize.height - 10,
-            'small'
-          );
+          const footerText = `${menuData.title} - ${formatDate(menuData.createdAt)} - ページ ${i} / ${pageCount}`;
+          doc.setFont('helvetica');
+          doc.setFontSize(fontStyles.small.fontSize);
+          doc.text(processJapaneseText(footerText), 14, doc.internal.pageSize.height - 10, {
+            align: 'left',
+            baseline: 'bottom'
+          });
         }
 
         doc.save(`swimming-menu-${menuData.id}.pdf`);
