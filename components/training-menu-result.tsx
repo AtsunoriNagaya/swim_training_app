@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { stringify } from "csv-stringify";
+import { calculateTotalDistance } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -193,7 +194,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                   processJapaneseText(item.description),
                   processJapaneseText(item.distance),
                   processJapaneseText(`${item.sets}本`),
-                  processJapaneseText(`${parseInt(item.distance) * item.sets}m`),
+                  processJapaneseText(`${calculateTotalDistance(item.distance, item.sets)}m`),
                   processJapaneseText(item.circle),
                   processJapaneseText(typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-'),
                   processJapaneseText(`${item.time}分`),
@@ -209,7 +210,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                   processJapaneseText(`${section.name}合計`),
                   '',
                   '',
-                  processJapaneseText(`${section.items.reduce((sum, item) => sum + parseInt(item.distance) * item.sets, 0)}m`),
+                  processJapaneseText(`${section.items.reduce((sum, item) => sum + calculateTotalDistance(item.distance, item.sets), 0)}m`),
                   '',
                   '',
                   processJapaneseText(`${section.totalTime}分`),
@@ -309,7 +310,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                   processJapaneseText('総合計'),
                   processJapaneseText(`${menuData.menu.reduce((sum, section) => 
                     sum + section.items.reduce((sectionSum, item) => 
-                      sectionSum + parseInt(item.distance) * item.sets, 0), 0)}m`),
+                      sectionSum + calculateTotalDistance(item.distance, item.sets), 0), 0)}m`),
                   processJapaneseText(`練習時間: ${menuData.totalTime}分`),
                   processJapaneseText(`指定時間との差: ${menuData.cooldown}分`)
                 ].join('    '),
@@ -375,7 +376,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               item.description,
               item.distance,
               item.sets.toString(),
-              (parseInt(item.distance) * item.sets).toString() + "m",
+              calculateTotalDistance(item.distance, item.sets).toString() + "m",
               item.circle,
               typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-',
               `${item.time}分`,
@@ -521,7 +522,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                           {item.sets}本
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          計: {parseInt(item.distance) * item.sets}m
+                          計: {calculateTotalDistance(item.distance, item.sets)}m
                         </div>
                       </TableCell>
                       <TableCell>
