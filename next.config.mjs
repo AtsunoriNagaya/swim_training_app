@@ -23,6 +23,15 @@ const allowedOrigins = [
 
 /** @type {import('next').NextConfig} */
 let nextConfig = {
+  webpack: (config, { isServer }) => {
+    // pdf-parseのデバッグモードを無効化
+    config.plugins.push(
+      new config.webpack.DefinePlugin({
+        'module.parent': JSON.stringify({}), // デバッグモードを強制的に無効化
+      })
+    );
+    return config;
+  },
   async headers() {
     return [
       {
