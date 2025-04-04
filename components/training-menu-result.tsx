@@ -151,53 +151,65 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         // テキスト描画の補助関数
         const drawText = (text: string | null | undefined, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
           const safeText = text || ""; // textがnull/undefinedなら空文字列を使用
-          doc.setFont('helvetica', style); // Explicitly set font
+          doc.setFont('helvetica', style); // フォントを設定
           doc.setFontSize(fontStyles[style].fontSize);
 
-          const processedText = processJapaneseText(safeText); // Restore Japanese processing
+          const processedText = processJapaneseText(safeText);
+          let currentY = y;
 
-          let lines: string[] | null = null;
           try {
-            lines = doc.splitTextToSize(
-              processedText,
-              doc.internal.pageSize.width - x * 2
+            // テキストを行に分割
+            const lines = processedText.split('\n').flatMap(line => 
+              doc.splitTextToSize(
+                line,
+                doc.internal.pageSize.width - x * 2
+              )
             );
-          } catch (splitError) {
-            console.error("Error in doc.splitTextToSize:", splitError, "Input text:", processedText);
-            return y; // エラー発生時は描画せず、元のy座標を返す
-          }
 
-          // linesが有効な文字列配列か確認
-          if (Array.isArray(lines) && lines.length > 0 && lines.every(line => typeof line === 'string')) {
-            try {
-              doc.text(lines, x, y);
-              return y + lines.length * fontStyles[style].fontSize * fontStyles[style].lineHeight;
-            } catch (textError) {
-              console.error("Error in doc.text:", textError, "Input lines:", lines);
-              return y; // エラー発生時は元のy座標を返す
+            // 各行を個別に描画
+            for (const line of lines) {
+              if (typeof line === 'string' && line.trim().length > 0) {
+                try {
+                  doc.text(line, x, currentY, { align: 'left' });
+                  currentY += fontStyles[style].fontSize * fontStyles[style].lineHeight;
+                } catch (textError) {
+                  console.error("Error in doc.text:", textError, "Input line:", line);
+                  // エラーが発生しても処理を継続
+                }
+              }
             }
-          } else {
-            // linesが無効な場合はログを出力（デバッグ用）
-            console.warn("doc.splitTextToSize returned invalid lines:", lines, "Input text:", processedText);
-            return y; // テキストが描画されなかった場合は元のy座標を返す
+
+            return currentY;
+          } catch (error) {
+            console.error("Error in text processing:", error, "Input text:", processedText);
+            return y; // エラー発生時は元のy座標を返す
           }
         };
 
         // 日本語文字列の処理
-        const processJapaneseText = (text: string) => {
+        const processJapaneseText = (text: string | null | undefined) => {
           if (!text) return "";
-          return text.split('').map(char => {
-            const code = char.charCodeAt(0);
-            if (code > 127) {
-              // 日本語文字の場合は半角に変換
-              if (code >= 0xFF01 && code <= 0xFF5E) {
-                return String.fromCharCode(code - 0xFEE0);
+          
+          try {
+            // 文字列を配列に分割して処理
+            return text.split('').map(char => {
+              try {
+                const code = char.charCodeAt(0);
+                // 全角数字・アルファベット・記号を半角に変換
+                if (code >= 0xFF01 && code <= 0xFF5E) {
+                  return String.fromCharCode(code - 0xFEE0);
+                }
+                // その他の文字（漢字、ひらがな、カタカナなど）はそのまま
+                return char;
+              } catch (charError) {
+                console.error("Error processing character:", char, charError);
+                return char; // エラーが発生した場合は元の文字を返す
               }
-              // その他の日本語文字はそのまま
-              return char;
-            }
-            return char;
-          }).join('');
+            }).join('');
+          } catch (error) {
+            console.error("Error in processJapaneseText:", error, "Input text:", text);
+            return String(text); // エラーが発生した場合は文字列に変換して返す
+          }
         };
         
         // タイトルと基本情報
