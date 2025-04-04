@@ -1,17 +1,15 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { jsPDF } from "jspdf"; // jsPDFをインポート
+import { jsPDF } from "jspdf";
 
-// jsPDFWithAutoTableを定義 - anyを使用して型エラーを回避
-// 型定義のみを残し、実際のインポートは動的に行う
-interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: (options: any) => jsPDFWithAutoTable;
-  lastAutoTable: {
-    finalY: number;
-  };
-  internal: any;
+// jspdf-autotableの型定義
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
 }
+
 import { stringify } from "csv-stringify";
 import { calculateTotalDistance } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -121,7 +119,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
       if (format === "pdf") {
         // Dynamic Import で jspdf と jspdf-autotable を読み込む
         const { jsPDF } = await import("jspdf");
-        const autoTable = (await import("jspdf-autotable")).default;
+        const { default: autoTable } = await import("jspdf-autotable");
 
         // 日本語対応のPDF設定
         const doc = new jsPDF({
@@ -153,7 +151,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         // テキスト描画の補助関数
         const drawText = (text: string | null | undefined, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
           const safeText = text || ""; // textがnull/undefinedなら空文字列を使用
-          doc.setFont('helvetica', 'normal'); // Explicitly set font
+          doc.setFont('helvetica', style); // Explicitly set font
           doc.setFontSize(fontStyles[style].fontSize);
 
           const processedText = processJapaneseText(safeText); // Restore Japanese processing
@@ -187,6 +185,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
 
         // 日本語文字列の処理
         const processJapaneseText = (text: string) => {
+          if (!text) return "";
           return text.split('').map(char => {
             const code = char.charCodeAt(0);
             if (code > 127) {
@@ -299,9 +298,9 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
                 data.cell.styles.fillColor = sectionTotalRow.styles.fillColor;
                 data.cell.styles.textColor = sectionTotalRow.styles.textColor;
                 data.cell.styles.fontStyle = sectionTotalRow.styles.fontStyle;
-                data.cell.styles.fontSize = sectionTotalRow.styles.fontSize;
-                data.cell.styles.cellPadding = sectionTotalRow.styles.cellPadding;
-                data.cell.styles.halign = sectionTotalRow.styles.halign;
+                data.cell.styles.fontSize = data.cell.styles.fontSize;
+                data.cell.styles.cellPadding = data.cell.styles.cellPadding;
+                data.cell.styles.halign = data.cell.styles.halign;
               }
             },
             columnStyles: {
@@ -314,7 +313,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               6: { cellWidth: 18, halign: 'right' }, // 所要時間
               7: { cellWidth: 35 }           // 備考
             },
-            tableWidth: 'auto',
+            tableWidth: 186,
             margin: { top: 8, right: 14, bottom: 8, left: 14 },
             didDrawCell: function(data: any) {
               // セル内のテキストが日本語を含む場合、位置を微調整
@@ -374,8 +373,8 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
             lineWidth: 0.1,
             font: 'helvetica'
           },
-          margin: { left: 14, right: 14 },
-          tableWidth: 'auto',
+          margin: { top: 8, right: 14, bottom: 8, left: 14 },
+          tableWidth: 186,
           columnStyles: {
             0: { cellWidth: 186 } // 全体の幅を合わせる
           }
