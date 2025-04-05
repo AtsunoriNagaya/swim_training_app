@@ -1,6 +1,6 @@
 import { Redis } from "@upstash/redis";
 
-const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+const redisUrl = (process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL)?.replace("rediss://", "https://");
 const redisToken = process.env.UPSTASH_REDIS_TOKEN || process.env.KV_REST_API_TOKEN;
 
 if (!redisUrl || !redisToken) {
