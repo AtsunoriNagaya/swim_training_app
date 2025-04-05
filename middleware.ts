@@ -3,9 +3,7 @@ import type { NextRequest } from 'next/server'
 
 // next.config.mjs と同じ許可オリジンリスト
 const allowedOrigins = [
-  'https://swim-training-app.vercel.app',
-  'https://swim-traing-app.vercel.app', // タイプミスのあるドメインも含む
-  'http://localhost:3000',
+  '*',
 ];
 
 export function middleware(request: NextRequest) {
