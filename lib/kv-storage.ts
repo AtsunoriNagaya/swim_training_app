@@ -310,15 +310,12 @@ export async function getMenu(menuId: string): Promise<GeneratedMenuData | null>
  */
 export async function getMenuHistory(): Promise<{
   id: string;
-  loadLevels: string[];
-  duration: number;
-  notes: string;
-  createdAt: string;
-  totalTime: number;
-  intensity: string;
-  targetSkills: string[];
   title: string;
-  aiModel: string;
+  description: string;
+  fileType: string;
+  fileSize: string;
+  uploadedAt: string;
+  fileUrl: string;
 }[]> {
   try {
     // インデックスファイルを取得
@@ -329,20 +326,18 @@ export async function getMenuHistory(): Promise<{
       const metadata = menu.metadata;
       return {
         id: menu.id,
-        ...metadata,
-        // loadLevelsを文字列から配列に変換
-        loadLevels: metadata.loadLevels ? metadata.loadLevels.split(',').filter(Boolean) : [],
-        // 数値型の項目を変換
-        duration: parseInt(metadata.duration) || 0,
-        totalTime: parseInt(metadata.totalTime) || 0,
-        // 配列型の項目を確実に配列として扱う
-        targetSkills: Array.isArray(metadata.targetSkills) ? metadata.targetSkills : [],
+        title: metadata.title,
+        description: metadata.notes || "",
+        fileType: metadata.fileType || "",
+        fileSize: metadata.fileSize || "",
+        uploadedAt: metadata.createdAt,
+        fileUrl: metadata.fileUrl || "",
       };
     });
 
     // 作成日時の降順でソート（新しい順）
     return menus.sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
     });
   } catch (error) {
     console.error("[KV] メニュー履歴の取得に失敗:", error);

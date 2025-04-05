@@ -30,15 +30,11 @@ interface MenuSection {
 interface MenuHistoryItem {
   id: string;
   title: string;
-  menu: MenuSection[];
-  totalTime: number;
-  intensity?: string | null;
-  targetSkills?: string[] | null;
-  createdAt: string;
-  aiModel: string;
-  loadLevels: string[];
-  duration: number;
-  notes?: string;
+  description: string;
+  fileType: string;
+  fileSize: string;
+  uploadedAt: string;
+  fileUrl: string;
 }
 
 export default function MenuHistoryList() {
@@ -54,38 +50,15 @@ export default function MenuHistoryList() {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || "メニュー履歴の取得に失敗しました");
         }
-        
         const data = await response.json();
-        
+
         // データの検証
         if (!data || !Array.isArray(data.menuHistory)) {
           console.error("Invalid menu history format:", data);
           throw new Error("メニュー履歴のデータ形式が不正です");
         }
 
-        // 各メニューアイテムの型を検証
-        const validatedHistory = data.menuHistory.map((item: any) => {
-          if (!item || typeof item !== 'object') {
-            console.warn("Invalid menu item:", item);
-            return null;
-          }
-
-          return {
-            id: item.id || "",
-            title: item.title || "無題のメニュー",
-            menu: Array.isArray(item.menu) ? item.menu : [],
-            totalTime: Number(item.totalTime) || 0,
-            intensity: item.intensity || null,
-            targetSkills: Array.isArray(item.targetSkills) ? item.targetSkills : [],
-            createdAt: item.createdAt || new Date().toISOString(),
-            aiModel: item.aiModel || "unknown",
-            loadLevels: Array.isArray(item.loadLevels) ? item.loadLevels : [],
-            duration: Number(item.duration) || 0,
-            notes: item.notes || ""
-          };
-        }).filter(Boolean) as MenuHistoryItem[];
-
-        setMenuHistory(validatedHistory);
+        setMenuHistory(data.menuHistory);
       } catch (error: any) {
         console.error("Menu history error:", error);
         toast({
@@ -136,8 +109,7 @@ export default function MenuHistoryList() {
 
   const filteredMenus = menuHistory.filter((menu) =>
     menu.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    menu.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    menu.loadLevels.some(level => getLoadLevelLabel(level).includes(searchTerm))
+    menu.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -160,20 +132,13 @@ export default function MenuHistoryList() {
               {filteredMenus.map((menu) => (
                 <div key={menu.id} className="border rounded-md p-4">
                   <h3 className="font-semibold">{menu.title}</h3>
-                  <p className="text-sm text-gray-500">Created at: {formatDate(menu.createdAt)}</p>
-                  <p className="text-sm">AI Model: {menu.aiModel}</p>
-                  <p className="text-sm">Duration: {menu.duration} minutes</p>
-                  {menu.notes && <p className="text-sm">Notes: {menu.notes}</p>}
-                  <div className="flex flex-wrap gap-2">
-                    {menu.loadLevels.map((level) => (
-                      <Badge key={level} className={getLoadLevelColor(level)}>
-                        {getLoadLevelLabel(level)}
-                      </Badge>
-                    ))}
-                  </div>
-                  <Link href={`/result?id=${menu.id}`} className="inline-block mt-2">
-                    <Button size="sm">View Details</Button>
-                  </Link>
+                  <p className="text-sm text-gray-500">アップロード日時: {formatDate(menu.uploadedAt)}</p>
+                  <p className="text-sm">ファイルサイズ: {menu.fileSize}</p>
+                  <p className="text-sm">ファイルの種類: {menu.fileType}</p>
+                  <p className="text-sm">説明: {menu.description}</p>
+                  <a href={menu.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-2">
+                    <Button size="sm">ファイルを表示</Button>
+                  </a>
                 </div>
               ))}
             </div>

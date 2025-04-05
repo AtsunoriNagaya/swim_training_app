@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { uploadFileToBlob } from "@/lib/blob-storage"
 import { parsePdf } from "@/lib/pdf-parser"
 import { parse as csvParse } from 'csv-parse';
+import { saveMenu } from "@/lib/kv-storage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,16 +32,14 @@ export async function POST(req: NextRequest) {
 
     // ファイルの処理
     const fileBuffer = await file.arrayBuffer();
-    const fileContent = new Uint8Array(fileBuffer);
+    const fileBytes = new Uint8Array(fileBuffer);
+    let parsedContent = "";
 
     // PDFの場合
     if (file.type === "application/pdf") {
       try {
         // カスタムPDFパーサーを使用してテキスト抽出
-        const pdfText = await parsePdf(fileContent);
-        // ベクトル化してDBに保存
-        // await saveToVectorDB(pdfText, description, file.name);
-        console.log("PDFテキスト:", pdfText.substring(0, 200) + "...");
+        parsedContent = await parsePdf(fileBytes);
       } catch (error) {
         console.error("PDFパースエラー:", error);
         return NextResponse.json(
@@ -55,7 +54,7 @@ export async function POST(req: NextRequest) {
       try {
         // CSVパーサーを使用してデータ抽出
         const csvData = await new Promise((resolve, reject) => {
-          csvParse(fileContent.toString(), {
+          csvParse(fileBytes.toString(), {
             columns: true,
             skip_empty_lines: true,
             delimiter: ',', // カンマ区切りを明示的に指定
@@ -69,9 +68,7 @@ export async function POST(req: NextRequest) {
             }
           });
         });
-        // ベクトル化してDBに保存
-        // await saveToVectorDB(JSON.stringify(csvData), description, file.name);
-        console.log("CSVデータ:", JSON.stringify(csvData).substring(0, 200) + "...");
+        parsedContent = JSON.stringify(csvData);
       } catch (error) {
         console.error("CSVパースエラー:", error);
         return NextResponse.json(
@@ -81,19 +78,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 仮実装：成功レスポンスを返す
-    return NextResponse.json({
-      success: true,
-      fileId: `file-${Date.now()}`,
-      fileName: file.name,
+    const menuId = `file-${Date.now()}`;
+
+    // メニューデータを保存
+    await saveMenu(menuId, {
+      title: file.name,
+      notes: description,
       fileType: file.type === "application/pdf" ? "pdf" : "csv",
       fileSize: `${(file.size / 1024).toFixed(1)} KB`,
-      description: description,
-      uploadedAt: new Date().toISOString(),
-      fileUrl: fileUrl, // BlobのURLを追加
-    })
+      fileUrl: fileUrl,
+      content: parsedContent,
+    });
+
+    // 成功レスポンスを返す
+    return NextResponse.json({
+      success: true,
+      menuId: menuId,
+    });
   } catch (error) {
-    console.error("ファイルアップロードエラー:", error)
-    return NextResponse.json({ error: "ファイルアップロード中にエラーが発生しました" }, { status: 500 })
+    console.error("ファイルアップロードエラー:", error);
+    return NextResponse.json({ error: "ファイルアップロード中にエラーが発生しました" }, { status: 500 });
   }
 }
