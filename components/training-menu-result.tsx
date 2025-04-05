@@ -1,14 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { jsPDF } from "jspdf";
-
-// jspdf-autotableの型定義
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import fontkit from '@pdf-lib/fontkit';
 
 import { stringify } from "csv-stringify";
 import { calculateTotalDistance } from "@/lib/utils";
@@ -117,318 +111,186 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
 
     try {
       if (format === "pdf") {
-        // Dynamic Import で jspdf と jspdf-autotable を読み込む
-        const { jsPDF } = await import("jspdf");
-        const { default: autoTable } = await import("jspdf-autotable");
-
-        // 日本語フォントの読み込み
+        // PDFドキュメントを作成
+        const pdfDoc = await PDFDocument.create();
+        
+        // フォントの読み込み
         const fontUrl = 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.16/files/noto-sans-jp-japanese-400-normal.woff';
         const fontResponse = await fetch(fontUrl);
-        const fontArrayBuffer = await fontResponse.arrayBuffer();
-        const fontBase64 = btoa(String.fromCharCode(...new Uint8Array(fontArrayBuffer)));
+        const fontBytes = await fontResponse.arrayBuffer();
+        
+        // フォントを登録
+        await pdfDoc.registerFontkit(fontkit);
+        const customFont = await pdfDoc.embedFont(fontBytes);
+        
+        // ページを追加
+        let page = pdfDoc.addPage([595.28, 841.89]); // A4サイズ
+        const { width, height } = page.getSize();
+        
+        // フォントサイズの設定
+        const fontSize = {
+          title: 16,
+          normal: 12,
+          small: 10
+        };
 
-        // 日本語対応のPDF設定
-        const doc = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: "a4",
-          putOnlyUsedFonts: true,
-          compress: true,
-          hotfixes: ["px_scaling"],
-          floatPrecision: 16
+        // 現在のY位置（上から下に進む）
+        let yPos = height - 50;
+        
+        // タイトルを描画
+        page.drawText(menuData.title, {
+          x: 50,
+          y: yPos,
+          font: customFont,
+          size: fontSize.title,
+          color: rgb(0, 0, 0)
         });
-
-        // フォントの追加
-        doc.addFileToVFS('NotoSansJP-Regular.ttf', fontBase64);
-        doc.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
-        doc.setFont('NotoSansJP');
-
-        // フォントの設定
-        const fontStyles = {
-          normal: {
-            fontSize: 10,
-            lineHeight: 1.2,
-            font: 'NotoSansJP'
-          },
-          title: {
-            fontSize: 16,
-            lineHeight: 1.5,
-            font: 'NotoSansJP'
-          },
-          small: {
-            fontSize: 8,
-            lineHeight: 1.1,
-            font: 'NotoSansJP'
-          }
-        };
-
-        // テキスト描画の補助関数
-        const drawText = (text: string | null | undefined, x: number, y: number, style: keyof typeof fontStyles = 'normal') => {
-          try {
-            const safeText = text || "";
-            doc.setFont('NotoSansJP');
-            doc.setFontSize(fontStyles[style].fontSize);
-
-            // テキストを処理
-            const processedText = processJapaneseText(safeText);
-            const maxWidth = doc.internal.pageSize.width - x * 2;
-
-            // テキストを行に分割（改行とページ幅による分割）
-            const lines = doc.splitTextToSize(processedText, maxWidth);
-            if (!Array.isArray(lines) || lines.length === 0) {
-              console.warn("No lines to draw:", processedText);
-              return y;
-            }
-
-            // 各行を描画
-            let currentY = y;
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
-              if (typeof line === 'string' && line.trim()) {
-                try {
-                  // シンプルなテキスト描画
-                  doc.text(line, x, currentY);
-                  currentY += fontStyles[style].fontSize * fontStyles[style].lineHeight;
-                } catch (lineError) {
-                  console.error("Error drawing line:", line, lineError);
-                }
-              }
-            }
-            return currentY;
-          } catch (error) {
-            console.error("Error in drawText:", error, "Input:", text);
-            return y;
-          }
-        };
-
-        // 日本語文字列の処理
-        const processJapaneseText = (text: string | null | undefined) => {
-          if (!text) return "";
-          
-          try {
-            // 文字列を配列に分割して処理
-            return text.split('').map(char => {
-              try {
-                const code = char.charCodeAt(0);
-                // 全角数字・アルファベット・記号を半角に変換
-                if (code >= 0xFF01 && code <= 0xFF5E) {
-                  return String.fromCharCode(code - 0xFEE0);
-                }
-                // その他の文字（漢字、ひらがな、カタカナなど）はそのまま
-                return char;
-              } catch (charError) {
-                console.error("Error processing character:", char, charError);
-                return char; // エラーが発生した場合は元の文字を返す
-              }
-            }).join('');
-          } catch (error) {
-            console.error("Error in processJapaneseText:", error, "Input text:", text);
-            return String(text); // エラーが発生した場合は文字列に変換して返す
-          }
-        };
         
-        // タイトルと基本情報
-        let yPos = 20;
-        yPos = drawText(menuData.title, 14, yPos, 'title');
-        yPos += 10;
+        yPos -= 30;
         
-        yPos = drawText(`作成日時: ${formatDate(menuData.createdAt)}`, 14, yPos);
-        yPos = drawText(`負荷レベル: ${menuData.loadLevels.map(l => `${l}(${getLoadLevelLabel(l)})`).join(', ')}`, 14, yPos + 5);
-        yPos = drawText(`予定時間: ${menuData.duration}分 / 実際の時間: ${menuData.totalTime}分`, 14, yPos + 5);
+        // 基本情報を描画
+        page.drawText(`作成日時: ${formatDate(menuData.createdAt)}`, {
+          x: 50,
+          y: yPos,
+          font: customFont,
+          size: fontSize.normal,
+          color: rgb(0, 0, 0)
+        });
+        
+        yPos -= 20;
+        
+        page.drawText(`負荷レベル: ${menuData.loadLevels.map(l => `${l}(${getLoadLevelLabel(l)})`).join(', ')}`, {
+          x: 50,
+          y: yPos,
+          font: customFont,
+          size: fontSize.normal,
+          color: rgb(0, 0, 0)
+        });
+        
+        yPos -= 20;
+        
+        page.drawText(`予定時間: ${menuData.duration}分 / 実際の時間: ${menuData.totalTime}分`, {
+          x: 50,
+          y: yPos,
+          font: customFont,
+          size: fontSize.normal,
+          color: rgb(0, 0, 0)
+        });
         
         if (menuData.notes) {
-          yPos = drawText('備考:', 14, yPos + 5);
-          yPos = drawText(menuData.notes, 14, yPos + 3, 'small');
-        }
-
-        yPos = menuData.notes ? yPos + 10 : yPos + 5;
-
-        // 各セクションのメニュー
-        menuData.menu.forEach((section, index) => {
-          yPos = drawText(`${section.name} (${section.totalTime}分)`, 14, yPos);
-          yPos += 5;
-
-          let tableFinalY = yPos; // テーブルの最終Y座標を保存する変数
-
-          const sectionRows = section.items.map((item) => ({
-            content: [
-              processJapaneseText(item.description),
-              processJapaneseText(item.distance),
-              processJapaneseText(`${item.sets}本`),
-              processJapaneseText(`${calculateTotalDistance(item.distance, item.sets)}m`),
-              processJapaneseText(item.circle),
-              processJapaneseText(typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-'),
-              processJapaneseText(`${item.time}分`),
-              processJapaneseText([
-                item.equipment ? `器具: ${item.equipment}` : '',
-                item.notes || ''
-              ].filter(Boolean).join('\n'))
-            ]
-          }));
-
-          // セクション合計行
-          const sectionTotalRow = {
-            content: [
-              processJapaneseText(`${section.name}合計`),
-              '',
-              '',
-              processJapaneseText(`${section.items.reduce((sum, item) => sum + calculateTotalDistance(item.distance, item.sets), 0).toString()}m`),
-              '',
-              '',
-              processJapaneseText(`${section.totalTime}分`),
-              ''
-            ],
-            styles: {
-              fillColor: [245, 245, 245],
-              textColor: [80, 80, 80],
-              fontStyle: 'bold',
-              fontSize: 8,
-              cellPadding: { top: 4, right: 3, bottom: 4, left: 3 },
-              halign: 'right'
-            }
-          };
-
-          autoTable(doc, {
-            startY: yPos,
-            head: [["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間", "備考"].map(processJapaneseText)],
-            body: [...sectionRows, sectionTotalRow],
-            theme: 'grid',
-            styles: { 
-              fontSize: 8,
-              cellPadding: 2,
-              lineColor: [200, 200, 200],
-              lineWidth: 0.1,
-              font: 'NotoSansJP',
-              overflow: 'linebreak',
-              cellWidth: 'wrap',
-              valign: 'middle',
-              minCellHeight: 8
-            },
-            headStyles: { 
-              fillColor: [40, 40, 40],
-              textColor: [255, 255, 255],
-              fontStyle: 'bold',
-              font: 'NotoSansJP',
-              halign: 'center',
-              fontSize: 9,
-              cellPadding: { top: 5, right: 3, bottom: 5, left: 3 }
-            },
-            bodyStyles: {
-              halign: 'left'
-            },
-            alternateRowStyles: {
-              fillColor: [252, 252, 252]
-            },
-            willDrawCell: function(data: any) {
-              // セクション合計行のスタイル調整
-              if (data.row.raw === sectionTotalRow) {
-                data.cell.styles.fillColor = sectionTotalRow.styles.fillColor;
-                data.cell.styles.textColor = sectionTotalRow.styles.textColor;
-                data.cell.styles.fontStyle = sectionTotalRow.styles.fontStyle;
-                data.cell.styles.fontSize = data.cell.styles.fontSize;
-                data.cell.styles.cellPadding = data.cell.styles.cellPadding;
-                data.cell.styles.halign = data.cell.styles.halign;
-              }
-            },
-            columnStyles: {
-              0: { cellWidth: 35 },          // 内容
-              1: { cellWidth: 15 },          // 距離
-              2: { cellWidth: 12 },          // 本数
-              3: { cellWidth: 20 },          // 合計距離
-              4: { cellWidth: 15 },          // サイクル
-              5: { cellWidth: 12 },          // 休憩
-              6: { cellWidth: 15 },          // 所要時間
-              7: { cellWidth: 25 }           // 備考
-            },
-            tableWidth: 149, // 固定幅に設定
-            margin: { left: 14, right: 14, top: 8, bottom: 8 },
-            showHead: true,
-            showFoot: false,
-            useCss: true,
-            didDrawCell: function(data: any) {
-              // セル内のテキストが日本語を含む場合、位置を微調整
-              if (data.cell.text && /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf]/.test(data.cell.text)) {
-                const fontSize = data.row.section === 'head' ? 9 : 8;
-                data.cell.styles.fontSize = fontSize;
-                // 備考欄の場合は左寄せ
-                if (data.column === 7) {
-                  data.cell.styles.halign = 'left';
-                }
-              }
-            },
-            didParseCell: function(data: any) {
-              // 数値を含むセルは右寄せ
-              if (data.cell.text && /^[\d,]+[^\u3000-\u9faf]*$/.test(data.cell.text)) {
-                data.cell.styles.halign = 'right';
-              }
-            },
-            didDrawPage: function(data: any) {
-              tableFinalY = data.table.finalY; // 最終Y座標を更新
-            }
+          yPos -= 20;
+          page.drawText('備考:', {
+            x: 50,
+            y: yPos,
+            font: customFont,
+            size: fontSize.normal,
+            color: rgb(0, 0, 0)
           });
-
-          yPos = tableFinalY + 10;
-        });
-
-        // 総合計テーブル
-        autoTable(doc, {
-          startY: yPos + 5,
-          head: [],
-          body: [
-            [
-              {
-                content: [
-                  processJapaneseText('総合計'),
-                  processJapaneseText(`${menuData.menu.reduce((sum, section) =>
-                    sum + section.items.reduce((sectionSum, item) =>
-                      sectionSum + calculateTotalDistance(item.distance, item.sets), 0), 0)}m`), // Add initial value 0 for outer reduce
-                  processJapaneseText(`練習時間: ${menuData.totalTime}分`),
-                  processJapaneseText(`指定時間との差: ${menuData.cooldown}分`)
-                ].join('    '),
-                styles: {
-                  fillColor: [235, 235, 235],
-                  textColor: [50, 50, 50],
-                  fontStyle: 'bold',
-                  fontSize: 10,
-                  cellPadding: { top: 8, right: 6, bottom: 8, left: 6 },
-                  halign: 'right',
-                  valign: 'middle'
-                }
-              }
-            ]
-          ],
-          theme: 'grid',
-          styles: {
-            fontSize: 8,
-            cellPadding: 2,
-            lineColor: [200, 200, 200],
-            lineWidth: 0.1,
-            font: 'NotoSansJP',
-            overflow: 'linebreak',
-            cellWidth: 'wrap',
-            valign: 'middle'
-          },
-          margin: { top: 8, right: 14, bottom: 8, left: 14 },
-          tableWidth: 149,
-          columnStyles: {
-            0: { cellWidth: 149 }
+          
+          yPos -= 15;
+          page.drawText(menuData.notes, {
+            x: 50,
+            y: yPos,
+            font: customFont,
+            size: fontSize.small,
+            color: rgb(0, 0, 0)
+          });
+        }
+        
+        yPos -= 30;
+        
+        // メニューセクションを描画
+        for (const section of menuData.menu) {
+          // セクションヘッダー
+          page.drawText(`${section.name} (${section.totalTime}分)`, {
+            x: 50,
+            y: yPos,
+            font: customFont,
+            size: fontSize.normal,
+            color: rgb(0, 0, 0)
+          });
+          
+          yPos -= 20;
+          
+          // テーブルヘッダー
+          const headers = ["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間"];
+          const columnWidths = [150, 60, 50, 70, 60, 50, 60];
+          let xPos = 50;
+          
+          // ヘッダー背景
+          page.drawRectangle({
+            x: xPos,
+            y: yPos - 15,
+            width: columnWidths.reduce((a, b) => a + b, 0),
+            height: 20,
+            color: rgb(0.9, 0.9, 0.9)
+          });
+          
+          // ヘッダーテキスト
+          headers.forEach((header, i) => {
+            page.drawText(header, {
+              x: xPos + 5,
+              y: yPos,
+              font: customFont,
+              size: fontSize.small,
+              color: rgb(0, 0, 0)
+            });
+            xPos += columnWidths[i];
+          });
+          
+          yPos -= 25;
+          
+          // アイテムの描画
+          for (const item of section.items) {
+            if (yPos < 50) {
+              // 新しいページを追加
+              page = pdfDoc.addPage([595.28, 841.89]);
+              yPos = height - 50;
+            }
+            
+            xPos = 50;
+            
+            // セルの内容を描画
+            const cells = [
+              item.description,
+              item.distance,
+              `${item.sets}本`,
+              `${calculateTotalDistance(item.distance, item.sets)}m`,
+              item.circle,
+              typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-',
+              `${item.time}分`
+            ];
+            
+            cells.forEach((cell, i) => {
+              page.drawText(cell, {
+                x: xPos + 5,
+                y: yPos,
+                font: customFont,
+                size: fontSize.small,
+                color: rgb(0, 0, 0)
+              });
+              xPos += columnWidths[i];
+            });
+            
+            yPos -= 20;
           }
-        });
-
-        // フッター
-        const pageCount = (doc.internal as any).getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i);
-          const footerText = `${menuData.title} - ${formatDate(menuData.createdAt)} - ページ ${i} / ${pageCount}`;
-          doc.setFont('NotoSansJP');
-          doc.setFontSize(fontStyles.small.fontSize);
-          doc.text(processJapaneseText(footerText), 14, doc.internal.pageSize.height - 10, {
-            align: 'left',
-            baseline: 'bottom'
-          });
+          
+          yPos -= 10;
         }
-
-        doc.save(`swimming-menu-${menuData.id}.pdf`);
+        
+        // PDFをバイナリデータとして取得
+        const pdfBytes = await pdfDoc.save();
+        
+        // Blobを作成してダウンロード
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `swimming-menu-${menuData.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
       } else if (format === "csv") {
         const csvData = [
           ["水泳練習メニュー"],
