@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis';
 import { saveJsonToBlob, getJsonFromBlob } from './blob-storage';
+import { getEmbedding, cosineSimilarity, generateMenuText } from './embedding';
 
 // Redis クライアントの初期化 (Vercel KV または Upstash Redis を想定)
 let redis: Redis;
@@ -63,18 +64,30 @@ interface ScoredMenu {
 const INDEX_FILE_NAME = 'menus/index.json';
 
 /**
- * メニューデータをVercel Blobに保存する
+ * メニューデータをVercel BlobとRedisに保存する
  */
 export async function saveMenu(menuId: string, menuData: any) {
-  // メニューデータをBlobに保存し、正確なURLを取得
+  // メニューテキストからembeddingを生成
+  const menuText = generateMenuText(menuData);
+  const embedding = await getEmbedding(menuText);
+  // メニューデータとembeddingをBlobに保存
   const menuDataUrl = await saveJsonToBlob(menuData, `menus/${menuId}.json`);
+  const embeddingUrl = await saveJsonToBlob({ embedding }, `menus/${menuId}.embedding.json`);
   console.log(`[KV] Saved menu data to Blob, URL: ${menuDataUrl}`);
+  console.log(`[KV] Saved embedding to Blob, URL: ${embeddingUrl}`);
 
   // インデックスファイルを取得
   const indexData = await getIndexData();
 
+  // Redisにembeddingを保存（高速検索用）
+  await redis.hset(`menu:${menuId}`, {
+    embedding: JSON.stringify(embedding),
+    text: menuText
+  });
+
   // メタデータを生成
   const metadata = {
+    embeddingUrl,
     loadLevels: menuData.loadLevels ? menuData.loadLevels.join(',') : "",
     duration: menuData.duration ? menuData.duration.toString() : "0",
     notes: menuData.notes || "",
@@ -101,90 +114,74 @@ export async function saveMenu(menuId: string, menuData: any) {
 }
 
 /**
- * メニューの類似度を計算する
+ * メニューの類似度を計算する（ベクトル検索を使用）
  */
 export async function searchSimilarMenus(query: string, duration: number): Promise<ScoredMenu[]> {
-  const indexData = await getIndexData();
-  const results: ScoredMenu[] = [];
-  
-  // クエリから負荷レベルを抽出
-  const queryLevels = query.split(' ').filter(q => ['A', 'B', 'C'].includes(q));
-  
-  // クエリからキーワードを抽出（負荷レベルと時間を除外）
-  const keywords = query.toLowerCase()
-    .split(' ')
-    .filter(word => 
-      !['A', 'B', 'C'].includes(word) && 
-      !word.endsWith('分') &&
-      word.length > 1
-    );
+  try {
+    const indexData = await getIndexData();
+    const results: ScoredMenu[] = [];
 
-  for (const menu of indexData.menus) {
-    try {
-      let score = 0;
-      const metadata = menu.metadata;
-      
-      // 時間範囲での類似度（現在の±20%）
-      const menuDuration = parseInt(metadata.duration);
-      if (menuDuration >= duration * 0.8 && menuDuration <= duration * 1.2) {
-        score += 3;
-        // より近い時間により高いスコア
-        const durationDiff = Math.abs(duration - menuDuration);
-        if (durationDiff <= 5) score += 2;
-        else if (durationDiff <= 10) score += 1;
-      } else {
-        continue; // 時間が大きく異なる場合はスキップ
-      }
-      
-      // 負荷レベルの一致度
-      const menuLevels = metadata.loadLevels.split(',');
-      const levelMatch = menuLevels.filter((l: string) => queryLevels.includes(l)).length;
-      score += levelMatch * 2;
-      
-      // キーワードマッチング
-      const menuText = [
-        metadata.title,
-        metadata.notes,
-        ...(metadata.targetSkills || [])
-      ].join(' ').toLowerCase();
-      
-      for (const keyword of keywords) {
-        if (menuText.includes(keyword)) {
-          score += 1;
+    // クエリのembeddingを取得
+    const queryEmbedding = await getEmbedding(query);
+
+    // 各メニューについて類似度を計算
+    for (const menu of indexData.menus) {
+      try {
+        const metadata = menu.metadata;
+        
+        // 時間範囲での絞り込み（現在の±20%）
+        const menuDuration = parseInt(metadata.duration);
+        if (!(menuDuration >= duration * 0.8 && menuDuration <= duration * 1.2)) {
+          continue;
         }
-      }
+
+        // Redisからembeddingを取得（高速）
+        const storedData = await redis.hgetall<{ embedding: string }>(`menu:${menu.id}`);
+        let menuEmbedding: number[];
+        
+        if (storedData && storedData.embedding) {
+          menuEmbedding = JSON.parse(storedData.embedding);
+        } else {
+          // フォールバック: Blobからembeddingを取得
+          const embeddingData = await handleBlobError(() => 
+            getJsonFromBlob(metadata.embeddingUrl)
+          ) as { embedding: number[] } | null;
+          
+          if (!embeddingData) {
+            console.warn(`[KV] ⚠️ No embedding found for menu ${menu.id}`);
+            continue;
+          }
+          menuEmbedding = embeddingData.embedding;
+        }
+
+        // コサイン類似度を計算
+        const similarity = cosineSimilarity(queryEmbedding, menuEmbedding);
       
-      // メニューデータを取得
-      const menuData = await handleBlobError(() => getJsonFromBlob(menu.menuDataUrl)) as GeneratedMenuData | null;
-      if (menuData) {
-        // メニュー構成の類似度
-        const sectionNames = menuData.menu.map(s => s.name.toLowerCase());
-        const hasWarmup = sectionNames.some(name => name.includes('w-up'));
-        const hasMain = sectionNames.some(name => name.includes('main'));
-        const hasCooldown = sectionNames.some(name => name.includes('down'));
-        
-        if (hasWarmup) score += 1;
-        if (hasMain) score += 1;
-        if (hasCooldown) score += 1;
-        
-        // スコアが一定以上のメニューのみを結果に追加
-        if (score >= 3) {
+        // メニューデータを取得
+        const menuData = await handleBlobError(() => 
+          getJsonFromBlob(menu.menuDataUrl)
+        ) as GeneratedMenuData | null;
+
+        if (menuData && similarity > 0.7) { // 類似度閾値
           results.push({
             menuData,
-            similarityScore: score
+            similarityScore: similarity
           });
         }
+      } catch (error) {
+        console.error(`メニュー検索エラー (ID: ${menu.id}):`, error);
+        continue;
       }
-    } catch (error) {
-      console.error(`メニュー検索エラー (ID: ${menu.id}):`, error);
-      continue;
     }
+    
+    // スコアの高い順にソート
+    return results
+      .sort((a: ScoredMenu, b: ScoredMenu) => b.similarityScore - a.similarityScore)
+      .slice(0, 5); // 上位5件のみを返す
+  } catch (error) {
+    console.error("[KV] メニュー検索エラー:", error);
+    return [];
   }
-  
-  // スコアの高い順にソート
-  return results
-    .sort((a, b) => b.similarityScore - a.similarityScore)
-    .slice(0, 5); // 上位5件のみを返す
 }
 
 /**

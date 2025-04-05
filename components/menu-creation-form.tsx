@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Loader2, Sparkles } from "lucide-react"
+import { Loader2, Sparkles, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -63,6 +63,8 @@ const getApiKeyFormDescription = (aiModel: string) => {
 
 export default function MenuCreationForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [similarMenus, setSimilarMenus] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const router = useRouter()
 
   const form = useForm<FormSchemaType>({
@@ -76,6 +78,56 @@ export default function MenuCreationForm() {
   })
 
   const { toast } = useToast()
+
+  // 類似メニューを検索する関数
+  const searchSimilarMenus = async (notes: string, duration: number) => {
+    if (!notes || !duration) return;
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch("/api/search-similar-menus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: notes,
+          duration: duration,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("類似メニューの検索に失敗しました");
+      }
+
+      const data = await response.json();
+      setSimilarMenus(data.menus || []);
+    } catch (error) {
+      console.error("類似メニュー検索エラー:", error);
+      toast({
+        title: "検索エラー",
+        description: "類似メニューの検索中にエラーが発生しました",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // フォームの値が変更されたときに類似メニューを検索
+  useEffect(() => {
+    const notes = form.watch("notes");
+    const duration = form.watch("duration");
+    
+    // debounce処理
+    const timeoutId = setTimeout(() => {
+      if (notes && duration) {
+        searchSimilarMenus(notes, duration);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [form.watch("notes"), form.watch("duration")]);
 
   async function onSubmit(values: FormSchemaType) {
     setIsLoading(true)
@@ -255,6 +307,32 @@ export default function MenuCreationForm() {
                 </FormItem>
               )}
             />
+
+            {/* 類似メニューの表示 */}
+            {isSearching ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>類似メニューを検索中...</span>
+              </div>
+            ) : similarMenus.length > 0 ? (
+              <div className="space-y-4">
+                <h3 className="text-base font-medium flex items-center">
+                  <Search className="h-4 w-4 mr-2" />
+                  類似のメニュー
+                </h3>
+                <div className="space-y-2">
+                  {similarMenus.map((menu, index) => (
+                    <div key={index} className="p-4 rounded-lg border border-primary/20 bg-background/50">
+                      <h4 className="font-medium">{menu.menuData.title || "無題のメニュー"}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        時間: {menu.menuData.totalTime}分 / 
+                        類似度: {Math.round(menu.similarityScore * 100)}%
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <Button
               type="submit"
