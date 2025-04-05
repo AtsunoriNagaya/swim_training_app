@@ -1,12 +1,15 @@
 import { Redis } from "@upstash/redis";
 
-if (!process.env.UPSTASH_REDIS_URL || !process.env.UPSTASH_REDIS_TOKEN) {
+const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL;
+const redisToken = process.env.UPSTASH_REDIS_TOKEN || process.env.KV_REST_API_TOKEN;
+
+if (!redisUrl || !redisToken) {
   throw new Error("Missing Upstash Redis configuration in environment variables");
 }
 
 const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_URL,
-  token: process.env.UPSTASH_REDIS_TOKEN,
+  url: redisUrl,
+  token: redisToken,
 });
 
 /**
@@ -21,8 +24,9 @@ export async function storeMenuEmbedding(
   metadata: Record<string, any> = {}
 ) {
   const key = `menu:${menuId}`;
-  const value = JSON.stringify({ embedding, ...metadata });
-  await redis.set(key, value);
+  const data = { embedding, ...metadata };
+  const value = JSON.stringify(data); // 文字列化
+  await redis.set(key, value as string);
 }
 
 /**
@@ -31,6 +35,6 @@ export async function storeMenuEmbedding(
  */
 export async function getMenuEmbedding(menuId: string): Promise<any> {
   const key = `menu:${menuId}`;
-  const result = await redis.get(key);
+  const result = await redis.get(key) as string | null;
   return result ? JSON.parse(result) : null;
 }
