@@ -4,6 +4,25 @@ import { parsePdf } from "@/lib/pdf-parser"
 import { parse as csvParse } from 'csv-parse';
 import { saveMenu } from "@/lib/kv-storage";
 
+// HTTPメソッドを明示的に定義
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+// CORSヘッダーを設定する関数
+function setCorsHeaders(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
+// OPTIONSリクエストのハンドラー
+export async function OPTIONS(req: NextRequest) {
+  const response = new NextResponse(null, { status: 204 });
+  return setCorsHeaders(response);
+}
+
+// POSTリクエストのハンドラー
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -91,12 +110,17 @@ export async function POST(req: NextRequest) {
     });
 
     // 成功レスポンスを返す
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       menuId: menuId,
     });
+    return setCorsHeaders(response);
   } catch (error) {
     console.error("ファイルアップロードエラー:", error);
-    return NextResponse.json({ error: "ファイルアップロード中にエラーが発生しました" }, { status: 500 });
+    const response = NextResponse.json(
+      { error: "ファイルアップロード中にエラーが発生しました" },
+      { status: 500 }
+    );
+    return setCorsHeaders(response);
   }
 }
