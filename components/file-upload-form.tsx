@@ -46,32 +46,39 @@ export default function FileUploadForm() {
     setIsUploading(true)
 
     try {
-      // ここでAPIリクエストを行い、ファイルをアップロードする
-      console.log("アップロードファイル:", values.file[0])
-      console.log("説明:", values.description)
-
-      // 実際のAPIリクエスト（実装時にコメントアウトを解除）
-      const formData = new FormData();
-      formData.append("file", values.file[0]);
-      formData.append("description", values.description || "");
-
-      const response = await fetch("/api/upload-menu", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("ファイルアップロードに失敗しました");
+      const file = values.file[0];
+      
+      // ファイル内容をテキストとして読み込む
+      let fileContent = "";
+      if (file.type === "text/csv") {
+        fileContent = await file.text(); // シンプルにテキストとして読み込む
+      } else if (file.type === "application/pdf") {
+        // PDFの場合は表示のみとし、内容は保存しない
+        fileContent = "PDF file - content not stored locally";
       }
-
-      // 開発用のモックデータ
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      
+      // メニューデータの作成
+      const menuId = `local-${Date.now()}`;
+      const menuData = {
+        id: menuId,
+        title: file.name,
+        description: values.description || "",
+        fileType: file.type,
+        fileSize: `${(file.size / 1024).toFixed(1)} KB`,
+        createdAt: new Date().toISOString(),
+        content: fileContent.substring(0, 50000), // 容量制限のため先頭部分のみ保存
+      };
+      
+      // ローカルストレージに保存
+      const existingMenus = JSON.parse(localStorage.getItem('swim-training-menus') || '[]');
+      existingMenus.unshift(menuData); // 新しいメニューを先頭に追加
+      localStorage.setItem('swim-training-menus', JSON.stringify(existingMenus.slice(0, 20))); // 最新20件のみ保持
 
       // フォームをリセット
       form.reset()
 
-      // ページを更新して新しいファイルリストを表示
-      router.refresh()
+      // 履歴ページに遷移
+      router.push('/history')
     } catch (error) {
       console.error("エラー:", error)
       // エラー処理
