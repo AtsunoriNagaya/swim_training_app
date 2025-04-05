@@ -1,48 +1,44 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { uploadFileToBlob } from "@/lib/blob-storage"
 import { parsePdf } from "@/lib/pdf-parser"
 import { parse as csvParse } from 'csv-parse';
 import { saveMenu } from "@/lib/kv-storage";
 
-// HTTPメソッドを明示的に定義
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-// CORSヘッダーを設定する関数
-function setCorsHeaders(response: NextResponse) {
-  response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return response;
-}
-
-// OPTIONSリクエストのハンドラー
-export async function OPTIONS(req: NextRequest) {
-  const response = new NextResponse(null, { status: 204 });
-  return setCorsHeaders(response);
-}
-
-// POSTリクエストのハンドラー
-export async function POST(req: NextRequest) {
+export async function POST(req) {
   try {
     const formData = await req.formData()
-    const file = formData.get("file") as File
-    const description = formData.get("description") as string
+    const file = formData.get("file")
+    const description = formData.get("description")
 
     if (!file) {
-      return NextResponse.json({ error: "ファイルが見つかりません" }, { status: 400 })
+      return new NextResponse(
+        JSON.stringify({ error: "ファイルが見つかりません" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
     }
 
     // ファイルタイプの検証
     const validTypes = ["application/pdf", "text/csv"]
     if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ error: "PDFまたはCSV形式のファイルのみアップロード可能です" }, { status: 400 })
+      return new NextResponse(
+        JSON.stringify({ error: "PDFまたはCSV形式のファイルのみアップロード可能です" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
     }
 
     // ファイルサイズの検証（5MB以下）
     const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "ファイルサイズは5MB以下にしてください" }, { status: 400 })
+      return new NextResponse(
+        JSON.stringify({ error: "ファイルサイズは5MB以下にしてください" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
     }
 
     // ファイルをBlobにアップロード
@@ -61,10 +57,10 @@ export async function POST(req: NextRequest) {
         parsedContent = await parsePdf(fileBytes);
       } catch (error) {
         console.error("PDFパースエラー:", error);
-        return NextResponse.json(
-          { error: "PDFファイルの解析中にエラーが発生しました。ファイルが破損していないか確認してください。" },
-          { status: 400 }
-        );
+        return new NextResponse(
+          JSON.stringify({ error: "PDFファイルの解析中にエラーが発生しました。ファイルが破損していないか確認してください。" }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        )
       }
     }
 
@@ -90,10 +86,10 @@ export async function POST(req: NextRequest) {
         parsedContent = JSON.stringify(csvData);
       } catch (error) {
         console.error("CSVパースエラー:", error);
-        return NextResponse.json(
-          { error: `CSVファイルの解析中にエラーが発生しました。ファイルの形式が正しいか確認してください。${error instanceof Error ? ` (${error.message})` : ''}` },
-          { status: 400 }
-        );
+        return new NextResponse(
+          JSON.stringify({ error: `CSVファイルの解析中にエラーが発生しました。ファイルの形式が正しいか確認してください。${error instanceof Error ? ` (${error.message})` : ''}` }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        )
       }
     }
 
@@ -110,17 +106,37 @@ export async function POST(req: NextRequest) {
     });
 
     // 成功レスポンスを返す
-    const response = NextResponse.json({
-      success: true,
-      menuId: menuId,
-    });
-    return setCorsHeaders(response);
+    return new NextResponse(
+      JSON.stringify({
+        success: true,
+        menuId: menuId,
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
+    );
   } catch (error) {
     console.error("ファイルアップロードエラー:", error);
-    const response = NextResponse.json(
-      { error: "ファイルアップロード中にエラーが発生しました" },
-      { status: 500 }
-    );
-    return setCorsHeaders(response);
+    return new NextResponse(
+      JSON.stringify({ error: "ファイルアップロード中にエラーが発生しました" }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
   }
+}
+
+export async function OPTIONS(req) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
