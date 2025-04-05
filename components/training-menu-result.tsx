@@ -115,7 +115,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
         const pdfDoc = await PDFDocument.create();
         
         // フォントの読み込み
-        const fontUrl = 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.16/files/noto-sans-jp-japanese-400-normal.woff';
+        const fontUrl = 'https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf';
         const fontResponse = await fetch(fontUrl);
         const fontBytes = await fontResponse.arrayBuffer();
         
@@ -217,13 +217,43 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
           const columnWidths = [150, 60, 50, 70, 60, 50, 60];
           let xPos = 50;
           
+          const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
+          const tableHeight = 20;
+
           // ヘッダー背景
           page.drawRectangle({
             x: xPos,
             y: yPos - 15,
-            width: columnWidths.reduce((a, b) => a + b, 0),
-            height: 20,
+            width: tableWidth,
+            height: tableHeight,
             color: rgb(0.9, 0.9, 0.9)
+          });
+
+          // テーブルの罫線を描画
+          page.drawLine({
+            start: { x: xPos, y: yPos - 15 },
+            end: { x: xPos + tableWidth, y: yPos - 15 },
+            color: rgb(0.2, 0.2, 0.2),
+            thickness: 0.5
+          });
+
+          // 縦線を描画
+          let currentX = xPos;
+          columnWidths.forEach(width => {
+            page.drawLine({
+              start: { x: currentX, y: yPos - 15 },
+              end: { x: currentX, y: yPos - 15 + tableHeight },
+              color: rgb(0.2, 0.2, 0.2),
+              thickness: 0.5
+            });
+            currentX += width;
+          });
+          // 最後の縦線
+          page.drawLine({
+            start: { x: currentX, y: yPos - 15 },
+            end: { x: currentX, y: yPos - 15 + tableHeight },
+            color: rgb(0.2, 0.2, 0.2),
+            thickness: 0.5
           });
           
           // ヘッダーテキスト
@@ -261,7 +291,40 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               `${item.time}分`
             ];
             
+            // セルの背景と罫線を描画
             cells.forEach((cell, i) => {
+              const cellX = xPos;
+              const cellY = yPos - 15;
+              const cellWidth = columnWidths[i];
+              const cellHeight = 20;
+
+              // セルの罫線
+              page.drawLine({
+                start: { x: cellX, y: cellY },
+                end: { x: cellX + cellWidth, y: cellY },
+                color: rgb(0.2, 0.2, 0.2),
+                thickness: 0.5
+              });
+              page.drawLine({
+                start: { x: cellX, y: cellY + cellHeight },
+                end: { x: cellX + cellWidth, y: cellY + cellHeight },
+                color: rgb(0.2, 0.2, 0.2),
+                thickness: 0.5
+              });
+              page.drawLine({
+                start: { x: cellX, y: cellY },
+                end: { x: cellX, y: cellY + cellHeight },
+                color: rgb(0.2, 0.2, 0.2),
+                thickness: 0.5
+              });
+              page.drawLine({
+                start: { x: cellX + cellWidth, y: cellY },
+                end: { x: cellX + cellWidth, y: cellY + cellHeight },
+                color: rgb(0.2, 0.2, 0.2),
+                thickness: 0.5
+              });
+
+              // セルのテキスト
               page.drawText(cell, {
                 x: xPos + 5,
                 y: yPos,
@@ -272,10 +335,59 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               xPos += columnWidths[i];
             });
             
-            yPos -= 20;
+            yPos -= 25;
           }
           
-          yPos -= 10;
+          // セクション合計行
+          xPos = 50;
+          const totalRow = [
+            `${section.name}合計`,
+            '',
+            '',
+            `${section.items.reduce((sum, item) => sum + calculateTotalDistance(item.distance, item.sets), 0)}m`,
+            '',
+            '',
+            `${section.totalTime}分`
+          ];
+
+          // 合計行の背景
+          page.drawRectangle({
+            x: xPos,
+            y: yPos - 15,
+            width: tableWidth,
+            height: 20,
+            color: rgb(0.96, 0.96, 0.96)
+          });
+
+          // 合計行の罫線
+          page.drawLine({
+            start: { x: xPos, y: yPos - 15 },
+            end: { x: xPos + tableWidth, y: yPos - 15 },
+            color: rgb(0.2, 0.2, 0.2),
+            thickness: 0.5
+          });
+          page.drawLine({
+            start: { x: xPos, y: yPos + 5 },
+            end: { x: xPos + tableWidth, y: yPos + 5 },
+            color: rgb(0.2, 0.2, 0.2),
+            thickness: 0.5
+          });
+
+          // 合計行のテキスト
+          totalRow.forEach((cell, i) => {
+            if (cell) {
+              page.drawText(cell, {
+                x: i === 0 ? xPos + 5 : xPos + columnWidths[i] - (cell.length * fontSize.small * 0.6) - 5,
+                y: yPos,
+                font: customFont,
+                size: fontSize.small,
+                color: rgb(0.2, 0.2, 0.2)
+              });
+            }
+            xPos += columnWidths[i];
+          });
+
+          yPos -= 30;
         }
         
         // PDFをバイナリデータとして取得
