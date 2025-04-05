@@ -228,9 +228,9 @@ export default function MenuCreationForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="openai">OpenAI (GPT-4)</SelectItem>
-                      <SelectItem value="google">Google (Gemini)</SelectItem>
-                      <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
+                      <SelectItem value="openai">OpenAI API (gpt-4o)</SelectItem>
+                      <SelectItem value="google">Google Gemini API (gemini-2.0-flash)</SelectItem>
+                      <SelectItem value="anthropic">Anthropic Claude API (claude-3.5-sonnet)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>メニュー生成に使用するAIモデルを選択してください</FormDescription>

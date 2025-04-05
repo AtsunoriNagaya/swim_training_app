@@ -46,20 +46,6 @@ export default function Home() {
               </Link>
             </div>
           </div>
-
-          <div className="relative mx-auto mt-16 max-w-5xl">
-            <div className="absolute -inset-1 rounded-xl bg-gradient-to-r from-primary via-secondary to-accent blur-md opacity-50"></div>
-            <div className="relative rounded-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-xl overflow-hidden border border-white/50 dark:border-gray-800/50">
-              <div className="p-1 bg-gradient-to-r from-primary via-secondary to-accent"></div>
-              <div className="p-6 md:p-10">
-                <img
-                  src="/placeholder.svg?height=600&width=1000"
-                  alt="アプリケーションのスクリーンショット"
-                  className="rounded-lg shadow-lg w-full"
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -212,4 +198,3 @@ export default function Home() {
     </div>
   )
 }
-
