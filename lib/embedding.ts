@@ -1,61 +1,54 @@
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+export async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
+  const openai = new OpenAI({
+    apiKey: apiKey,
+  });
 
-/**
- * テキストをベクトル化する
- */
-export async function getEmbedding(text: string): Promise<number[]> {
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: "text-embedding-ada-002",
       input: text,
     });
 
     return response.data[0].embedding;
   } catch (error) {
-    console.error('[Embedding] Error generating embedding:', error);
-    throw error;
+    console.error("Embedding生成エラー:", error);
+    throw new Error("テキストのEmbedding生成に失敗しました");
   }
 }
 
-/**
- * 2つのベクトル間のコサイン類似度を計算する
- */
-export function cosineSimilarity(vecA: number[], vecB: number[]): number {
-  const dotProduct = vecA.reduce((acc, val, i) => acc + val * vecB[i], 0);
-  const normA = Math.sqrt(vecA.reduce((acc, val) => acc + val * val, 0));
-  const normB = Math.sqrt(vecB.reduce((acc, val) => acc + val * val, 0));
-  return dotProduct / (normA * normB);
+// コサイン類似度を計算する関数
+export function cosineSimilarity(vec1: number[], vec2: number[]): number {
+  const dotProduct = vec1.reduce((acc, val, i) => acc + val * vec2[i], 0);
+  const norm1 = Math.sqrt(vec1.reduce((acc, val) => acc + val * val, 0));
+  const norm2 = Math.sqrt(vec2.reduce((acc, val) => acc + val * val, 0));
+  return dotProduct / (norm1 * norm2);
 }
 
-/**
- * メニューデータからベクトル化用のテキストを生成する
- */
-export function generateMenuText(menuData: any): string {
-  const parts = [
-    menuData.title || '',
-    menuData.notes || '',
-    ...(menuData.targetSkills || []),
-    menuData.intensity || '',
-  ];
-
-  // メニューの各セクションの情報を追加
-  if (menuData.menu && Array.isArray(menuData.menu)) {
-    menuData.menu.forEach((section: any) => {
-      parts.push(section.name || '');
-      
-      if (section.items && Array.isArray(section.items)) {
-        section.items.forEach((item: any) => {
-          parts.push(item.description || '');
-          if (item.equipment) parts.push(item.equipment);
-          if (item.notes) parts.push(item.notes);
-        });
-      }
-    });
+// メニューテキストを生成する関数
+export function generateMenuText(menu: any): string {
+  const parts = [];
+  
+  if (menu.title) {
+    parts.push(menu.title);
+  }
+  
+  if (menu.description) {
+    parts.push(menu.description);
+  }
+  
+  if (menu.notes) {
+    parts.push(menu.notes);
   }
 
-  return parts.filter(Boolean).join(' ');
+  if (menu.loadLevels && Array.isArray(menu.loadLevels)) {
+    parts.push(`負荷レベル: ${menu.loadLevels.join(', ')}`);
+  }
+
+  if (menu.duration) {
+    parts.push(`時間: ${menu.duration}分`);
+  }
+
+  return parts.join(' ');
 }

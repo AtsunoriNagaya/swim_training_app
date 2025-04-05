@@ -15,41 +15,26 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent } from "@/components/ui/card"
-
-// 型エイリアス
-type FormSchemaType = z.infer<typeof formSchema>
+import { Switch } from "@/components/ui/switch"
 
 const formSchema = z.object({
-  aiModel: z.string({
-    required_error: "AIモデルを選択してください",
-  }),
-  apiKey: z.string({
-    required_error: "APIキーを入力してください",
-  }).min(1, {
-    message: "APIキーを入力してください",
-  }),
-  loadLevels: z.array(z.string()).min(1, {
-    message: "少なくとも1つの負荷レベルを選択してください",
-  }),
-  duration: z.coerce
-    .number()
-    .min(15, {
-      message: "練習時間は最低15分以上で指定してください",
-    })
-    .max(240, {
-      message: "練習時間は最大240分（4時間）までで指定してください",
-    }),
+  useRAG: z.boolean(),
+  aiModel: z.string(),
+  apiKey: z.string().min(1, "APIキーを入力してください"),
+  openaiApiKey: z.string().optional(),
+  loadLevels: z.array(z.string()).min(1, "少なくとも1つの負荷レベルを選択してください"),
+  duration: z.coerce.number().min(15).max(240),
   notes: z.string().optional(),
-})
+}).required();
 
-// コンポーネントの外で定義
+type FormData = z.infer<typeof formSchema>;
+
 const loadLevelOptions = [
   { id: "A", label: "A（高負荷）" },
   { id: "B", label: "B（中負荷）" },
   { id: "C", label: "C（低負荷）" },
 ]
 
-// FormDescription の内容を生成する関数
 const getApiKeyFormDescription = (aiModel: string) => {
   if (aiModel === "openai") {
     return "OpenAIのAPIキーを入力してください"
@@ -66,22 +51,37 @@ export default function MenuCreationForm() {
   const [similarMenus, setSimilarMenus] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const router = useRouter()
+  const [isRAGEnabled, setIsRAGEnabled] = useState(false)
 
-  const form = useForm<FormSchemaType>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      useRAG: false,
+      aiModel: "",
+      apiKey: "",
+      openaiApiKey: "",
       loadLevels: [],
       duration: 90,
       notes: "",
-      apiKey: "",
     },
   })
 
   const { toast } = useToast()
 
-  // 類似メニューを検索する関数
-  const searchSimilarMenus = async (notes: string, duration: number) => {
-    if (!notes || !duration) return;
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'useRAG') {
+        setIsRAGEnabled(value.useRAG || false);
+        if (!value.useRAG) {
+          setSimilarMenus([]);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+
+  const searchSimilarMenus = async (notes: string, duration: number, openaiApiKey: string) => {
+    if (!notes || !duration || !openaiApiKey) return;
     
     setIsSearching(true);
     try {
@@ -93,6 +93,7 @@ export default function MenuCreationForm() {
         body: JSON.stringify({
           query: notes,
           duration: duration,
+          openaiApiKey: openaiApiKey,
         }),
       });
 
@@ -114,56 +115,44 @@ export default function MenuCreationForm() {
     }
   };
 
-  // フォームの値が変更されたときに類似メニューを検索
   useEffect(() => {
     const notes = form.watch("notes");
     const duration = form.watch("duration");
+    const openaiApiKey = form.watch("openaiApiKey");
+    const isRAGEnabled = form.watch("useRAG");
     
-    // debounce処理
     const timeoutId = setTimeout(() => {
-      if (notes && duration) {
-        searchSimilarMenus(notes, duration);
+      if (notes && duration && openaiApiKey && isRAGEnabled) {
+        searchSimilarMenus(notes, duration, openaiApiKey);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [form.watch("notes"), form.watch("duration")]);
+  }, [form.watch("notes"), form.watch("duration"), form.watch("openaiApiKey"), form.watch("useRAG")]);
 
-  async function onSubmit(values: FormSchemaType) {
+  const onSubmit = async (data: FormData) => {
     setIsLoading(true)
 
     try {
-      // ここでAPIリクエストを行い、メニューを生成する
-      console.log("フォーム送信値:", values)
+      console.log("フォーム送信値:", data)
 
-      // APIリクエスト
       const response = await fetch("/api/generate-menu", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(data),
       });
 
-      // レスポンスデータを取得
-      const data = await response.json();
+      const responseData = await response.json();
 
-      // エラーチェック
       if (!response.ok) {
-        // APIから返されたエラーメッセージを使用
-        const errorMessage = data.error || "メニュー生成に失敗しました";
-        console.error("API エラー詳細:", data);
+        const errorMessage = responseData.error || "メニュー生成に失敗しました";
+        console.error("API エラー詳細:", responseData);
         throw new Error(errorMessage);
       }
 
-      // 成功時の処理
-      router.push(`/result?id=${data.menuId}`);
-
-      // 開発用のモックデータ
-      // setTimeout(() => {
-      //   router.push(`/result?id=mock-menu-id-123`)
-      //   setIsLoading(false)
-      // }, 2000)
+      router.push(`/result?id=${responseData.menuId}`);
     } catch (error: any) {
       console.error("エラー:", error)
       toast({
@@ -181,6 +170,51 @@ export default function MenuCreationForm() {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="useRAG"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">類似メニュー検索</FormLabel>
+                    <FormDescription>
+                      過去のメニューから類似のものを検索して参考にします
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {isRAGEnabled && (
+              <FormField
+                control={form.control}
+                name="openaiApiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base">OpenAI APIキー（類似メニュー検索用）</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="sk-..."
+                        className="border-primary/20 focus:ring-primary/30"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      類似メニューの検索にはOpenAI APIキーが必要です
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="aiModel"
@@ -220,7 +254,6 @@ export default function MenuCreationForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    {/* 関数を使用 */}
                     {getApiKeyFormDescription(form.watch("aiModel"))}
                   </FormDescription>
                   <FormMessage />
@@ -308,7 +341,6 @@ export default function MenuCreationForm() {
               )}
             />
 
-            {/* 類似メニューの表示 */}
             {isSearching ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

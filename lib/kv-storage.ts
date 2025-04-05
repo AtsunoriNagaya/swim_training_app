@@ -66,24 +66,38 @@ const INDEX_FILE_NAME = 'menus/index.json';
 /**
  * メニューデータをVercel BlobとRedisに保存する
  */
-export async function saveMenu(menuId: string, menuData: any) {
+export async function saveMenu(menuId: string, menuData: any, openaiApiKey?: string) {
   // メニューテキストからembeddingを生成
   const menuText = generateMenuText(menuData);
-  const embedding = await getEmbedding(menuText);
-  // メニューデータとembeddingをBlobに保存
+  let embedding: number[] | null = null;
+  
+  if (openaiApiKey) {
+    try {
+      embedding = await getEmbedding(menuText, openaiApiKey);
+    } catch (error) {
+      console.error('[KV] Embedding生成エラー:', error);
+      // エラーが発生してもメニューは保存する
+    }
+  }
+  // メニューデータを保存
   const menuDataUrl = await saveJsonToBlob(menuData, `menus/${menuId}.json`);
-  const embeddingUrl = await saveJsonToBlob({ embedding }, `menus/${menuId}.embedding.json`);
   console.log(`[KV] Saved menu data to Blob, URL: ${menuDataUrl}`);
-  console.log(`[KV] Saved embedding to Blob, URL: ${embeddingUrl}`);
+
+  let embeddingUrl = '';
+  // embeddingが生成できた場合のみ保存
+  if (embedding) {
+    embeddingUrl = await saveJsonToBlob({ embedding }, `menus/${menuId}.embedding.json`);
+    console.log(`[KV] Saved embedding to Blob, URL: ${embeddingUrl}`);
+
+    // Redisにembeddingを保存（高速検索用）
+    await redis.hset(`menu:${menuId}`, {
+      embedding: JSON.stringify(embedding),
+      text: menuText
+    });
+  }
 
   // インデックスファイルを取得
   const indexData = await getIndexData();
-
-  // Redisにembeddingを保存（高速検索用）
-  await redis.hset(`menu:${menuId}`, {
-    embedding: JSON.stringify(embedding),
-    text: menuText
-  });
 
   // メタデータを生成
   const metadata = {
@@ -116,13 +130,17 @@ export async function saveMenu(menuId: string, menuData: any) {
 /**
  * メニューの類似度を計算する（ベクトル検索を使用）
  */
-export async function searchSimilarMenus(query: string, duration: number): Promise<ScoredMenu[]> {
+export async function searchSimilarMenus(query: string, duration: number, openaiApiKey?: string): Promise<ScoredMenu[]> {
   try {
     const indexData = await getIndexData();
     const results: ScoredMenu[] = [];
 
-    // クエリのembeddingを取得
-    const queryEmbedding = await getEmbedding(query);
+    // クエリのembeddingを取得（APIキーがある場合のみ）
+    if (!openaiApiKey) {
+      return [];
+    }
+
+    const queryEmbedding = await getEmbedding(query, openaiApiKey);
 
     // 各メニューについて類似度を計算
     for (const menu of indexData.menus) {
