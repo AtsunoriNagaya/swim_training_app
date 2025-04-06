@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { parse } from "csv-parse/sync";
-import { storeMenuEmbedding } from "../../../lib/upstash-storage";
+import { storeMenuVector } from "../../../lib/upstash-storage";
 import { getEmbedding } from "../../../lib/embedding";
 import { parsePdf } from "../../../lib/pdf-parser";
 
@@ -27,7 +27,13 @@ const pdfText = await parsePdf(Buffer.from(arrayBuffer));
       const embedding = await getEmbedding(pdfText, process.env.OPENAI_API_KEY || '');
       // PDFの場合、ファイル名をIDとして利用
       const menuId = file.name;
-      await storeMenuEmbedding(menuId, embedding, { uploadedAt: new Date().toISOString(), type: "pdf" });
+      await storeMenuVector(menuId, embedding, {
+        uploadedAt: new Date().toISOString(),
+        type: "pdf",
+        fileName: file.name,
+        fileSize: file.size,
+        contentPreview: pdfText.substring(0, 200) // プレビュー用に最初の200文字を保存
+      });
       return NextResponse.json({ success: true, type: "pdf", id: menuId });
     }
 
@@ -42,7 +48,12 @@ const pdfText = await parsePdf(Buffer.from(arrayBuffer));
       const content = record.content;
       if (!content) continue;
       const embedding = await getEmbedding(content, process.env.OPENAI_API_KEY || '');
-      await storeMenuEmbedding(menuId, embedding, { uploadedAt: new Date().toISOString(), type: "csv" });
+      await storeMenuVector(menuId, embedding, {
+        uploadedAt: new Date().toISOString(),
+        type: "csv",
+        content: content,
+        recordMetadata: { ...record }, // CSVの全カラムをメタデータとして保存
+      });
       count++;
     }
 

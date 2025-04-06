@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
-import { getEmbedding, cosineSimilarity } from "@/lib/embedding";
+import { getEmbedding } from "@/lib/embedding";
+import { searchSimilarMenus } from "@/lib/upstash-storage";
 
 export async function POST(request: Request) {
   try {
@@ -16,37 +16,17 @@ export async function POST(request: Request) {
     // クエリの埋め込みベクトルを生成
     const queryEmbedding = await getEmbedding(query, openaiApiKey);
 
-    // KVストアから全てのメニューを取得
-    const allMenus = await kv.hgetall("menus");
-    if (!allMenus) {
-      return NextResponse.json({ menus: [] });
-    }
+    // Upstash Vector で類似メニューを検索
+    const similarMenus = await searchSimilarMenus(queryEmbedding, 5);
 
-    // 類似度計算とソート
-    const menuEntries = Object.entries(allMenus);
-    const similarMenus = await Promise.all(
-      menuEntries.map(async ([id, menu]: [string, any]) => {
-        const menuEmbedding = menu.embedding;
-        if (!menuEmbedding) return null;
+    // レスポンスの形式を整形
+    const formattedMenus = similarMenus.map(menu => ({
+      menuId: menu.id,
+      menuData: menu.metadata,
+      similarityScore: menu.score
+    }));
 
-        // コサイン類似度を計算
-        const similarity = cosineSimilarity(queryEmbedding, menuEmbedding);
-
-        return {
-          menuId: id,
-          menuData: menu,
-          similarityScore: similarity,
-        };
-      })
-    );
-
-    // nullを除外し、類似度でソート
-    const validMenus = similarMenus
-      .filter((menu) => menu !== null)
-      .sort((a, b) => b!.similarityScore - a!.similarityScore)
-      .slice(0, 5); // 上位5件を返す
-
-    return NextResponse.json({ menus: validMenus });
+    return NextResponse.json({ menus: formattedMenus });
   } catch (error) {
     console.error("類似メニュー検索エラー:", error);
     return NextResponse.json(
