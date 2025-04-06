@@ -25,22 +25,22 @@
 
 ## 技術スタック
 
-*   Next.js (v15.2.4)
-*   React (v19)
-*   TypeScript (v5)
+*   Next.js 15
+*   React 19
+*   TypeScript 5
 *   Tailwind CSS
 *   Radix UI
 *   AI Models:
-    *   OpenAI API (gpt-4o)
-    *   Google Gemini API (gemini-2.0-flash)
-    *   Anthropic Claude API (claude-3.5-sonnet)
-    *   OpenAI Embeddings API (text-embedding-ada-002)
+    *   OpenAI API (GPT-4)
+    *   Google Gemini API
+    *   Anthropic Claude API
+    *   OpenAI Embeddings API
 *   Data Storage:
-    *   Vercel KV (インデックスURL)
-    *   Vercel Blob (メニューデータ本体、インデックスファイル)
+    *   Vercel KV
+    *   Vercel Blob
 *   File Generation (Client-side):
-    *   jsPDF + jspdf-autotable (PDF生成)
-    *   csv-stringify (CSV生成)
+    *   jsPDF + jspdf-autotable
+    *   csv-stringify
 
 ## APIキーの準備
 
@@ -83,6 +83,16 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
 
 ## デプロイ
 
+### 前提条件
+
+1. Node.js（v18以上）のインストール
+2. pnpm（推奨）またはnpmのインストール
+3. 必要なAIサービスのAPIキー：
+   - OpenAI API（メニュー生成用とRAG機能用）
+   - Google API（Gemini）
+   - Anthropic API（Claude）
+   のいずれか
+
 ### Vercelへのデプロイ
 
 1. [Vercel](https://vercel.com)にアカウントを作成し、ログインします。
@@ -91,15 +101,45 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
    - Vercelダッシュボードで「Storage」タブを選択
    - 「KV」を選択し、新しいKVデータベースを作成
    - 「Blob」を選択し、新しいBlobストレージを作成
-   - プロジェクトにKVデータベースとBlobストレージを接続すると、必要な環境変数が自動的に設定されます
+   - プロジェクトにKVデータベースとBlobストレージを接続
 4. 以下のビルド設定を確認します：
-   - ファイルアップロード機能を使用するページ（`app/upload/page.tsx`）では、`dynamic = 'force-dynamic'` を設定してサーバーサイドレンダリングの問題を回避
-   - `jspdf-autotable` パッケージが `dependencies` に正しく含まれていることを確認
+   - ファイルアップロード機能を使用するページ（`app/upload/page.tsx`）では、`dynamic = 'force-dynamic'` を設定
+   - `jspdf-autotable` パッケージが `dependencies` に含まれていることを確認
 5. デプロイを実行します。
+
+### ローカル開発
+
+1. リポジトリをクローン：
+   ```bash
+   git clone https://github.com/[your-username]/swim-training-app.git
+   cd swim-training-app
+   ```
+
+2. 依存関係のインストール：
+   ```bash
+   pnpm install
+   # または
+   npm install
+   ```
+
+3. 環境変数の設定：
+   - `.env.example` を `.env` にコピー
+   - 必要な環境変数を設定
+
+4. 開発サーバーの起動：
+   ```bash
+   pnpm dev
+   # または
+   npm run dev
+   ```
 
 ### その他のプラットフォームへのデプロイ
 
-他のプラットフォームにデプロイする場合は、Vercel KVとVercel Blobの代わりに別のデータストレージソリューションを使用する必要があります。
+他のプラットフォームにデプロイする場合は、以下の点に注意してください：
+
+1. Vercel KVとVercel Blobの代替となるデータストレージの用意
+2. 環境変数の適切な設定
+3. Node.js v18以上の実行環境の確保
 
 ## 今後の展望
 
@@ -114,10 +154,22 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
 *   多言語対応
 *   PDFテンプレートのカスタマイズ機能
 
-## 開発者
-
-長屋篤典
-
 ## ライセンス
 
-MIT
+このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](./LICENSE)ファイルをご覧ください。
+
+## コントリビューション
+
+1. このリポジトリをフォーク
+2. 機能開発用のブランチを作成：`git checkout -b feature/amazing-feature`
+3. 変更をコミット：`git commit -m 'Add some amazing feature'`
+4. リモートにプッシュ：`git push origin feature/amazing-feature`
+5. プルリクエストを作成
+
+## 貢献者
+
+このプロジェクトに貢献していただいた皆様に感謝いたします。
+
+## サポート
+
+問題や提案がございましたら、GitHubのIssueセクションにてご報告ください。
