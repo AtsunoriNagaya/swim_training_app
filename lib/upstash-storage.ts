@@ -3,8 +3,8 @@ import { Index } from "@upstash/vector";
 
 const redisUrl = (process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL)?.replace("rediss://", "https://");
 const redisToken = process.env.UPSTASH_REDIS_TOKEN || process.env.KV_REST_API_TOKEN;
-const vectorUrl = process.env.UPSTASH_VECTOR_URL;
-const vectorToken = process.env.UPSTASH_VECTOR_TOKEN;
+const vectorUrl = process.env.UPSTASH_VECTOR_REST_URL;
+const vectorToken = process.env.UPSTASH_VECTOR_REST_TOKEN;
 
 if (!redisUrl || !redisToken) {
   throw new Error("Missing Upstash Redis configuration in environment variables");
