@@ -24,7 +24,6 @@ export interface MenuItem {
   distance: string;
   sets: number;
   circle: string;
-  rest: string | number;
   equipment?: string;
   notes?: string;
   time?: number; // Calculated
@@ -81,7 +80,7 @@ function initializeAIClient(aiModel: string, apiKey: string) {
 }
 
 // 所要時間計算関数
-function calculateItemTime(distance: number, circle: string, sets: number, rest: number | string): number {
+function calculateItemTime(distance: number, circle: string, sets: number): number {
   try {
     // サークルタイムを秒に変換（"1:30" → 90秒）
     const [minutes, seconds] = circle.split(":").map(Number);
@@ -91,32 +90,21 @@ function calculateItemTime(distance: number, circle: string, sets: number, rest:
     }
     const circleSeconds = (minutes * 60) + (seconds || 0);
     
-    // 1セットの所要時間（秒）= サークルタイム × 本数
-    const setTimeSeconds = circleSeconds * sets;
+    // 所要時間（秒）= サークルタイム × 本数
+    const totalSeconds = circleSeconds * sets;
     
-    // 休憩時間を分から秒に変換
-            const restMinutes = typeof rest === 'string' ? parseInt(rest) : rest;
-            if (isNaN(restMinutes)) {
-              console.error(`Invalid rest time: ${rest}`);
-              throw new Error("休憩時間の形式が不正です");
-            }
-            const restSeconds = restMinutes * 60;
-            
-            // 合計時間（秒）= セット時間 + 休憩時間
-            const totalSeconds = setTimeSeconds + restSeconds;
-            
-            // 分に変換して返す（切り上げ）
-            const calculatedTime = Math.ceil(totalSeconds / 60);
-            console.log(`calculateItemTime: distance=${distance}, circle=${circle}, sets=${sets}, rest=${rest}, calculatedTime=${calculatedTime}`);
-            return calculatedTime;
-          } catch (error) {
-            console.error("Time calculation error:", error);
-            // エラー時は概算値を返す（安全側に倒して多めに見積もる）
-            const estimatedTime = Math.ceil((distance * sets) / 50) + (typeof rest === 'number' ? rest : 1);
-            console.log(`calculateItemTime (estimated): distance=${distance}, circle=${circle}, sets=${sets}, rest=${rest}, estimatedTime=${estimatedTime}`);
-            return estimatedTime;
-          }
-        }
+    // 分に変換して返す（切り上げ）
+    const calculatedTime = Math.ceil(totalSeconds / 60);
+    console.log(`calculateItemTime: distance=${distance}, circle=${circle}, sets=${sets}, calculatedTime=${calculatedTime}`);
+    return calculatedTime;
+  } catch (error) {
+    console.error("Time calculation error:", error);
+    // エラー時は概算値を返す
+    const estimatedTime = Math.ceil((distance * sets) / 50);
+    console.log(`calculateItemTime (estimated): distance=${distance}, circle=${circle}, sets=${sets}, estimatedTime=${estimatedTime}`);
+    return estimatedTime;
+  }
+}
 
 // メニュー生成関数
 const AI_MODELS = {
@@ -299,13 +287,16 @@ export async function POST(req: NextRequest) {
 6. Down（クールダウン）: 体をクールダウンさせ、疲労を軽減
 
 各項目には以下の詳細を必ず含めてください：
+- メニュー名: 距離×本数の形式で記述（例: "25m×4本"）
 - 種目（自由形、背泳ぎ、平泳ぎ、バタフライ、メドレーなど）
-- 距離（25m、50m、100mなど）
-- 本数
+- 距離: メニュー名と一致させること
 - サークルタイム（例：100mを2分00秒で回る → "2:00"）
-- セット間の休憩時間
 - 使用器具（必要な場合）
 - 特記事項（ポイントとなる技術的な指示など）
+
+【重要】メニュー名と距離の整合性について：
+- メニュー名が"25m×4本"の場合、distanceは"25"と設定すること
+- メニュー名に含まれる本数とsetsの値を一致させること
 
 また、以下の点に注意してください：
 1. 各項目の所要時間と合計時間を正確に計算すること
@@ -330,7 +321,6 @@ export async function POST(req: NextRequest) {
           "distance": "総距離（m）",        // 文字列：必須
           "sets": 3,                      // 数値：必須
           "circle": "2:00",               // 文字列：必須
-          "rest": 1,                      // 数値または文字列：必須
           "equipment": "使用器具（オプション）",
           "notes": "特記事項（オプション）",
           "time": 10                      // 数値：自動計算します
@@ -434,16 +424,7 @@ ${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMen
           // 距離とサークルタイムから所要時間を計算
           if (item.distance && item.circle && item.sets) {
             const distance = parseInt(item.distance.replace(/[^0-9]/g, ""));
-            // item.rest (string | number) を数値 (分) に変換
-            let restMinutes = 0;
-            if (item.rest !== undefined) {
-              if (typeof item.rest === 'string') {
-                restMinutes = parseInt(item.rest) || 0; 
-              } else { // item.rest is number
-                restMinutes = item.rest;
-              }
-            }
-            item.time = calculateItemTime(distance, item.circle, item.sets, restMinutes);
+            item.time = calculateItemTime(distance, item.circle, item.sets);
             sectionTotal += item.time ?? 0; // item.timeがundefinedの場合0を加算
           }
         }
