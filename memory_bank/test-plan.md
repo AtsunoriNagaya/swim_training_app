@@ -86,11 +86,17 @@
 - モックデータ（練習メニュー）
 
 ## テスト結果記録
-- テスト実施日
-- テスト実施者
-- テストケース結果
-- 発見された問題点
-- 修正状況
+### 2025年4月14日
+1. 単体テスト完了
+   - テスト実施者: 開発チーム
+   - 実施テスト項目:
+     - AI メニュー生成関連: menu-validation.test.ts, menu-generation.test.ts
+     - 機能テスト: search-and-display.test.ts, output-display.test.ts, search-similarity.test.ts
+     - 補助機能テスト: time-calculations.test.ts
+     - データ管理テスト: file-operations.test.ts, menu-management.test.ts, output-operations.test.ts
+   - テストケース結果: すべてのテストが正常に完了
+   - 発見された問題点: なし
+   - 修正状況: 該当なし
 
 ## 品質基準
 - 重大なバグがないこと
