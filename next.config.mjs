@@ -17,6 +17,9 @@ try {
 
 /** @type {import('next').NextConfig} */
 let nextConfig = {
+  experimental: {
+    forceSwcTransforms: true
+  },
   env: {
     // pdf-parseのデバッグモードを無効化
     PDF_PARSE_DEBUG: 'false',

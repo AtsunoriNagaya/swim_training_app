@@ -9,7 +9,7 @@ const config = {
     "**/__tests__/**/*.test.[jt]s?(x)"
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
+    '^.+\\.(ts|tsx)$': ['babel-jest', { configFile: './.babelrc.test' }]
   },
   collectCoverage: true,
   collectCoverageFrom: [
