@@ -140,6 +140,56 @@ describe('メニュー生成機能のテスト', () => {
       expect(response.menu.length).toBeGreaterThan(0);
     });
   });
+
+  describe('練習時間指定機能のテスト', () => {
+    it('指定した練習時間に応じたメニューが生成される (UT-006)', async () => {
+      server.use(
+        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
+          return res(ctx.json(mockMenuResponse));
+        })
+      );
+      const times = [30, 60, 90];
+      for (const time of times) {
+        const params: GenerateMenuRequest = {
+          loadLevel: '中',
+          trainingTime: time,
+          model: 'openai'
+        };
+
+        const response = await generateTrainingMenu(params);
+        expect(response).toBeDefined();
+        expect(response.totalTime).toBeLessThanOrEqual(params.trainingTime);
+      }
+    });
+  });
+
+  describe('特記事項反映機能のテスト', () => {
+    it('特記事項が反映されたメニューが生成される (UT-007)', async () => {
+      server.use(
+        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
+          return res(ctx.json(mockMenuResponse));
+        })
+      );
+      const params: GenerateMenuRequest = {
+        loadLevel: '中',
+        trainingTime: 60,
+        model: 'openai',
+        specialNotes: '膝の怪我に配慮が必要'
+      };
+
+      // APIレスポンスのモックにspecialNotesを含める
+      server.use(
+        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
+          return res(ctx.json({...mockMenuResponse, specialNotes: params.specialNotes}));
+        })
+      );
+
+
+      const response = await generateTrainingMenu(params);
+      expect(response).toBeDefined();
+      expect(response.specialNotes).toBe(params.specialNotes);
+    });
+  });
 });
 
 // メニュー生成関数

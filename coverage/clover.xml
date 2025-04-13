@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1744545281170" clover="3.2.0">
-  <project timestamp="1744545281170" name="All files">
-    <metrics statements="1828" coveredstatements="0" conditionals="828" coveredconditionals="0" methods="407" coveredmethods="0" elements="3063" coveredelements="0" complexity="0" loc="1828" ncloc="1828" packages="16" files="81" classes="81"/>
+<coverage generated="1744549802600" clover="3.2.0">
+  <project timestamp="1744549802601" name="All files">
+    <metrics statements="1827" coveredstatements="0" conditionals="828" coveredconditionals="0" methods="407" coveredmethods="0" elements="3062" coveredelements="0" complexity="0" loc="1827" ncloc="1827" packages="16" files="81" classes="81"/>
     <package name="app">
-      <metrics statements="5" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
+      <metrics statements="4" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
       <file name="layout.tsx" path="C:\Users\maiku\開発\swim-training-app\app\layout.tsx">
-        <metrics statements="3" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
-        <line num="10" count="0" type="stmt"/>
-        <line num="12" count="0" type="stmt"/>
-        <line num="23" count="0" type="stmt"/>
+        <metrics statements="2" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
+        <line num="9" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
       </file>
       <file name="page.tsx" path="C:\Users\maiku\開発\swim-training-app\app\page.tsx">
         <metrics statements="2" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>

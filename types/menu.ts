@@ -24,6 +24,7 @@ export interface TrainingMenu {
   intensity?: string;
   targetSkills?: string[];
   remainingTime?: number;
+  specialNotes?: string;
 }
 
 export type LoadLevel = '低' | '中' | '高';
