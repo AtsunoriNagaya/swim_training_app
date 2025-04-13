@@ -25,6 +25,7 @@ export interface TrainingMenu {
   targetSkills?: string[];
   remainingTime?: number;
   specialNotes?: string;
+  similarityScore?: number; // 類似度スコアを追加
 }
 
 export type LoadLevel = '低' | '中' | '高';
