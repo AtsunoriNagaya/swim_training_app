@@ -125,6 +125,32 @@
      4. 関数呼び出しの引数順序を修正
    - 修正状況: テストコードの修正は完了。実装との整合性確認が必要
 
+   - 修正詳細（2025年4月14日追記）:
+     1. **setup.tsの修正**
+        - 重複していたCSVエンドポイントの定義を削除
+        - 類似メニュー検索のレスポンス形式を `{ menus: [], similarities: [] }` 形式に統一
+        - エラーメッセージを日本語化（「No file provided」→「ファイルが指定されていません」など）
+        - API認証エラーのメッセージを「Invalid API key」から「無効なAPIキーです」に変更
+        - メニュー生成時のデフォルトのメニュー項目を日本語化（「Warm Up」→「ウォームアップ」など）
+        - NextResponse.jsonのモックを修正してステータスコードを設定できるように拡張
+        - ルートハンドラのモックで無効なAPIキーの場合に401エラーを返すよう修正
+
+     2. **menu-generation-storage.test.tsの修正**
+        - ファイル先頭の不要な文字「ｐ」を削除
+        - エラーメッセージの期待値を「無効なAPIキーです」に変更
+        - 保存失敗テストの前にAPIキーを有効な値に戻す処理を追加
+
+     3. **search-history-display.test.tsの修正**
+        - 検索結果の型定義を新しいレスポンス形式に合わせて更新
+        - 検索結果処理部分を修正（menuData → menus, similarityScore → similarities）
+        - 型アサーションを使用して型エラーを解消
+
+     4. **upload-rag.test.tsの修正**
+        - generatedMenu.itemsをgeneratedMenu.menuに修正
+        - RAG処理のエラーテストを修正（processForRAG → getEmbedding）
+
+     すべての結合テストが正常に通過することを確認しました。
+
 3. 結合テスト（第2フェーズ）実施
    - テスト実施者: 開発チーム
    - 実施テストケース:

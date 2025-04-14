@@ -8,6 +8,13 @@ const generateMenu = async (params: GenerateMenuRequest): Promise<TrainingMenu> 
     json: () => Promise.resolve(params)
   } as NextRequest;
   const response = await generateMenuHandler(request);
+  
+  // レスポンスのステータスコードを確認
+  if (response.status === 401) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || '無効なAPIキーです');
+  }
+  
   return response.json();
 };
 
@@ -57,10 +64,13 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
     // 無効なAPIキーでのテスト
     process.env.OPENAI_API_KEY = 'invalid_key';
 
-    await expect(generateMenu(params)).rejects.toThrow('Invalid API key');
+    await expect(generateMenu(params)).rejects.toThrow('無効なAPIキーです');
   });
 
   test('保存に失敗した場合、適切なエラーが返される', async () => {
+    // APIキーを有効な値に戻す
+    process.env.OPENAI_API_KEY = 'test-openai-key';
+    
     const params: GenerateMenuRequest = {
       model: 'openai',
       loadLevel: '中',

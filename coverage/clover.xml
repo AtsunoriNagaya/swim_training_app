@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1744617783364" clover="3.2.0">
-  <project timestamp="1744617783364" name="All files">
-    <metrics statements="1849" coveredstatements="22" conditionals="852" coveredconditionals="19" methods="414" coveredmethods="7" elements="3115" coveredelements="48" complexity="0" loc="1849" ncloc="1849" packages="16" files="82" classes="82"/>
+<coverage generated="1744625856878" clover="3.2.0">
+  <project timestamp="1744625856878" name="All files">
+    <metrics statements="1849" coveredstatements="8" conditionals="852" coveredconditionals="7" methods="414" coveredmethods="0" elements="3115" coveredelements="15" complexity="0" loc="1849" ncloc="1849" packages="16" files="82" classes="82"/>
     <package name="app">
       <metrics statements="4" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
       <file name="layout.tsx" path="C:\Users\maiku\開発\swim-training-app\app\layout.tsx">
@@ -1891,7 +1891,7 @@
       </file>
     </package>
     <package name="lib">
-      <metrics statements="231" coveredstatements="22" conditionals="142" coveredconditionals="19" methods="49" coveredmethods="7"/>
+      <metrics statements="231" coveredstatements="8" conditionals="142" coveredconditionals="7" methods="49" coveredmethods="0"/>
       <file name="blob-storage.ts" path="C:\Users\maiku\開発\swim-training-app\lib\blob-storage.ts">
         <metrics statements="35" coveredstatements="0" conditionals="8" coveredconditionals="0" methods="11" coveredmethods="0"/>
         <line num="8" count="0" type="stmt"/>
@@ -1956,19 +1956,19 @@
         <line num="53" count="0" type="stmt"/>
       </file>
       <file name="kv-storage.ts" path="C:\Users\maiku\開発\swim-training-app\lib\kv-storage.ts">
-        <metrics statements="116" coveredstatements="0" conditionals="74" coveredconditionals="0" methods="16" coveredmethods="0"/>
-        <line num="7" count="0" type="stmt"/>
-        <line num="9" count="0" type="cond" truecount="0" falsecount="3"/>
-        <line num="10" count="0" type="cond" truecount="0" falsecount="2"/>
-        <line num="12" count="0" type="cond" truecount="0" falsecount="4"/>
-        <line num="13" count="0" type="stmt"/>
+        <metrics statements="116" coveredstatements="8" conditionals="74" coveredconditionals="7" methods="16" coveredmethods="0"/>
+        <line num="7" count="1" type="stmt"/>
+        <line num="9" count="1" type="cond" truecount="3" falsecount="0"/>
+        <line num="10" count="1" type="cond" truecount="2" falsecount="0"/>
+        <line num="12" count="1" type="cond" truecount="2" falsecount="2"/>
+        <line num="13" count="1" type="stmt"/>
         <line num="16" count="0" type="stmt"/>
         <line num="20" count="0" type="stmt"/>
-        <line num="22" count="0" type="stmt"/>
-        <line num="24" count="0" type="stmt"/>
+        <line num="22" count="1" type="stmt"/>
+        <line num="24" count="1" type="stmt"/>
         <line num="25" count="0" type="stmt"/>
         <line num="26" count="0" type="stmt"/>
-        <line num="64" count="0" type="stmt"/>
+        <line num="64" count="1" type="stmt"/>
         <line num="71" count="0" type="stmt"/>
         <line num="72" count="0" type="stmt"/>
         <line num="74" count="0" type="cond" truecount="0" falsecount="2"/>
@@ -2075,29 +2075,29 @@
         <line num="344" count="0" type="stmt"/>
       </file>
       <file name="output-operations.ts" path="C:\Users\maiku\開発\swim-training-app\lib\output-operations.ts">
-        <metrics statements="22" coveredstatements="22" conditionals="24" coveredconditionals="19" methods="7" coveredmethods="7"/>
-        <line num="10" count="3" type="stmt"/>
-        <line num="11" count="3" type="stmt"/>
-        <line num="18" count="2" type="stmt"/>
-        <line num="19" count="2" type="stmt"/>
-        <line num="20" count="3" type="stmt"/>
-        <line num="21" count="4" type="stmt"/>
-        <line num="33" count="2" type="stmt"/>
-        <line num="34" count="2" type="stmt"/>
-        <line num="42" count="3" type="stmt"/>
-        <line num="43" count="3" type="stmt"/>
-        <line num="44" count="3" type="cond" truecount="1" falsecount="1"/>
-        <line num="46" count="3" type="stmt"/>
-        <line num="47" count="5" type="stmt"/>
-        <line num="48" count="5" type="stmt"/>
-        <line num="49" count="6" type="stmt"/>
-        <line num="50" count="6" type="cond" truecount="2" falsecount="0"/>
-        <line num="51" count="6" type="cond" truecount="1" falsecount="1"/>
-        <line num="52" count="6" type="cond" truecount="2" falsecount="0"/>
-        <line num="53" count="6" type="cond" truecount="2" falsecount="0"/>
-        <line num="54" count="6" type="stmt"/>
-        <line num="56" count="5" type="stmt"/>
-        <line num="58" count="3" type="stmt"/>
+        <metrics statements="22" coveredstatements="0" conditionals="24" coveredconditionals="0" methods="7" coveredmethods="0"/>
+        <line num="10" count="0" type="stmt"/>
+        <line num="11" count="0" type="stmt"/>
+        <line num="18" count="0" type="stmt"/>
+        <line num="19" count="0" type="stmt"/>
+        <line num="20" count="0" type="stmt"/>
+        <line num="21" count="0" type="stmt"/>
+        <line num="33" count="0" type="stmt"/>
+        <line num="34" count="0" type="stmt"/>
+        <line num="42" count="0" type="stmt"/>
+        <line num="43" count="0" type="stmt"/>
+        <line num="44" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="46" count="0" type="stmt"/>
+        <line num="47" count="0" type="stmt"/>
+        <line num="48" count="0" type="stmt"/>
+        <line num="49" count="0" type="stmt"/>
+        <line num="50" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="51" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="52" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="53" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="54" count="0" type="stmt"/>
+        <line num="56" count="0" type="stmt"/>
+        <line num="58" count="0" type="stmt"/>
       </file>
       <file name="pdf-parser.ts" path="C:\Users\maiku\開発\swim-training-app\lib\pdf-parser.ts">
         <metrics statements="8" coveredstatements="0" conditionals="4" coveredconditionals="0" methods="1" coveredmethods="0"/>

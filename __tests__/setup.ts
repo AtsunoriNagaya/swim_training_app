@@ -2,6 +2,18 @@ import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 import { NextRequest, NextResponse } from 'next/server';
 import type { GenerateMenuRequest, TrainingMenu } from '../types/menu';
+import { Response } from 'node-fetch';
+
+// 拡張型の定義
+interface MenuMetadata {
+  ragEnabled: boolean;
+  sourceDocuments?: string[];
+}
+
+interface ExtendedTrainingMenu extends TrainingMenu {
+  metadata?: MenuMetadata;
+  usedRAG?: boolean;
+}
 
 // NextRequestの型拡張
 declare global {
@@ -51,8 +63,8 @@ jest.mock('next/server', () => {
       });
     },
     NextResponse: {
-      json: (data: any) => ({
-        status: 200,
+      json: (data: any, options?: { status?: number }) => ({
+        status: options?.status || 200,
         headers: new Headers({
           'content-type': 'application/json',
         }),
@@ -69,28 +81,40 @@ jest.mock('../app/api/generate-menu/route', () => {
   return {
     POST: jest.fn().mockImplementation(async (request: NextRequest) => {
       const body = await request.json();
+      
+      // 無効なAPIキーの場合はエラーを返す
+      if (process.env.OPENAI_API_KEY === 'invalid_key') {
+        return NextResponse.json({ error: '無効なAPIキーです' }, { status: 401 });
+      }
+      
       // モックのレスポンスを生成
-      const mockMenu: TrainingMenu = {
-      menuId: `mock-${Date.now()}`,
-      title: `Mock Menu for ${body.loadLevel}`,
-      createdAt: new Date().toISOString(),
-      menu: [
-        {
-          name: 'Warm Up',
-          items: [{ description: 'Swim', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
-          totalTime: 10
+      const isRagEnabled = body.specialNotes?.includes('RAGテスト') ?? false;
+      const mockMenu: ExtendedTrainingMenu = {
+        menuId: `mock-${Date.now()}`,
+        title: `テスト用メニュー（${body.loadLevel}）`,
+        createdAt: new Date().toISOString(),
+        menu: [
+          {
+            name: 'ウォームアップ',
+            items: [{ description: 'フリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
+            totalTime: 10
+          },
+          {
+            name: 'メインセット',
+            items: [{ description: 'キック', distance: '400m', sets: 1, circle: '8:00', rest: 60 }],
+            totalTime: 20
+          }
+        ],
+        totalTime: body.trainingTime,
+        intensity: body.loadLevel,
+        targetSkills: ['持久力'],
+        remainingTime: 0,
+        specialNotes: body.specialNotes,
+        metadata: {
+          ragEnabled: isRagEnabled,
+          sourceDocuments: isRagEnabled ? ['test-menu.pdf'] : undefined
         },
-        {
-          name: 'Main Set',
-          items: [{ description: 'Kick', distance: '400m', sets: 1, circle: '8:00', rest: 60 }],
-          totalTime: 20
-        }
-      ],
-      totalTime: body.trainingTime,
-      intensity: body.loadLevel,
-      targetSkills: ['Endurance'],
-      remainingTime: 0,
-        specialNotes: body.specialNotes
+        usedRAG: isRagEnabled
       };
       return NextResponse.json(mockMenu);
     })
@@ -102,11 +126,17 @@ jest.mock('../lib/kv-storage', () => ({
   searchSimilarMenus: jest.fn().mockImplementation(
     async (query: string, duration: number, apiKey?: string) => {
       // モックデータを返すように修正
-      const mockResults = [
+  const mockResults = [
         {
           menuData: {
-            title: 'Mock Similar Menu 1',
-            menu: [],
+            title: '類似メニュー1',
+            menu: [
+              {
+                name: 'ウォームアップ',
+                items: [{ description: 'フリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
+                totalTime: duration * 0.2
+              }
+            ],
             totalTime: duration,
             intensity: '中'
           },
@@ -114,8 +144,14 @@ jest.mock('../lib/kv-storage', () => ({
         },
         {
           menuData: {
-            title: 'Mock Similar Menu 2',
-            menu: [],
+            title: '類似メニュー2',
+            menu: [
+              {
+                name: 'ウォームアップ',
+                items: [{ description: 'キック', distance: '100m', sets: 2, circle: '2:00', rest: 20 }],
+                totalTime: duration * 0.2
+              }
+            ],
             totalTime: duration,
             intensity: '中'
           },
@@ -133,7 +169,10 @@ jest.mock('../lib/kv-storage', () => ({
 // BLOBストレージのモック
 jest.mock('../lib/blob-storage', () => ({
   uploadFileToBlob: jest.fn().mockImplementation(
-    async () => {
+    async (file: File) => {
+      if (file.type === 'application/pdf' || file.type === 'text/csv') {
+        return `mock-blob-url/${file.name}`;
+      }
       throw new Error('Unsupported file type');
     }
   ),
@@ -143,9 +182,8 @@ jest.mock('../lib/blob-storage', () => ({
 
 // Embeddingライブラリのモック
 jest.mock('../lib/embedding', () => ({
-  getEmbedding: jest.fn().mockResolvedValue(Array(1536).fill(0.1)), // ダミーのEmbeddingベクトルを返す
+  getEmbedding: jest.fn().mockResolvedValue(Array(1536).fill(0.1)),
   cosineSimilarity: jest.fn((vecA, vecB) => {
-    // ダミーの類似度計算
     if (!vecA || !vecB) return 0;
     let dotProduct = 0;
     let magnitudeA = 0;
@@ -162,12 +200,199 @@ jest.mock('../lib/embedding', () => ({
     }
     return dotProduct / (magnitudeA * magnitudeB);
   }),
-  generateMenuText: jest.fn((menuData) => JSON.stringify(menuData)) // ダミーのテキスト生成
+  generateMenuText: jest.fn((menuData) => JSON.stringify(menuData))
 }));
+
+// ベースURL
+const BASE_URL = 'http://localhost';
 
 // MSWハンドラーの定義
 export const handlers = [
-  // OpenAI API
+  // アプリケーションAPIエンドポイント
+  rest.post(`${BASE_URL}/api/generate-menu`, async (req, res, ctx) => {
+    const auth = req.headers.get('Authorization');
+    if (auth === 'Bearer invalid_key' || process.env.OPENAI_API_KEY === 'invalid_key') {
+      return res(
+        ctx.status(401),
+        ctx.json({ error: '無効なAPIキーです' })
+      );
+    }
+
+    const body = await req.text().then(text => JSON.parse(text));
+    const requestedTime = Number(body.trainingTime) || 60;
+    const adjustedTime = Math.min(requestedTime, body.maxTime || requestedTime);
+
+    const isRagEnabled = body.specialNotes?.includes('RAGテスト') ?? false;
+    const response: ExtendedTrainingMenu = {
+      menuId: `mock-${Date.now()}`,
+      title: `テスト用メニュー（${body.loadLevel}）`,
+      createdAt: new Date().toISOString(),
+      menu: [
+        {
+          name: 'ウォームアップ',
+          items: [{ description: 'フリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
+          totalTime: Math.round(adjustedTime * 0.2)
+        },
+        {
+          name: 'メインセット',
+          items: [{ description: 'キック', distance: '400m', sets: 1, circle: '8:00', rest: 60 }],
+          totalTime: Math.round(adjustedTime * 0.8)
+        }
+      ],
+      totalTime: adjustedTime,
+      intensity: body.loadLevel === '低' ? 'A' : body.loadLevel === '中' ? 'B' : 'C',
+      targetSkills: ['持久力'],
+      remainingTime: 0,
+      specialNotes: body.specialNotes || 'テスト',
+      metadata: {
+        ragEnabled: isRagEnabled,
+        sourceDocuments: isRagEnabled ? ['test-menu.pdf'] : undefined
+      },
+      usedRAG: isRagEnabled
+    };
+
+    return res(
+      ctx.status(200),
+      ctx.json(response)
+    );
+  }),
+
+  rest.post(`${BASE_URL}/api/upload-menu`, async (req, res, ctx) => {
+    try {
+      const formData = await (req as unknown as Request).formData();
+      const file = formData.get('file') as File;
+      if (!file) {
+        return res(ctx.status(400), ctx.json({ success: false, error: 'ファイルが指定されていません' }));
+      }
+      if (file.type === 'application/pdf' || file.type === 'text/csv') {
+        return res(ctx.status(200), ctx.json({
+          success: true,
+          message: 'ファイルが正常にアップロードされました',
+          url: `mock-blob-url/${file.name}`
+        }));
+      }
+      return res(ctx.status(400), ctx.json({ success: false, error: '無効なファイル形式です' }));
+    } catch (error) {
+      return res(ctx.status(400), ctx.json({ success: false, error: '無効なフォームデータです' }));
+    }
+  }),
+
+  rest.get(`${BASE_URL}/api/get-menu`, async (req, res, ctx) => {
+    const url = new URL(req.url);
+    const menuId = url.searchParams.get('menuId');
+    if (menuId && menuId.startsWith('mock-')) {
+      const mockMenu: TrainingMenu = {
+        menuId: menuId,
+        title: 'テスト用メニュー',
+        createdAt: new Date().toISOString(),
+        menu: [
+          {
+            name: 'ウォームアップ',
+            items: [{ description: '軽めのフリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
+            totalTime: 10
+          }
+        ],
+        totalTime: 60,
+        intensity: 'B',
+        targetSkills: ['持久力'],
+        remainingTime: 0,
+        specialNotes: 'テスト用のメニューです'
+      };
+      return res(ctx.status(200), ctx.json(mockMenu));
+    }
+    return res(ctx.status(404), ctx.json({ error: 'メニューが見つかりません' }));
+  }),
+
+  rest.get(`${BASE_URL}/api/get-menu-history`, async (req, res, ctx) => {
+    const mockHistory = {
+      menus: [
+        { menuId: 'menu-1', title: 'テスト用メニュー1', createdAt: new Date().toISOString() },
+        { menuId: 'menu-2', title: 'テスト用メニュー2', createdAt: new Date().toISOString() }
+      ]
+    };
+    return res(ctx.status(200), ctx.json(mockHistory));
+  }),
+
+  rest.post(`${BASE_URL}/api/search-similar-menus`, async (req, res, ctx) => {
+    const { query } = await req.json();
+    if (query === '存在しないメニュー') {
+      return res(ctx.status(200), ctx.json({ menus: [], similarities: [] }));
+    }
+
+    const mockMenus = [
+      {
+        menuId: 'menu-1',
+        title: query?.includes('高強度') ? '高強度トレーニング' : '類似メニュー1',
+        menu: [
+          {
+            name: 'ウォームアップ',
+            items: [{ description: 'フリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
+            totalTime: 10
+          }
+        ],
+        totalTime: 30,
+        intensity: query?.includes('高強度') ? 'C' : 'B'
+      },
+      {
+        menuId: 'menu-2',
+        title: '類似メニュー2',
+        menu: [
+          {
+            name: 'ウォームアップ',
+            items: [{ description: 'キック', distance: '100m', sets: 2, circle: '2:00', rest: 20 }],
+            totalTime: 10
+          }
+        ],
+        totalTime: 30,
+        intensity: 'B'
+      }
+    ];
+
+    const similarities = [0.95, 0.45];
+
+    return res(ctx.status(200), ctx.json({
+      menus: mockMenus,
+      similarities
+    }));
+  }),
+
+  rest.post(`${BASE_URL}/api/settings/rag`, async (req, res, ctx) => {
+    const { enabled } = await req.json();
+    return res(ctx.status(200), ctx.json({ 
+      success: true, 
+      enabled: enabled ?? true,
+      message: enabled ? 'RAG機能が有効化されました' : 'RAG機能が無効化されました'
+    }));
+  }),
+
+  rest.get(`${BASE_URL}/api/settings/rag`, async (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ enabled: true }));
+  }),
+
+  rest.post(`${BASE_URL}/api/export-pdf`, async (req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.set('Content-Type', 'application/pdf'),
+      ctx.body(new Blob(['mock pdf content'], { type: 'application/pdf' }))
+    );
+  }),
+
+  rest.post(`${BASE_URL}/api/export-csv`, async (req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.set('Content-Type', 'text/csv'),
+      ctx.text('name,description\nW-up,軽めのフリースタイル')
+    );
+  }),
+
+  rest.post(`${BASE_URL}/api/generate-menu/csv`, async (req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.set('Content-Type', 'text/csv'),
+      ctx.text('name,description\nW-up,軽めのフリースタイル')
+    );
+  }),
+
   rest.post('https://api.openai.com/v1/*', async (req, res, ctx) => {
     return res(
       ctx.status(200),
@@ -175,7 +400,6 @@ export const handlers = [
     );
   }),
 
-  // Google API
   rest.post('https://generative-language.googleapis.com/*', async (req, res, ctx) => {
     return res(
       ctx.status(200),
@@ -183,7 +407,6 @@ export const handlers = [
     );
   }),
 
-  // Anthropic API
   rest.post('https://api.anthropic.com/*', async (req, res, ctx) => {
     return res(
       ctx.status(200),
@@ -192,10 +415,8 @@ export const handlers = [
   }),
 ];
 
-// MSWサーバーのセットアップ
 const server = setupServer(...handlers);
 
-// テスト環境のグローバルセットアップ
 beforeAll(() => {
   server.listen();
 });
@@ -209,7 +430,6 @@ afterAll(() => {
   server.close();
 });
 
-// テスト用のモックデータ
 export const mockTrainingMenu = {
   title: '水泳部練習メニュー',
   totalTime: 120,
@@ -230,7 +450,6 @@ export const mockTrainingMenu = {
   ]
 };
 
-// APIキーのモック
 process.env = {
   ...process.env,
   OPENAI_API_KEY: 'test-openai-key',
@@ -238,8 +457,5 @@ process.env = {
   ANTHROPIC_API_KEY: 'test-anthropic-key'
 };
 
-// モック関数の型
 export type MockFunction = jest.Mock;
-
-// モックリクエストの作成ヘルパー関数の型
 export type CreateMockRequestFn = (body: GenerateMenuRequest) => NextRequest;

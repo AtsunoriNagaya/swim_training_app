@@ -40,9 +40,9 @@ const embeddings = await getEmbedding(uploadResult as string, process.env.OPENAI
     const response = await generateMenuHandler(request);
     const generatedMenu = await response.json();
     expect(generatedMenu).toBeDefined();
-    expect(generatedMenu.items).toBeInstanceOf(Array);
-    expect(generatedMenu.metadata.ragEnabled).toBe(true);
-    expect(generatedMenu.metadata.sourceDocuments).toContain(fileName);
+    expect(generatedMenu.menu).toBeInstanceOf(Array);
+    expect(generatedMenu.metadata?.ragEnabled).toBe(true);
+    expect(generatedMenu.metadata?.sourceDocuments).toContain(fileName);
   });
 
   test('無効なファイル形式の場合、適切なエラーが返される', async () => {
@@ -61,12 +61,12 @@ const embeddings = await getEmbedding(uploadResult as string, process.env.OPENAI
     const file = new File([testPdfBuffer], fileName, { type: 'application/pdf' });
     const uploadResult = await uploadFileToBlob(file, `test-uploads/${fileName}`);
 
-    // RAG処理をモックしてエラーを発生させる
-    jest.spyOn(require('../../lib/embedding'), 'processForRAG')
-      .mockRejectedValueOnce(new Error('RAG processing failed'));
+    // getEmbedding関数をモックしてエラーを発生させる
+    jest.spyOn(require('../../lib/embedding'), 'getEmbedding')
+      .mockRejectedValueOnce(new Error('RAG処理に失敗しました'));
 
     await expect(getEmbedding(uploadResult, process.env.OPENAI_API_KEY as string))
-      .rejects.toThrow('RAG processing failed');
+      .rejects.toThrow('RAG処理に失敗しました');
   });
 
   test('RAGが無効な場合、通常のメニュー生成が行われる', async () => {
@@ -83,8 +83,8 @@ const embeddings = await getEmbedding(uploadResult as string, process.env.OPENAI
     const response = await generateMenuHandler(request);
     const generatedMenu = await response.json();
     expect(generatedMenu).toBeDefined();
-    expect(generatedMenu.items).toBeInstanceOf(Array);
-    expect(generatedMenu.metadata.ragEnabled).toBe(false);
-    expect(generatedMenu.metadata.sourceDocuments).toBeUndefined();
+    expect(generatedMenu.menu).toBeInstanceOf(Array);
+    expect(generatedMenu.metadata?.ragEnabled).toBe(false);
+    expect(generatedMenu.metadata?.sourceDocuments).toBeUndefined();
   });
 });
