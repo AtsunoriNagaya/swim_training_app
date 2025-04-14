@@ -1,6 +1,15 @@
-import { generateMenu } from '../../app/api/generate-menu/route';
+import { POST as generateMenuHandler } from '../../app/api/generate-menu/route';
 import { generatePdf, generateCsv } from '../../lib/output-operations';
-import { TrainingMenu } from '../../types/menu';
+import { TrainingMenu, GenerateMenuRequest } from '../../types/menu';
+import { NextRequest } from 'next/server';
+
+const generateMenu = async (params: GenerateMenuRequest): Promise<TrainingMenu> => {
+  const request = {
+    json: () => Promise.resolve(params)
+  } as NextRequest;
+  const response = await generateMenuHandler(request);
+  return response.json();
+};
 
 describe('Generation and Output Integration (IT-005)', () => {
   let testMenu: TrainingMenu;
@@ -10,11 +19,11 @@ describe('Generation and Output Integration (IT-005)', () => {
     process.env.OPENAI_API_KEY = 'mock_openai_key';
 
     // テスト用のメニューを生成
-    const params = {
+    const params: GenerateMenuRequest = {
       model: 'openai',
-      loadLevel: 'medium',
-      duration: 60,
-      notes: '出力テスト用メニュー'
+      loadLevel: '中',
+      trainingTime: 60,
+      specialNotes: '出力テスト用メニュー'
     };
 
     testMenu = await generateMenu(params);
@@ -29,7 +38,7 @@ describe('Generation and Output Integration (IT-005)', () => {
     
     // PDFの内容を検証
     const pdfContent = pdfResult.buffer.toString('utf-8');
-    testMenu.menu.flatMap(section => section.items).forEach((item: TrainingMenu['menu'][number]['items'][number]) => {
+    testMenu.menu.flatMap(section => section.items).forEach((item) => {
       expect(pdfContent).toContain(item.description);
     });
   });
@@ -51,7 +60,7 @@ describe('Generation and Output Integration (IT-005)', () => {
     expect(rows[0]).toContain('強度');
     
     // データ行の検証
-    testMenu.menu.flatMap(section => section.items).forEach((item: TrainingMenu['menu'][number]['items'][number], index: number) => {
+    testMenu.menu.flatMap(section => section.items).forEach((item, index: number) => {
       const row = rows[index + 1];
       expect(row).toContain(item.description);
     });

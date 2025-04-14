@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1744587469304" clover="3.2.0">
-  <project timestamp="1744587469304" name="All files">
-    <metrics statements="1827" coveredstatements="0" conditionals="828" coveredconditionals="0" methods="407" coveredmethods="0" elements="3062" coveredelements="0" complexity="0" loc="1827" ncloc="1827" packages="16" files="81" classes="81"/>
+<coverage generated="1744617783364" clover="3.2.0">
+  <project timestamp="1744617783364" name="All files">
+    <metrics statements="1849" coveredstatements="22" conditionals="852" coveredconditionals="19" methods="414" coveredmethods="7" elements="3115" coveredelements="48" complexity="0" loc="1849" ncloc="1849" packages="16" files="82" classes="82"/>
     <package name="app">
       <metrics statements="4" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="0"/>
       <file name="layout.tsx" path="C:\Users\maiku\開発\swim-training-app\app\layout.tsx">
@@ -1891,7 +1891,7 @@
       </file>
     </package>
     <package name="lib">
-      <metrics statements="209" coveredstatements="0" conditionals="118" coveredconditionals="0" methods="42" coveredmethods="0"/>
+      <metrics statements="231" coveredstatements="22" conditionals="142" coveredconditionals="19" methods="49" coveredmethods="7"/>
       <file name="blob-storage.ts" path="C:\Users\maiku\開発\swim-training-app\lib\blob-storage.ts">
         <metrics statements="35" coveredstatements="0" conditionals="8" coveredconditionals="0" methods="11" coveredmethods="0"/>
         <line num="8" count="0" type="stmt"/>
@@ -2073,6 +2073,31 @@
         <line num="340" count="0" type="stmt"/>
         <line num="343" count="0" type="stmt"/>
         <line num="344" count="0" type="stmt"/>
+      </file>
+      <file name="output-operations.ts" path="C:\Users\maiku\開発\swim-training-app\lib\output-operations.ts">
+        <metrics statements="22" coveredstatements="22" conditionals="24" coveredconditionals="19" methods="7" coveredmethods="7"/>
+        <line num="10" count="3" type="stmt"/>
+        <line num="11" count="3" type="stmt"/>
+        <line num="18" count="2" type="stmt"/>
+        <line num="19" count="2" type="stmt"/>
+        <line num="20" count="3" type="stmt"/>
+        <line num="21" count="4" type="stmt"/>
+        <line num="33" count="2" type="stmt"/>
+        <line num="34" count="2" type="stmt"/>
+        <line num="42" count="3" type="stmt"/>
+        <line num="43" count="3" type="stmt"/>
+        <line num="44" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="46" count="3" type="stmt"/>
+        <line num="47" count="5" type="stmt"/>
+        <line num="48" count="5" type="stmt"/>
+        <line num="49" count="6" type="stmt"/>
+        <line num="50" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="51" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="52" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="53" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="54" count="6" type="stmt"/>
+        <line num="56" count="5" type="stmt"/>
+        <line num="58" count="3" type="stmt"/>
       </file>
       <file name="pdf-parser.ts" path="C:\Users\maiku\開発\swim-training-app\lib\pdf-parser.ts">
         <metrics statements="8" coveredstatements="0" conditionals="4" coveredconditionals="0" methods="1" coveredmethods="0"/>

@@ -1,7 +1,8 @@
-import { uploadFile } from '../../lib/blob-storage';
-import { processForRAG } from '../../lib/embedding';
-import { generateMenu } from '../../app/api/generate-menu/route';
-import { MenuGenerationParams } from '../../types/menu';
+import { uploadFileToBlob, saveJsonToBlob } from '../../lib/blob-storage';
+import { getEmbedding } from '../../lib/embedding';
+import { POST as generateMenuHandler } from '../../app/api/generate-menu/route';
+import type { GenerateMenuRequest, TrainingMenu } from '../../types/menu';
+import { NextRequest } from 'next/server';
 
 describe('Upload and RAG Integration (IT-002)', () => {
   beforeEach(() => {
@@ -14,31 +15,30 @@ describe('Upload and RAG Integration (IT-002)', () => {
     const fileName = 'test-menu.pdf';
 
     // ファイルアップロード
-    const uploadResult = await uploadFile({
-      fileName,
-      fileContent: testPdfBuffer,
-      contentType: 'application/pdf'
-    });
+    const file = new File([testPdfBuffer], fileName, { type: 'application/pdf' });
+    const uploadResult = await uploadFileToBlob(file, `test-uploads/${fileName}`);
     expect(uploadResult).toBeDefined();
-    expect(uploadResult.url).toBeTruthy();
+    expect(uploadResult).toBeTruthy();
 
     // アップロードしたファイルのRAG処理
-    const ragResult = await processForRAG(uploadResult.url);
-    expect(ragResult).toBeDefined();
-    expect(ragResult.vectors).toBeInstanceOf(Array);
-    expect(ragResult.vectors.length).toBeGreaterThan(0);
+const embeddings = await getEmbedding(uploadResult as string, process.env.OPENAI_API_KEY as string);
+    expect(embeddings).toBeDefined();
+    expect(Array.isArray(embeddings)).toBe(true);
+    expect(embeddings.length).toBeGreaterThan(0);
 
     // RAGを使用したメニュー生成
-    const params: MenuGenerationParams = {
+    const params: GenerateMenuRequest = {
       model: 'openai',
-      loadLevel: 'medium',
-      duration: 60,
-      notes: 'RAGテスト',
-      ragEnabled: true,
-      ragContext: ragResult.vectors
+      loadLevel: '中',
+      trainingTime: 60,
+      specialNotes: 'RAGテスト'
     };
 
-    const generatedMenu = await generateMenu(params);
+    const request = {
+      json: () => Promise.resolve(params)
+    } as any;
+    const response = await generateMenuHandler(request);
+    const generatedMenu = await response.json();
     expect(generatedMenu).toBeDefined();
     expect(generatedMenu.items).toBeInstanceOf(Array);
     expect(generatedMenu.metadata.ragEnabled).toBe(true);
@@ -49,43 +49,39 @@ describe('Upload and RAG Integration (IT-002)', () => {
     const invalidFileBuffer = Buffer.from('invalid file content');
     const fileName = 'test.txt';
 
-    await expect(
-      uploadFile({
-        fileName,
-        fileContent: invalidFileBuffer,
-        contentType: 'text/plain'
-      })
-    ).rejects.toThrow('Unsupported file type');
+    const invalidFile = new File([invalidFileBuffer], fileName, { type: 'text/plain' });
+    await expect(uploadFileToBlob(invalidFile, `test-uploads/${fileName}`))
+      .rejects.toThrow('Unsupported file type');
   });
 
   test('RAG処理に失敗した場合、適切なエラーが返される', async () => {
     const testPdfBuffer = Buffer.from('test pdf content');
     const fileName = 'test-menu.pdf';
 
-    const uploadResult = await uploadFile({
-      fileName,
-      fileContent: testPdfBuffer,
-      contentType: 'application/pdf'
-    });
+    const file = new File([testPdfBuffer], fileName, { type: 'application/pdf' });
+    const uploadResult = await uploadFileToBlob(file, `test-uploads/${fileName}`);
 
     // RAG処理をモックしてエラーを発生させる
     jest.spyOn(require('../../lib/embedding'), 'processForRAG')
       .mockRejectedValueOnce(new Error('RAG processing failed'));
 
-    await expect(processForRAG(uploadResult.url))
+    await expect(getEmbedding(uploadResult, process.env.OPENAI_API_KEY as string))
       .rejects.toThrow('RAG processing failed');
   });
 
   test('RAGが無効な場合、通常のメニュー生成が行われる', async () => {
-    const params: MenuGenerationParams = {
+    const params: GenerateMenuRequest = {
       model: 'openai',
-      loadLevel: 'medium',
-      duration: 60,
-      notes: 'RAG無効テスト',
-      ragEnabled: false
+      loadLevel: '中',
+      trainingTime: 60,
+      specialNotes: 'RAG無効テスト'
     };
 
-    const generatedMenu = await generateMenu(params);
+    const request = {
+      json: () => Promise.resolve(params)
+    } as NextRequest;
+    const response = await generateMenuHandler(request);
+    const generatedMenu = await response.json();
     expect(generatedMenu).toBeDefined();
     expect(generatedMenu.items).toBeInstanceOf(Array);
     expect(generatedMenu.metadata.ragEnabled).toBe(false);

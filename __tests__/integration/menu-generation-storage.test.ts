@@ -1,6 +1,15 @@
-import { generateMenu } from '../../app/api/generate-menu/route';
-import { saveMenu } from '../../lib/kv-storage';
-import { MenuGenerationParams, TrainingMenu } from '../../types/menu';
+import { POST as generateMenuHandler } from '../../app/api/generate-menu/route';
+import { saveMenu, getMenu } from '../../lib/kv-storage';
+import type { GenerateMenuRequest, TrainingMenu } from '../../types/menu';
+import { NextRequest } from 'next/server';
+
+const generateMenu = async (params: GenerateMenuRequest): Promise<TrainingMenu> => {
+  const request = {
+    json: () => Promise.resolve(params)
+  } as NextRequest;
+  const response = await generateMenuHandler(request);
+  return response.json();
+};
 
 describe('Menu Generation and Storage Integration (IT-001)', () => {
   beforeEach(() => {
@@ -10,37 +19,39 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
 
   test('メニューが正常に生成され保存される', async () => {
     // テスト用のメニュー生成パラメータ
-    const params: MenuGenerationParams = {
+    const params: GenerateMenuRequest = {
       model: 'openai',
-      loadLevel: 'medium',
-      duration: 60,
-      notes: '練習テスト'
+      loadLevel: '中',
+      trainingTime: 60,
+      specialNotes: '練習テスト'
     };
 
     // メニュー生成の実行
     const generatedMenu = await generateMenu(params);
     expect(generatedMenu).toBeDefined();
-    expect(generatedMenu.items).toBeInstanceOf(Array);
-    expect(generatedMenu.totalDuration).toBeLessThanOrEqual(params.duration);
+    expect(generatedMenu.menu).toBeInstanceOf(Array);
+    expect(generatedMenu.totalTime).toBeLessThanOrEqual(params.trainingTime);
 
     // メニューの保存
-    const saveResult = await saveMenu(generatedMenu);
-    expect(saveResult).toBeTruthy();
+    const menuId = `test-${Date.now()}`;
+    await expect(saveMenu(menuId, generatedMenu, process.env.OPENAI_API_KEY)).resolves.not.toThrow();
 
     // 保存されたメニューの検証
-    const savedMenu = await getMenu(saveResult.id);
+    const savedMenu = await getMenu(menuId);
     expect(savedMenu).toBeDefined();
-    expect(savedMenu.items).toEqual(generatedMenu.items);
-    expect(savedMenu.metadata.loadLevel).toBe(params.loadLevel);
-    expect(savedMenu.metadata.duration).toBe(params.duration);
+    if (savedMenu) {
+      expect(savedMenu.menu).toEqual(generatedMenu.menu);
+      expect(savedMenu.intensity).toBe(params.loadLevel);
+      expect(savedMenu.totalTime).toBe(params.trainingTime);
+    }
   });
 
   test('APIキーが無効な場合、適切なエラーが返される', async () => {
-    const params: MenuGenerationParams = {
+    const params: GenerateMenuRequest = {
       model: 'openai',
-      loadLevel: 'medium',
-      duration: 60,
-      notes: 'テスト'
+      loadLevel: '中',
+      trainingTime: 60,
+      specialNotes: 'テスト'
     };
 
     // 無効なAPIキーでのテスト
@@ -50,11 +61,11 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
   });
 
   test('保存に失敗した場合、適切なエラーが返される', async () => {
-    const params: MenuGenerationParams = {
+    const params: GenerateMenuRequest = {
       model: 'openai',
-      loadLevel: 'medium',
-      duration: 60,
-      notes: 'テスト'
+      loadLevel: '中',
+      trainingTime: 60,
+      specialNotes: 'テスト'
     };
 
     const generatedMenu = await generateMenu(params);
@@ -63,6 +74,7 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
     jest.spyOn(require('../../lib/kv-storage'), 'saveMenu')
       .mockRejectedValueOnce(new Error('Storage error'));
 
-    await expect(saveMenu(generatedMenu)).rejects.toThrow('Storage error');
+    const testMenuId = `test-${Date.now()}`;
+    await expect(saveMenu(testMenuId, generatedMenu, process.env.OPENAI_API_KEY)).rejects.toThrow('Storage error');
   });
 });
