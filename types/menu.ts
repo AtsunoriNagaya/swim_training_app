@@ -3,9 +3,10 @@ export interface MenuItem {
   distance: string;
   sets: number;
   circle: string;
+  rest: string | number; // test ブランチから追加
   equipment?: string;
   notes?: string;
-  time: number;  // 必須に変更
+  time: number; // HEAD ブランチから必須に変更
 }
 
 export interface MenuSection {
@@ -24,7 +25,7 @@ export interface TrainingMenu {
   targetSkills?: string[];
   remainingTime?: number;
   specialNotes?: string;
-  similarityScore?: number;
+  similarityScore?: number; // 類似度スコアを追加 (test ブランチから採用)
 }
 
 export type LoadLevel = '低' | '中' | '高';
