@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { saveMenu, searchSimilarMenus } from "@/lib/neon-db";
 import { getSelectedAIModel } from "@/lib/ai-clients";
-import { PROMPT_TEMPLATES, convertLoadLevels } from "@/lib/ai-config";
+import { PROMPT_TEMPLATES, convertLoadLevels, validateApiKey } from "@/lib/ai-config";
 import { cleanAIResponse, validateMenuData, calculateMenuTimes } from "@/lib/ai-response-processor";
 import { type TrainingMenu } from "@/types/menu";
 import { getEmbedding } from "@/lib/embedding"; // 追加: embedding関連のインポート
@@ -25,7 +25,7 @@ export interface GeneratedMenuData {
     name: string;
     items: Array<{
       description: string;
-      distance: string;
+      distance: string | number; // 文字列または数値を許可
       sets: number;
       circle: string;
       equipment?: string;
@@ -79,6 +79,12 @@ export async function POST(req: NextRequest) {
       throw new Error("AIモデルが選択されていません");
     }
 
+    // APIキーの形式検証
+    const apiKeyValidation = validateApiKey(aiModel, apiKey);
+    if (!apiKeyValidation.isValid) {
+      throw new Error(apiKeyValidation.message || "APIキーの形式が正しくありません");
+    }
+
     // loadLevelsのバリデーション
     if (!loadLevels) {
       throw new Error("負荷レベルが指定されていません");
@@ -96,44 +102,54 @@ export async function POST(req: NextRequest) {
     // 負荷レベルの文字列化
     const loadLevelStr = convertLoadLevels(loadLevelsArray);
 
-    // 過去の類似メニューを検索
+    // 過去の類似メニューを検索（RAG機能が有効な場合のみ）
     let relevantMenus = "";
-    try {
-      // 検索クエリを構築
-      const queryText = loadLevelsArray.join(" ") + " " + duration + "分";
-      const notesText = notes ? " " + notes.toString() : "";
-      
-      // テキストからembeddingを生成して類似メニューを検索
-      const queryEmbedding = await getEmbedding(queryText + notesText, apiKey);
-      const results = await searchSimilarMenus(queryEmbedding, 5, duration);
-      
-      // 関連メニューの抽出と整形
-      if (results && results.length > 0) {
-        relevantMenus = results
-          .map((scoredMenu: { id: string; metadata: any; similarity: number }) => {
-            try {
-              // metadataからメニュー情報を取得
-              const metadata = scoredMenu.metadata;
-              if (!metadata) return ""; // metadataがない場合はスキップ
-              
-              const title = metadata.title || 'Untitled';
-              const totalTime = metadata.totalTime || 0;
-              const targetSkills = Array.isArray(metadata.targetSkills) ? metadata.targetSkills : [];
-              const skills = targetSkills.join(", ");
-              
-              return `- ${title} (${totalTime}分): ${skills}`;
-            } catch (e) {
-              console.error("メニュー整形エラー:", e);
-              return "";
-            }
-          })
-          .filter(Boolean)
-          .join("\n");
+    const { useRAG, openaiApiKey } = requestBody;
+    
+    if (useRAG && openaiApiKey) {
+      try {
+        // OpenAI APIキーの検証
+        const openaiKeyValidation = validateApiKey("openai", openaiApiKey);
+        if (!openaiKeyValidation.isValid) {
+          console.warn("RAG機能用のOpenAI APIキーが無効です:", openaiKeyValidation.message);
+        } else {
+          // 検索クエリを構築
+          const queryText = loadLevelsArray.join(" ") + " " + duration + "分";
+          const notesText = notes ? " " + notes.toString() : "";
+          
+          // テキストからembeddingを生成して類似メニューを検索
+          const queryEmbedding = await getEmbedding(queryText + notesText, openaiApiKey);
+          const results = await searchSimilarMenus(queryEmbedding, 5, duration);
+          
+          // 関連メニューの抽出と整形
+          if (results && results.length > 0) {
+            relevantMenus = results
+              .map((scoredMenu: { id: string; metadata: any; similarity: number }) => {
+                try {
+                  // metadataからメニュー情報を取得
+                  const metadata = scoredMenu.metadata;
+                  if (!metadata) return ""; // metadataがない場合はスキップ
+                  
+                  const title = metadata.title || 'Untitled';
+                  const totalTime = metadata.totalTime || 0;
+                  const targetSkills = Array.isArray(metadata.targetSkills) ? metadata.targetSkills : [];
+                  const skills = targetSkills.join(", ");
+                  
+                  return `- ${title} (${totalTime}分): ${skills}`;
+                } catch (e) {
+                  console.error("メニュー整形エラー:", e);
+                  return "";
+                }
+              })
+              .filter(Boolean)
+              .join("\n");
+          }
+        }
+      } catch (error) {
+        console.error("RAG検索エラー:", error);
+        // RAGの失敗はメニュー生成の致命的なエラーではないため、空文字列で続行
+        relevantMenus = "";
       }
-    } catch (error) {
-      console.error("RAG検索エラー:", error);
-      // RAGの失敗はメニュー生成の致命的なエラーではないため、空文字列で続行
-      relevantMenus = "";
     }
 
     // プロンプトの構築
@@ -212,12 +228,25 @@ export async function POST(req: NextRequest) {
       ).join(' ')}`;
       
       let embedding: number[] | undefined;
-      try {
-        embedding = await getEmbedding(menuText, apiKey);
-        console.log("✅ Embedding生成成功");
-      } catch (embeddingError) {
-        console.warn("⚠️ Embedding生成に失敗しましたが、メニュー保存は続行します:", embeddingError);
-        // embedding生成に失敗しても続行
+      
+      // Embedding生成用のAPIキーを決定（RAG機能が有効な場合はopenaiApiKey、そうでなければメイン生成用APIキーがOpenAIの場合のみ）
+      let embeddingApiKey: string | undefined;
+      if (useRAG && openaiApiKey) {
+        embeddingApiKey = openaiApiKey;
+      } else if (aiModel === "openai") {
+        embeddingApiKey = apiKey;
+      }
+      
+      if (embeddingApiKey) {
+        try {
+          embedding = await getEmbedding(menuText, embeddingApiKey);
+          console.log("✅ Embedding生成成功");
+        } catch (embeddingError) {
+          console.warn("⚠️ Embedding生成に失敗しましたが、メニュー保存は続行します:", embeddingError);
+          // embedding生成に失敗しても続行
+        }
+      } else {
+        console.log("ℹ️ OpenAI APIキーが利用できないため、Embeddingなしでメニューを保存します");
       }
       
       // メタデータを構築

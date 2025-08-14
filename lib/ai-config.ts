@@ -4,16 +4,42 @@ export const AI_MODEL_CONFIGS = {
     model: "gpt-4o",
     temperature: 0.5,
     responseFormat: { type: "json_object" },
+    displayName: "OpenAI GPT-4o",
+    description: "最高品質・専門的な内容に最適。複雑な指示や高品質な出力が必要な場合に推奨。",
+    apiKeyFormat: "sk-proj-",
+    apiKeyDescription: "OpenAIのAPIキーを入力してください（sk-で始まる形式）",
+    icon: "🤖",
   },
   google: {
     model: "gemini-2.0-flash",
     temperature: 0.4,
+    displayName: "Google Gemini 2.0 Flash",
+    description: "高速・軽量。初回利用・学習目的やコスト効率を重視する場合に推奨。",
+    apiKeyFormat: "AIza",
+    apiKeyDescription: "Google Gemini APIキーを入力してください",
+    icon: "🛡️",
   },
   anthropic: {
-    model: "claude-3.5-sonnet",
+    model: "claude-3-5-sonnet-20241022",
     temperature: 0.5,
     maxTokens: 4000,
+    displayName: "Anthropic Claude 3.5 Sonnet",
+    description: "安全性と倫理性を重視。日常的な利用やバランスの取れた品質に最適。",
+    apiKeyFormat: "sk-ant-",
+    apiKeyDescription: "Anthropic Claude APIキーを入力してください（sk-ant-で始まる形式）",
+    icon: "⚡",
   },
+  // 新しいAIモデルを追加する場合は、以下のような形式で追加できます
+  // cohere: {
+  //   model: "command-r-plus",
+  //   temperature: 0.5,
+  //   maxTokens: 4000,
+  //   displayName: "Cohere Command R+",
+  //   description: "高性能な多言語対応モデル。企業向けの用途に最適。",
+  //   apiKeyFormat: "co-",
+  //   apiKeyDescription: "Cohere APIキーを入力してください",
+  //   icon: "🚀",
+  // },
 } as const;
 
 export type AIModelKey = keyof typeof AI_MODEL_CONFIGS;
@@ -51,45 +77,48 @@ export const PROMPT_TEMPLATES = {
 
 必ず合計時間が${duration}分以内になるようにメニューを作成してください。それを超えるものは受け入れられません。
 
-【重要: 出力形式について】
-必ず生のJSONのみを返してください。コードブロック('json')やマークダウン形式は使用しないでください。
+【最重要: 出力形式について】
+必ず生のJSONのみを返してください。コードブロック('json')やマークダウン形式、説明文、余分なテキストは一切含めないでください。
 以下の形式に厳密に従って応答してください。必須フィールドを必ず含めてください：
 
 {
-  "title": "メニュータイトル",  // 文字列：必須
-  "menu": [                    // 配列：必須
+  "title": "メニュータイトル",
+  "menu": [
     {
       "name": "セクション名（例：W-up）",
-      "items": [               // 配列：必須
+      "items": [
         {
-          "description": "項目の詳細説明",  // 文字列：必須
-          "distance": "総距離（m）",        // 文字列：必須
-          "sets": 3,                      // 数値：必須
-          "circle": "2:00",               // 文字列：必須
+          "description": "項目の詳細説明",
+          "distance": "総距離（m）",
+          "sets": 3,
+          "circle": "2:00",
           "equipment": "使用器具（オプション）",
           "notes": "特記事項（オプション）",
-          "time": 10                      // 数値：自動計算します
+          "time": 10
         }
       ],
-      "totalTime": 15                     // 数値：自動計算します
+      "totalTime": 15
     }
   ],
-  "totalTime": 90,             // 数値：必須（練習の合計時間 - 分単位）
-  "intensity": "B",            // 文字列：任意
-  "targetSkills": ["キック", "持久力"]  // 文字列配列：任意
+  "totalTime": 90,
+  "intensity": "B",
+  "targetSkills": ["キック", "持久力"]
 }
 
-重要な点：
-- title（文字列）：メニュータイトルは必須です
-- menu（配列）：メニューセクションの配列は必須です
-- totalTime（数値）：合計時間（分）は必須で、必ず数値型で返してください
-
-JSONオブジェクトのみを返し、JSONの前後に余分なテキストや説明を含めないでください。`,
+【絶対に守ってください】
+- JSONオブジェクトのみを返す
+- 前後に説明文やコードブロックを付けない
+- マークダウン記法を使用しない
+- 日本語のコメントは含めない
+- 有効なJSON形式で返す
+- 必須フィールド（title, menu, totalTime）を必ず含める`,
 
   user: (loadLevelStr: string, duration: number, notes?: string, relevantMenus?: string) => 
     `${loadLevelStr}の${duration}分練習メニューを作成してください。
 ${notes ? `特記事項：${notes}` : ""}
-${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMenus}` : ""}`,
+${relevantMenus ? `参考にすべき過去のメニュー情報：${relevantMenus}` : ""}
+
+【重要】必ず有効なJSON形式のみで応答してください。説明文やコードブロックは含めないでください。`,
 };
 
 // 負荷レベルの変換マッピング
@@ -106,4 +135,56 @@ export function convertLoadLevels(loadLevels: string[]): string {
   return loadLevels
     .map((level: string) => LOAD_LEVEL_MAPPING[level as LoadLevelKey] || level)
     .join("・");
+}
+
+// APIキー形式の検証関数
+export function validateApiKey(aiModel: string, apiKey: string): { isValid: boolean; message?: string } {
+  const config = AI_MODEL_CONFIGS[aiModel as AIModelKey];
+  if (!config) {
+    return { isValid: false, message: "不正なAIモデルが指定されました" };
+  }
+
+  if (!apiKey || apiKey.trim() === "") {
+    return { isValid: false, message: "APIキーを入力してください" };
+  }
+
+  const trimmedKey = apiKey.trim();
+
+  switch (aiModel) {
+    case "openai":
+      if (!trimmedKey.startsWith("sk-")) {
+        return { isValid: false, message: "OpenAI APIキーは「sk-」で始まる必要があります" };
+      }
+      if (trimmedKey.length < 20) {
+        return { isValid: false, message: "OpenAI APIキーの形式が正しくありません" };
+      }
+      break;
+
+    case "google":
+      if (!trimmedKey.startsWith("AIza")) {
+        return { isValid: false, message: "Google Gemini APIキーは「AIza」で始まる必要があります" };
+      }
+      if (trimmedKey.length < 30) {
+        return { isValid: false, message: "Google Gemini APIキーの形式が正しくありません" };
+      }
+      break;
+
+    case "anthropic":
+      if (!trimmedKey.startsWith("sk-ant-")) {
+        return { isValid: false, message: "Anthropic APIキーは「sk-ant-」で始まる必要があります" };
+      }
+      if (trimmedKey.length < 40) {
+        return { isValid: false, message: "Anthropic APIキーの形式が正しくありません" };
+      }
+      break;
+
+    default:
+      // 新しいAIモデルの場合は基本的な検証のみ
+      if (trimmedKey.length < 10) {
+        return { isValid: false, message: "APIキーが短すぎます" };
+      }
+      break;
+  }
+
+  return { isValid: true };
 }

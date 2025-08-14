@@ -35,15 +35,16 @@ const loadLevelOptions = [
   { id: "C", label: "C（低負荷）" },
 ]
 
+import { AI_MODEL_CONFIGS, type AIModelKey, validateApiKey } from "@/lib/ai-config"
+
 const getApiKeyFormDescription = (aiModel: string) => {
-  if (aiModel === "openai") {
-    return "OpenAIのAPIキーを入力してください"
-  } else if (aiModel === "google") {
-    return "GoogleのAPIキーを入力してください"
-  } else if (aiModel === "anthropic") {
-    return "AnthropicのAPIキーを入力してください"
-  }
-  return ""
+  const config = AI_MODEL_CONFIGS[aiModel as AIModelKey];
+  return config?.apiKeyDescription || "";
+}
+
+const getApiKeyPlaceholder = (aiModel: string) => {
+  const config = AI_MODEL_CONFIGS[aiModel as AIModelKey];
+  return config?.apiKeyFormat ? `${config.apiKeyFormat}...` : "APIキーを入力";
 }
 
 export default function MenuCreationForm() {
@@ -134,6 +135,20 @@ export default function MenuCreationForm() {
     setIsLoading(true)
 
     try {
+      // APIキーの事前検証
+      const apiKeyValidation = validateApiKey(data.aiModel, data.apiKey);
+      if (!apiKeyValidation.isValid) {
+        throw new Error(apiKeyValidation.message || "APIキーの形式が正しくありません");
+      }
+
+      // RAG機能が有効な場合のOpenAI APIキー検証
+      if (data.useRAG && data.openaiApiKey) {
+        const openaiKeyValidation = validateApiKey("openai", data.openaiApiKey);
+        if (!openaiKeyValidation.isValid) {
+          throw new Error(`類似メニュー検索用のAPIキーエラー: ${openaiKeyValidation.message}`);
+        }
+      }
+
       console.log("フォーム送信値:", data)
 
       const response = await fetch("/api/generate-menu", {
@@ -228,9 +243,11 @@ export default function MenuCreationForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="openai">OpenAI API (gpt-4o)</SelectItem>
-                      <SelectItem value="google">Google Gemini API (gemini-2.0-flash)</SelectItem>
-                      <SelectItem value="anthropic">Anthropic Claude API (claude-3.5-sonnet)</SelectItem>
+                      {Object.entries(AI_MODEL_CONFIGS).map(([key, config]) => (
+                        <SelectItem key={key} value={key}>
+                          {config.displayName} ({config.model})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormDescription className="flex items-center gap-2">
@@ -244,6 +261,21 @@ export default function MenuCreationForm() {
                       AIの使い方を見る
                     </a>
                   </FormDescription>
+                  
+                  {/* 選択されたAIモデルの特徴表示 */}
+                  {field.value && AI_MODEL_CONFIGS[field.value as AIModelKey] && (
+                    <div className="mt-3 p-3 border rounded-lg bg-muted/50">
+                      <div className="text-sm">
+                        <div className="font-semibold text-primary mb-1">
+                          {AI_MODEL_CONFIGS[field.value as AIModelKey].icon} {AI_MODEL_CONFIGS[field.value as AIModelKey].displayName}
+                        </div>
+                        <div className="text-muted-foreground">
+                          {AI_MODEL_CONFIGS[field.value as AIModelKey].description}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <FormMessage />
                 </FormItem>
               )}
@@ -258,7 +290,7 @@ export default function MenuCreationForm() {
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="sk-..."
+                      placeholder={getApiKeyPlaceholder(form.watch("aiModel"))}
                       className="border-primary/20 focus:ring-primary/30"
                       {...field}
                     />
