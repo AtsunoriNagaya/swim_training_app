@@ -20,11 +20,16 @@ export default function PrintClient() {
   const data = useMemo(() => {
     if (typeof window === 'undefined') return null;
     try {
-      // 1) Prefer hash key -> sessionStorage
+      // 1) Prefer hash key -> localStorage (cross-tab)
       const hash = (window.location.hash || '').replace(/^#/, '');
       if (hash) {
-        const fromStore = window.sessionStorage.getItem(decodeURIComponent(hash));
-        if (fromStore) return fromStore;
+        const storeKey = decodeURIComponent(hash);
+        const fromStore = window.localStorage.getItem(storeKey);
+        if (fromStore) {
+          // cleanup after read
+          try { window.localStorage.removeItem(storeKey); } catch {}
+          return fromStore;
+        }
       }
       // 2) Fallback to query ?data=base64
       const sp = new URLSearchParams(window.location.search);
