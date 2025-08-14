@@ -20,8 +20,17 @@ export default function PrintClient() {
   const data = useMemo(() => {
     if (typeof window === 'undefined') return null;
     try {
+      // 1) Prefer hash key -> sessionStorage
+      const hash = (window.location.hash || '').replace(/^#/, '');
+      if (hash) {
+        const fromStore = window.sessionStorage.getItem(decodeURIComponent(hash));
+        if (fromStore) return fromStore;
+      }
+      // 2) Fallback to query ?data=base64
       const sp = new URLSearchParams(window.location.search);
-      return sp.get('data');
+      const q = sp.get('data');
+      if (q) return q;
+      return null;
     } catch {
       return null;
     }
@@ -29,7 +38,11 @@ export default function PrintClient() {
 
   const markdown = useMemo(() => {
     if (!data) return "# 印刷プレビュー\nデータが見つかりません。";
-    return base64DecodeUnicode(data);
+    // If value looks like plain markdown (contains pipes/newlines and not base64 chars), use as-is
+    if (typeof data === 'string' && /\n|\|/.test(data) && /[^A-Za-z0-9+/=]/.test(data)) {
+      return data;
+    }
+    return base64DecodeUnicode(String(data));
   }, [data]);
 
   const html = useMemo(() => mdToHtml(markdown), [markdown]);
@@ -65,4 +78,3 @@ export default function PrintClient() {
     </div>
   );
 }
-
