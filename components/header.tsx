@@ -31,6 +31,10 @@ export default function Header() {
             <span>メニュー履歴</span>
             <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></div>
           </Link>
+          <Link href="/help" className="text-sm font-medium relative group">
+            <span>ヘルプ</span>
+            <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></div>
+          </Link>
         </nav>
         <div className="flex items-center gap-4">
           <ModeToggle />

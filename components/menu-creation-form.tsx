@@ -233,7 +233,17 @@ export default function MenuCreationForm() {
                       <SelectItem value="anthropic">Anthropic Claude API (claude-3.5-sonnet)</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>メニュー生成に使用するAIモデルを選択してください</FormDescription>
+                  <FormDescription className="flex items-center gap-2">
+                    メニュー生成に使用するAIモデルを選択してください
+                    <a 
+                      href="/help" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm underline"
+                    >
+                      AIの使い方を見る
+                    </a>
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -253,8 +263,16 @@ export default function MenuCreationForm() {
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="flex items-center gap-2">
                     {getApiKeyFormDescription(form.watch("aiModel"))}
+                    <a 
+                      href="/help" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm underline"
+                    >
+                      APIキーの取得方法
+                    </a>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

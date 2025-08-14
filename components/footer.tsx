@@ -38,6 +38,9 @@ export default function Footer() {
               <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
                 アプリについて
               </Link>
+              <Link href="/help" className="text-muted-foreground hover:text-primary transition-colors">
+                ヘルプ
+              </Link>
               <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
                 利用規約
               </Link>
