@@ -6,6 +6,21 @@
 
 過去のメニューデータをAI生成時の参考にしたり（RAG機能）、AIが生成したメニューが指定時間を超過した場合に自動調整する機能も備えています。RAG機能は実装済みで、OpenAI Embeddings APIを使用したベクトル化とpgvectorによる高速検索を行い、類似度スコアを%表示します。
 
+## リファクタリング概要（Priority A 適用）
+
+内部構成を以下の方針で整理しました（詳細は `memory_bank/REFACTORING.md` と実施結果レポート参照）。
+
+- サービス層の新設: `services/menuService.ts`（生成→サニタイズ→検証→時間計算→保存）と `services/ragService.ts`（埋め込み生成、pgvector検索）。API ルートは HTTP I/O に専念。
+- プロンプトの分離: `lib/prompts/{system.ts,user.ts,index.ts}` に分割し、`lib/ai-config.ts` から再エクスポート。
+- JSONサニタイズの一本化: `lib/json-sanitizer.ts` を導入し、AI応答の JSON 抽出・検証を共通化。
+- 型の統一: `types/menu.ts` に `GeneratedMenuData` を集約し、サーバ/クライアントで単一出所化。
+- DB初期化の副作用除去: `lib/neon-db.ts` のデフォルトエクスポートを廃止し、`getPool()` を名前付きエクスポートに統一。
+- 埋め込みモデル更新: OpenAI Embeddings を `text-embedding-3-small` に更新。
+- CORSの一元化: `middleware.ts` へ集約。許可オリジンは同一オリジンが基本、環境変数で限定的に拡張可能。
+- 時間超過の自動調整: 生成メニューが指定時間を超過した際に自動縮減（sets削減→アイテム削除→非必須セクション削除→Main微調整）。
+
+開発者向けの主な変更点は下記「開発者向けメモ」を参照してください。
+
 ## 特徴
 
 *   **AIによるメニュー自動生成**: OpenAI (GPT-4o), Google (Gemini 2.0 Flash), Anthropic (Claude 3.5 Sonnet) のAIモデルから選択し、負荷レベルや時間、特記事項に基づいて練習メニューを自動生成します。各AIサービスのAPIキーはユーザーが入力する形式となっています。
@@ -18,7 +33,7 @@
     * トグルスイッチで機能の有効/無効を切り替え可能
     * 検索用のOpenAI APIキーは別途入力欄を用意
     * 検索結果はAIプロンプトに含められ、参考情報として活用
-*   **自動時間調整**: AIが生成したメニューが指定時間を超過した場合、自動的に内容を調整して時間内に収めます。
+*   **自動時間調整**: AIが生成したメニューが指定時間を超過した場合、自動的に内容を調整して時間内に収めます（`services/menuService.adjustToDuration()`）。
 *   **メニュー履歴**: 過去に生成したメニューの履歴を確認し、再利用や参考にすることができます。
 *   **柔軟な出力形式**: 生成したメニューをクライアントサイドでPDFやCSV形式で保存できます。
     *   PDF出力は「Markdown→HTML→新規ウィンドウ印刷」方式で、Chromeの印刷ダイアログからPDF保存します。日本語・表の折返し・空欄セルに強く、レイアウトが安定します。
@@ -128,6 +143,8 @@ APIキーは環境変数ではなく、アプリケーション内のフォー�
 
 ```
 DATABASE_URL="postgresql://username:password@hostname:port/database?sslmode=require"
+## 必要に応じてCORSの許可オリジンを追加（カンマ区切り）
+CORS_ALLOW_ORIGINS="https://your-frontend.example,https://another.example"
 ```
 
 ### Neonデータベースのセットアップ
@@ -218,6 +235,26 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
    # または
    npm run dev
    ```
+
+## 開発者向けメモ（内部構成の変更）
+
+- ルート薄化とサービス層
+  - `app/api/generate-menu/route.ts` は `services/menuService.generateMenu()` を呼ぶだけの構成に簡素化。
+  - RAGは `services/ragService.getRelevantMenusText()` に集約。
+- プロンプト
+  - `lib/prompts/*` に分割。既存参照は `import { PROMPT_TEMPLATES } from "@/lib/ai-config";` で互換維持。
+- JSONサニタイズ
+  - `lib/json-sanitizer.ts` を導入し、`lib/ai-clients.ts` / `lib/ai-response-processor.ts` から参照。
+- 型
+  - `types/menu.ts` に `GeneratedMenuData` を追加し、`app/api` からの型依存を解消。
+- DB
+  - `lib/neon-db.ts` は `export function getPool()` のみ。デフォルトエクスポートは廃止（インポート時の接続副作用を防止）。
+- 埋め込み
+  - `lib/embedding.ts` のモデルを `text-embedding-3-small` に更新（1536次元）。
+- CORS
+  - `next.config.mjs` のヘッダ設定を削除し、`middleware.ts` に集約。
+  - 既定は同一オリジンのみ許可。クロスオリジンを許可する場合は `CORS_ALLOW_ORIGINS` を設定。
+
 
 ### PDF保存（ユーザー操作）
 

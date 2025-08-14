@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { saveMenu, searchSimilarMenus } from "@/lib/neon-db";
-import { getSelectedAIModel } from "@/lib/ai-clients";
-import { PROMPT_TEMPLATES, convertLoadLevels, validateApiKey } from "@/lib/ai-config";
-import { cleanAIResponse, validateMenuData, calculateMenuTimes } from "@/lib/ai-response-processor";
-import { type TrainingMenu } from "@/types/menu";
-import { getEmbedding } from "@/lib/embedding"; // 追加: embedding関連のインポート
+import { validateApiKey } from "@/lib/ai-config";
+import { type TrainingMenu, type GeneratedMenuData } from "@/types/menu";
+import { generateMenu } from "@/services/menuService";
 
 // 型定義
 type GeminiResponse = {
@@ -18,26 +15,7 @@ type GeminiResponse = {
   }>;
 };
 
-// AI応答の型定義（TrainingMenuと互換性のある形）
-export interface GeneratedMenuData {
-  title: string;
-  menu: Array<{
-    name: string;
-    items: Array<{
-      description: string;
-      distance: string | number; // 文字列または数値を許可
-      sets: number;
-      circle: string;
-      equipment?: string;
-      notes?: string;
-      time?: number;
-    }>;
-    totalTime?: number;
-  }>;
-  totalTime: number;
-  intensity?: string | null;
-  targetSkills?: string[] | null;
-}
+// 型は types/menu へ集約
 
 // エラー型の定義
 interface APIError extends Error {
@@ -96,193 +74,22 @@ export async function POST(req: NextRequest) {
       throw new Error("少なくとも1つの負荷レベルを選択してください");
     }
 
-    // AIモデルの選択
-    const selectedModel = getSelectedAIModel(aiModel);
-
-    // 負荷レベルの文字列化
-    const loadLevelStr = convertLoadLevels(loadLevelsArray);
-
-    // 過去の類似メニューを検索（RAG機能が有効な場合のみ）
-    let relevantMenus = "";
     const { useRAG, openaiApiKey } = requestBody;
-    
-    if (useRAG && openaiApiKey) {
-      try {
-        // OpenAI APIキーの検証
-        const openaiKeyValidation = validateApiKey("openai", openaiApiKey);
-        if (!openaiKeyValidation.isValid) {
-          console.warn("RAG機能用のOpenAI APIキーが無効です:", openaiKeyValidation.message);
-        } else {
-          // 検索クエリを構築
-          const queryText = loadLevelsArray.join(" ") + " " + duration + "分";
-          const notesText = notes ? " " + notes.toString() : "";
-          
-          // テキストからembeddingを生成して類似メニューを検索
-          const queryEmbedding = await getEmbedding(queryText + notesText, openaiApiKey);
-          const results = await searchSimilarMenus(queryEmbedding, 5, duration);
-          
-          // 関連メニューの抽出と整形
-          if (results && results.length > 0) {
-            relevantMenus = results
-              .map((scoredMenu: { id: string; metadata: any; similarity: number }) => {
-                try {
-                  // metadataからメニュー情報を取得
-                  const metadata = scoredMenu.metadata;
-                  if (!metadata) return ""; // metadataがない場合はスキップ
-                  
-                  const title = metadata.title || 'Untitled';
-                  const totalTime = metadata.totalTime || 0;
-                  const targetSkills = Array.isArray(metadata.targetSkills) ? metadata.targetSkills : [];
-                  const skills = targetSkills.join(", ");
-                  
-                  return `- ${title} (${totalTime}分): ${skills}`;
-                } catch (e) {
-                  console.error("メニュー整形エラー:", e);
-                  return "";
-                }
-              })
-              .filter(Boolean)
-              .join("\n");
-          }
-        }
-      } catch (error) {
-        console.error("RAG検索エラー:", error);
-        // RAGの失敗はメニュー生成の致命的なエラーではないため、空文字列で続行
-        relevantMenus = "";
-      }
-    }
-
-    // プロンプトの構築
-    const systemPrompt = PROMPT_TEMPLATES.system(duration);
-    const userPrompt = PROMPT_TEMPLATES.user(loadLevelStr, duration, notes, relevantMenus);
-
-    // AIによるメニュー生成
-    const text = await selectedModel.generate(userPrompt, systemPrompt, apiKey) || "";
-    if (!text) {
-      throw new Error("AIモデルからの応答が空でした");
-    }
-
-    // メニューデータの検証と時間計算
-    let menuData: GeneratedMenuData;
-    try {
-      // AIからの応答をクリーニング
-      const cleanedText = cleanAIResponse(text);
-      
-      try {
-        // AIからの応答をパースし、型キャスト
-        menuData = JSON.parse(cleanedText) as GeneratedMenuData;
-        console.log("menuData:", JSON.stringify(menuData, null, 2));
-      } catch (parseError) {
-        console.error("JSON解析エラー:", parseError);
-        throw new Error("AIモデルの応答が有効なJSON形式ではありません");
-      }
-      
-      // フィールドの存在チェックとフォールバック処理
-      if (!menuData) {
-        throw new Error("AIモデルの応答が有効なメニューデータを含んでいません");
-      }
-      
-      // 必須フィールドのチェックとデフォルト値の設定
-      if (!menuData.title) {
-        console.warn("メニュータイトルが不足しているためデフォルト値を設定します");
-        menuData.title = `${loadLevelStr}の${duration}分トレーニングメニュー`;
-      }
-      
-      // メニューデータの検証
-      if (!validateMenuData(menuData)) {
-        throw new Error("AIモデルの応答が有効なメニューデータ形式ではありません");
-      }
-      
-      // 時間の自動計算
-      menuData = calculateMenuTimes(menuData);
-      
-      // 合計時間の検証
-      if (menuData.totalTime > duration) {
-        console.warn(`生成されたメニューの合計時間(${menuData.totalTime}分)が指定時間(${duration}分)を超過しています`);
-        // 時間調整のロジックをここに追加することも可能
-      }
-      
-    } catch (error) {
-      console.error("メニューデータ処理エラー:", error);
-      throw new Error(`メニューデータの処理に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-
-    // メニューの保存
-    const menuId = `menu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // 保存用のデータを構築
-    const saveData = {
-      ...menuData,
-      menuId,
-      createdAt: new Date().toISOString(),
-      loadLevels: loadLevelsArray,
-      duration,
-      notes: notes || "",
+    const { menuId, menu } = await generateMenu({
       aiModel,
-    };
-    
-    try {
-      // メニューテキストからembeddingを生成
-      const menuText = `${menuData.title} ${menuData.menu.map(section => 
-        section.items.map(item => item.description).join(' ')
-      ).join(' ')}`;
-      
-      let embedding: number[] | undefined;
-      
-      // Embedding生成用のAPIキーを決定（RAG機能が有効な場合はopenaiApiKey、そうでなければメイン生成用APIキーがOpenAIの場合のみ）
-      let embeddingApiKey: string | undefined;
-      if (useRAG && openaiApiKey) {
-        embeddingApiKey = openaiApiKey;
-      } else if (aiModel === "openai") {
-        embeddingApiKey = apiKey;
-      }
-      
-      if (embeddingApiKey) {
-        try {
-          embedding = await getEmbedding(menuText, embeddingApiKey);
-          console.log("✅ Embedding生成成功");
-        } catch (embeddingError) {
-          console.warn("⚠️ Embedding生成に失敗しましたが、メニュー保存は続行します:", embeddingError);
-          // embedding生成に失敗しても続行
-        }
-      } else {
-        console.log("ℹ️ OpenAI APIキーが利用できないため、Embeddingなしでメニューを保存します");
-      }
-      
-      // メタデータを構築
-      const metadata = {
-        title: menuData.title,
-        description: `AI生成メニュー: ${loadLevelStr} ${duration}分`,
-        loadLevels: loadLevelsArray.join(','),
-        duration: duration.toString(),
-        notes: notes || "",
-        totalTime: menuData.totalTime.toString(),
-        intensity: menuData.intensity || "",
-        targetSkills: menuData.targetSkills || [],
-        aiModel,
-        createdAt: new Date().toISOString(),
-      };
-      
-      // Neonデータベースに保存（embeddingが生成できた場合のみ）
-      if (embedding) {
-        await saveMenu(menuId, saveData, embedding, metadata);
-        console.log("✅ メニューが正常に保存されました:", menuId);
-      } else {
-        // embeddingなしで保存（検索機能は制限される）
-        await saveMenu(menuId, saveData, undefined, metadata);
-        console.log("⚠️ メニューを保存しましたが、embeddingなしのため検索機能は制限されます:", menuId);
-      }
-    } catch (saveError) {
-      console.error("メニュー保存エラー:", saveError);
-      // 保存に失敗しても生成されたメニューは返す
-      console.log("データベース保存に失敗しましたが、メニューは生成されています");
-    }
+      apiKey,
+      loadLevelsArray,
+      duration,
+      notes,
+      useRAG,
+      openaiApiKey,
+    });
 
     // 成功レスポンス
     return NextResponse.json({
       success: true,
       menuId,
-      menu: menuData,
+      menu,
       message: "メニューが正常に生成されました"
     });
 
