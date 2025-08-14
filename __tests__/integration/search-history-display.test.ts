@@ -1,5 +1,5 @@
 import { POST as generateMenuHandler } from '../../app/api/generate-menu/route';
-import { searchSimilarMenus as searchMenus, getMenu } from '../../lib/kv-storage';
+import { searchSimilarMenus as searchMenus, getMenu } from '../../lib/neon-db';
 import type { GenerateMenuRequest, TrainingMenu } from '../../types/menu';
 import { NextRequest } from 'next/server';
 
@@ -10,8 +10,8 @@ interface MockSearchResult {
 }
 
 // searchMenusのモックを上書き
-jest.mock('../../lib/kv-storage', () => {
-  const originalModule = jest.requireActual('../../lib/kv-storage');
+jest.mock('../../lib/neon-db', () => {
+  const originalModule = jest.requireActual('../../lib/neon-db');
   return {
     ...originalModule,
     searchSimilarMenus: jest.fn().mockImplementation(
@@ -107,10 +107,11 @@ describe('Search and History Display Integration (IT-004)', () => {
 
   test('検索結果から履歴の詳細表示が正しく機能する', async () => {
     // 検索条件に基づいてメニューを検索
+    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
     const searchResult = await searchMenus(
-      '検索テスト用メニュー',
-      60,
-      process.env.OPENAI_API_KEY as string
+      testEmbedding,
+      5,
+      60
     );
 
     // 型アサーションを使用
@@ -135,10 +136,11 @@ describe('Search and History Display Integration (IT-004)', () => {
 
   test('複数の検索条件で正しく結果が絞り込まれる', async () => {
     // 複数条件での検索
+    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
     const searchResult = await searchMenus(
-      '検索テスト用メニュー',
-      60,
-      process.env.OPENAI_API_KEY as string
+      testEmbedding,
+      5,
+      60
     );
 
     // 型アサーションを使用
@@ -156,10 +158,11 @@ describe('Search and History Display Integration (IT-004)', () => {
 
   test('検索結果が存在しない場合、空配列が返される', async () => {
     // 存在しない条件で検索
+    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
     const searchResult = await searchMenus(
-      '存在しないメニュー',
-      120,
-      process.env.OPENAI_API_KEY as string
+      testEmbedding,
+      5,
+      120
     );
 
     // 型アサーションを使用

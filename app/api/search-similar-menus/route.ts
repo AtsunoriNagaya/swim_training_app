@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEmbedding } from "@/lib/embedding";
-import { searchSimilarMenus } from "@/lib/upstash-storage";
+import { searchSimilarMenus } from "@/lib/neon-db";
 
 export async function POST(request: Request) {
   try {
@@ -16,14 +16,14 @@ export async function POST(request: Request) {
     // クエリの埋め込みベクトルを生成
     const queryEmbedding = await getEmbedding(query, openaiApiKey);
 
-    // Upstash Vector で類似メニューを検索
-    const similarMenus = await searchSimilarMenus(queryEmbedding, 5);
+    // Neonデータベースのpgvectorで類似メニューを検索
+    const similarMenus = await searchSimilarMenus(queryEmbedding, 5, duration);
 
     // レスポンスの形式を整形
     const formattedMenus = similarMenus.map(menu => ({
       menuId: menu.id,
       menuData: menu.metadata,
-      similarityScore: menu.score
+      similarityScore: menu.similarity
     }));
 
     return NextResponse.json({ menus: formattedMenus });

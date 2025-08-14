@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node';
 import type { TrainingMenu, GenerateMenuRequest } from '../../../types/menu';
 
 // モックのインポート
-jest.mock('@/lib/kv-storage');
+jest.mock('@/lib/neon-db');
 
 // 期待されるメニューデータ
 const mockMenuResponse = {
