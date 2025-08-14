@@ -45,7 +45,7 @@ let nextConfig = {
   images: {
     unoptimized: true,
   },
-  output: 'standalone',
+  // output: 'standalone',
 };
 
 function mergeConfig(nextConfig, userConfig) {
