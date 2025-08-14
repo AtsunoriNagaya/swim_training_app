@@ -65,7 +65,7 @@ export function validateMenuData(menuData: any): menuData is GeneratedMenuData {
         return false;
       }
       
-      if (!item.distance || typeof item.distance !== 'string') {
+      if (!item.distance || (typeof item.distance !== 'string' && typeof item.distance !== 'number')) {
         console.error("距離が不正です:", item.distance);
         return false;
       }
@@ -108,9 +108,14 @@ export function calculateMenuTimes(menuData: GeneratedMenuData): GeneratedMenuDa
 }
 
 // アイテムの時間を推定する関数
-function estimateItemTime(distance: string, circle: string, sets: number): number {
-  // 距離を数値に変換（例："100m" → 100）
-  const distanceNum = parseInt(distance.replace(/[^\d]/g, ''));
+function estimateItemTime(distance: string | number, circle: string, sets: number): number {
+  // 距離を数値に変換（例："100m" → 100 または 100 → 100）
+  let distanceNum: number;
+  if (typeof distance === 'number') {
+    distanceNum = distance;
+  } else {
+    distanceNum = parseInt(distance.replace(/[^\d]/g, ''));
+  }
   
   // サークル時間を分に変換（例："2:00" → 2）
   const circleParts = circle.split(':');

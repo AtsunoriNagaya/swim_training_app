@@ -1,9 +1,9 @@
-import type { Metadata } from "next"
+import type { Metadata } from "next/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Key, Sparkles, Brain, Zap, Shield } from "lucide-react";
+import { Info, Key, Sparkles, Brain, Zap, Shield, FileText, Upload } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "ヘルプ - AIの使い方とAPIキー設定",
@@ -19,6 +19,86 @@ export default function HelpPage() {
           AIの種類と使い分け、APIキーの設定方法について詳しく説明します
         </p>
       </div>
+
+      {/* メニュー生成の2つの方法セクション */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+          <FileText className="h-6 w-6 text-primary" />
+          メニュー生成の2つの方法
+        </h2>
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* RAGなしでの生成 */}
+          <Card className="card-hover border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                RAGなしでの生成
+              </CardTitle>
+              <CardDescription>
+                基本的なAI知識のみを使用したメニュー生成
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">基本機能</Badge>
+                  <span className="text-sm text-muted-foreground">誰でも利用可能</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  AIモデルの基本的な知識のみを使用してトレーニングメニューを生成します。
+                  ファイルのアップロードは不要で、すぐに利用できます。
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  <strong>特徴：</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>ファイルアップロード不要</li>
+                    <li>基本的なトレーニング知識に基づく</li>
+                    <li>素早くメニュー生成</li>
+                    <li>初心者にも最適</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* RAGありでの生成 */}
+          <Card className="card-hover border-secondary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-secondary" />
+                RAGありでの生成
+              </CardTitle>
+              <CardDescription>
+                カスタムファイルを活用した高度なメニュー生成
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">高度機能</Badge>
+                  <span className="text-sm text-muted-foreground">カスタマイズ可能</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  独自のトレーニング資料やPDFファイルをアップロードして、
+                  より専門的でカスタマイズされたメニューを生成します。
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  <strong>特徴：</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>カスタムファイルの活用</li>
+                    <li>専門的なトレーニング知識</li>
+                    <li>より詳細で正確なメニュー</li>
+                    <li>上級者向け</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <Separator className="my-8 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />
 
       {/* AIの種類と使い分けセクション */}
       <section className="mb-12">
@@ -49,6 +129,12 @@ export default function HelpPage() {
                   複雑な指示や高品質な出力が必要な場合に最適です。
                   トレーニングメニューの生成や詳細な説明に適しています。
                 </p>
+                <div className="text-sm text-muted-foreground">
+                  <strong>RAGなしでの生成：</strong> 基本的なトレーニング知識に基づいた高品質なメニュー
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <strong>RAGありでの生成：</strong> アップロードされたファイルを深く理解し、専門的なメニューを生成
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -74,6 +160,12 @@ export default function HelpPage() {
                   安全性を重視した内容生成や、倫理的な判断が必要な場合に適しています。
                   高品質なトレーニングメニュー生成に最適です。
                 </p>
+                <div className="text-sm text-muted-foreground">
+                  <strong>RAGなしでの生成：</strong> 安全で適切なトレーニングメニューを生成
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <strong>RAGありでの生成：</strong> ファイル内容を安全に分析し、倫理的なメニューを提案
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -99,6 +191,12 @@ export default function HelpPage() {
                   画像やテキストの両方を理解できるAIです。
                   高速で効率的なトレーニングメニューの生成に適しています。
                 </p>
+                <div className="text-sm text-muted-foreground">
+                  <strong>RAGなしでの生成：</strong> 高速で基本的なトレーニングメニューを生成
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <strong>RAGありでの生成：</strong> 画像付きPDFも含めて多様なファイル形式に対応
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -115,22 +213,38 @@ export default function HelpPage() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="text-center p-4 border border-accent/20 rounded-lg bg-accent/5">
                   <h4 className="font-semibold mb-2 text-accent">初回利用・学習目的</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Gemini 2.0 Flash
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    RAGなしで基本メニューを生成
                   </p>
                 </div>
                 <div className="text-center p-4 border border-secondary/20 rounded-lg bg-secondary/5">
                   <h4 className="font-semibold mb-2 text-secondary">日常的な利用</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Claude 3.5 Sonnet
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    RAGありなし両方に対応
                   </p>
                 </div>
                 <div className="text-center p-4 border border-primary/20 rounded-lg bg-primary/5">
                   <h4 className="font-semibold mb-2 text-primary">高品質・専門的な内容</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-2">
                     GPT-4o
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    最高品質のメニュー生成
+                  </p>
                 </div>
+              </div>
+              <div className="mt-4 p-4 bg-primary/5 rounded-lg">
+                <h5 className="font-semibold mb-2 text-primary">RAGなしでの利用について</h5>
+                <p className="text-sm text-muted-foreground">
+                  どのAIモデルでも、ファイルをアップロードせずに基本的なトレーニングメニューを生成できます。
+                  初心者の方や、すぐにメニューが必要な場合におすすめです。
+                </p>
               </div>
             </CardContent>
           </Card>
