@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMenuHistory } from "@/lib/kv-storage";
+import { getMenuHistory } from "@/lib/neon-db";
 
 export async function GET() {
   try {
