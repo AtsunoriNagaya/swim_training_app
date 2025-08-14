@@ -5,7 +5,7 @@ import { useState, useCallback } from "react";
 import { stringify } from "csv-stringify";
 import { calculateTotalDistance } from "@/lib/utils";
 import { toMarkdownTable } from "@/lib/markdown/mdTable";
-import { openPrintPreview } from "@/lib/markdown/openPrintPreview";
+import { openPrintPopup } from "@/lib/markdown/printPopup";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -149,7 +149,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
     try {
       if (format === "pdf") {
         const md = buildMarkdown();
-        openPrintPreview(md, '_self');
+        openPrintPopup(md, { title: menuData.title });
       } else if (format === "csv") {
         const csvData = [
           ["水泳練習メニュー"],
