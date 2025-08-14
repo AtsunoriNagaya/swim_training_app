@@ -18,13 +18,21 @@ export function openPrintPreview(markdown: string, target: '_blank' | '_self' = 
       const key = `print_md_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       window.localStorage.setItem(key, markdown);
       const url = `/print#${encodeURIComponent(key)}`;
-      window.open(url, target, 'noopener');
+      if (target === '_self') {
+        window.location.assign(url);
+      } else {
+        window.open(url, '_blank', 'noopener');
+      }
       return;
     } catch {}
     // Fallback to base64-in-query if sessionStorage is not available
     const b64 = base64EncodeUnicode(markdown);
     const url = `/print?data=${encodeURIComponent(b64)}`;
-    window.open(url, target, 'noopener');
+    if (target === '_self') {
+      window.location.assign(url);
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
   }
 }
 
