@@ -2,13 +2,13 @@
 
 ## 概要
 
-水泳部員向けの練習メニューを、AIを活用して効率的に作成するWebアプリケーションです。OpenAI (gpt-4o), Google (gemini-2.0-flash), Anthropic (claude-3.5-sonnet) のAIモデルを使用し、負荷レベルや時間、特記事項に基づいて最適なメニューを生成します。生成されたメニューデータは **Neon Database (PostgreSQL + pgvector)** に保存されます。
+水泳部員向けの練習メニューを、AIを活用して効率的に作成するWebアプリケーションです。OpenAI (GPT-4o), Google (Gemini 2.0 Flash), Anthropic (Claude 3.5 Sonnet) のAIモデルを使用し、負荷レベルや時間、特記事項に基づいて最適なメニューを生成します。生成されたメニューデータは **Neon Database (PostgreSQL + pgvector)** に保存されます。
 
 過去のメニューデータをAI生成時の参考にしたり（RAG機能）、AIが生成したメニューが指定時間を超過した場合に自動調整する機能も備えています。RAG機能は実装済みで、OpenAI Embeddings APIを使用したベクトル化とpgvectorによる高速検索を行い、類似度スコアを%表示します。
 
 ## 特徴
 
-*   **AIによるメニュー自動生成**: OpenAI (gpt-4o), Google (gemini-2.0-flash), Anthropic (claude-3.5-sonnet) のAIモデルから選択し、負荷レベルや時間、特記事項に基づいて練習メニューを自動生成します。各AIサービスのAPIキーはユーザーが入力する形式となっています。
+*   **AIによるメニュー自動生成**: OpenAI (GPT-4o), Google (Gemini 2.0 Flash), Anthropic (Claude 3.5 Sonnet) のAIモデルから選択し、負荷レベルや時間、特記事項に基づいて練習メニューを自動生成します。各AIサービスのAPIキーはユーザーが入力する形式となっています。
 *   **過去メニューの参照 (RAG)**: 【実装済み】
     * OpenAI Embeddings APIを使用してメニューをベクトル化
     * pgvectorによる高速なベクトル検索を実装
@@ -33,9 +33,9 @@
 *   Tailwind CSS
 *   Radix UI
 *   AI Models:
-    *   OpenAI API (GPT-4)
-    *   Google Gemini API
-    *   Anthropic Claude API
+    *   OpenAI API (GPT-4o)
+    *   Google Gemini API (Gemini 2.0 Flash)
+    *   Anthropic Claude API (Claude 3.5 Sonnet)
     *   OpenAI Embeddings API
 *   Data Storage:
     *   Neon Database (PostgreSQL + pgvector)
@@ -44,6 +44,33 @@
     *   jsPDF + jspdf-autotable
     *   csv-stringify
 
+## AIの種類と使い分け
+
+本アプリケーションでは、以下の3つのAIモデルから選択してメニュー生成を行います：
+
+### 1. OpenAI GPT-4o
+- **特徴**: 最も汎用的で高品質なAIモデル
+- **用途**: 複雑な指示や高品質な出力が必要な場合、専門的なトレーニングメニューの生成
+- **料金**: $0.005/1K tokens
+- **推奨**: 高品質・専門的な内容が必要な場合
+
+### 2. Anthropic Claude 3.5 Sonnet
+- **特徴**: 安全性と倫理性を重視したAIモデル
+- **用途**: 安全性を重視した内容生成、日常的なトレーニングメニューの生成
+- **料金**: $3/1M tokens
+- **推奨**: 日常的な利用、バランスの取れた品質が必要な場合
+
+### 3. Google Gemini 2.0 Flash
+- **特徴**: マルチモーダル対応の高速・軽量AI
+- **用途**: 高速で効率的なトレーニングメニューの生成、初回利用・学習目的
+- **料金**: $0.075/1M tokens
+- **推奨**: 初回利用・学習目的、コスト効率を重視する場合
+
+### 使い分けのポイント
+- **初回利用・学習目的**: Gemini 2.0 Flash
+- **日常的な利用**: Claude 3.5 Sonnet
+- **高品質・専門的な内容**: GPT-4o
+
 ## APIキーの準備
 
 本アプリケーションでは、以下のAIサービスのいずれかのAPIキーが必要です：
@@ -51,10 +78,40 @@
 - OpenAI API (GPT-4o)
   - メニュー生成用
   - RAG機能用（類似メニュー検索に使用、オプション）
-- Google API (Gemini)
-- Anthropic API (Claude)
+- Google API (Gemini 2.0 Flash)
+- Anthropic API (Claude 3.5 Sonnet)
 
-APIキーは環境変数ではなく、アプリケーション内のフォームで直接入力する形式となっています。各APIキーは、それぞれの公式サイトで取得してください。
+APIキーは環境変数ではなく、アプリケーション内のフォームで直接入力する形式となっています。
+
+### APIキーの取得方法
+
+#### OpenAI APIキー
+1. [OpenAI Platform](https://platform.openai.com)にアクセス
+2. アカウントを作成またはログイン
+3. 左メニューから「API Keys」を選択
+4. 「Create new secret key」をクリック
+5. APIキーをコピーして安全に保管
+
+#### Anthropic Claude APIキー
+1. [Anthropic Console](https://console.anthropic.com)にアクセス
+2. アカウントを作成またはログイン
+3. 「Get API Key」をクリック
+4. APIキーをコピーして安全に保管
+
+#### Google Gemini APIキー
+1. [Google AI Studio](https://makersuite.google.com)にアクセス
+2. Googleアカウントでログイン
+3. 「Get API key」をクリック
+4. APIキーをコピーして安全に保管
+
+### 重要な注意事項
+- APIキーは絶対に他人と共有しないでください
+- GitHubなどの公開リポジトリにアップロードしないでください
+- APIキーが漏洩した場合は、すぐに再生成してください
+- 使用量と料金を定期的に確認してください
+
+### 詳細なヘルプ
+より詳しいAIの使い方やAPIキーの設定方法については、アプリケーション内の[ヘルプページ](/help)をご覧ください。
 
 ## Neon Database 設定
 
@@ -110,9 +167,9 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
 1. Node.js（v18以上）のインストール
 2. pnpm（推奨）またはnpmのインストール
 3. 必要なAIサービスのAPIキー：
-   - OpenAI API（メニュー生成用とRAG機能用）
-   - Google API（Gemini）
-   - Anthropic API（Claude）
+   - OpenAI API（GPT-4o、メニュー生成用とRAG機能用）
+   - Google API（Gemini 2.0 Flash）
+   - Anthropic API（Claude 3.5 Sonnet）
    のいずれか
 
 ### Vercelへのデプロイ
