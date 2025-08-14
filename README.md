@@ -1,314 +1,70 @@
 # 水泳部練習メニュー作成アプリ
 
-## 概要
+AIを使って、水泳部の練習メニューを手早く作れるWebアプリです。負荷レベル・所要時間・特記事項を入力すると、最適なメニューを自動生成し、履歴として保存できます。過去メニューを参照するRAGや、指定時間に収める自動調整にも対応しています。
 
-水泳部員向けの練習メニューを、AIを活用して効率的に作成するWebアプリケーションです。OpenAI (GPT-4o), Google (Gemini 2.0 Flash), Anthropic (Claude 3.5 Sonnet) のAIモデルを使用し、負荷レベルや時間、特記事項に基づいて最適なメニューを生成します。生成されたメニューデータは **Neon Database (PostgreSQL + pgvector)** に保存されます。
+詳細な手順や技術ノートは `memory_bank/` 以下に集約しました。READMEは「まず触る人」が迷わない要点だけを簡潔にまとめています。
 
-過去のメニューデータをAI生成時の参考にしたり（RAG機能）、AIが生成したメニューが指定時間を超過した場合に自動調整する機能も備えています。RAG機能は実装済みで、OpenAI Embeddings APIを使用したベクトル化とpgvectorによる高速検索を行い、類似度スコアを%表示します。
+## できること
 
-## 特徴
+- AIでメニュー自動生成: OpenAI / Anthropic / Google から選択
+- RAGで過去メニュー参照: 類似度を%表示して参考提示
+- 指定時間に自動調整: 超過した内容を段階的に縮減
+- 履歴管理: 生成済みメニューを保存・再利用
+- 出力: PDF（印刷）/ CSV での保存（日本語対応）
+  - PDFはポップアップ印刷が既定。/printページ方式も提供
 
-*   **AIによるメニュー自動生成**: OpenAI (GPT-4o), Google (Gemini 2.0 Flash), Anthropic (Claude 3.5 Sonnet) のAIモデルから選択し、負荷レベルや時間、特記事項に基づいて練習メニューを自動生成します。各AIサービスのAPIキーはユーザーが入力する形式となっています。
-*   **過去メニューの参照 (RAG)**: 【実装済み】
-    * OpenAI Embeddings APIを使用してメニューをベクトル化
-    * pgvectorによる高速なベクトル検索を実装
-    * コサイン類似度に基づく類似メニュー検索
-    * 類似度スコアを%表示（例: 類似度 95%）
-    * 上位5件の類似メニューを表示
-    * トグルスイッチで機能の有効/無効を切り替え可能
-    * 検索用のOpenAI APIキーは別途入力欄を用意
-    * 検索結果はAIプロンプトに含められ、参考情報として活用
-*   **自動時間調整**: AIが生成したメニューが指定時間を超過した場合、自動的に内容を調整して時間内に収めます。
-*   **メニュー履歴**: 過去に生成したメニューの履歴を確認し、再利用や参考にすることができます。
-*   **柔軟な出力形式**: 生成したメニューをクライアントサイドでPDFやCSV形式で保存できます。
-    *   PDF出力は「Markdown→HTML→新規ウィンドウ印刷」方式で、Chromeの印刷ダイアログからPDF保存します。日本語・表の折返し・空欄セルに強く、レイアウトが安定します。
-    *   CSV出力では、UTF-8 BOMを付与して日本語の文字化けを防止しました。
-*   **データベース移行完了**: UpstashからNeon Databaseへの移行が完了し、永続的な無料プランで安定したサービスを提供しています。
+## クイックスタート
 
-## 技術スタック
+前提:
+- Node.js（v18+）
+- pnpm または npm
 
-*   Next.js 15
-*   React 19
-*   TypeScript 5
-*   Tailwind CSS
-*   Radix UI
-*   AI Models:
-    *   OpenAI API (GPT-4o)
-    *   Google Gemini API (Gemini 2.0 Flash)
-    *   Anthropic Claude API (Claude 3.5 Sonnet)
-    *   OpenAI Embeddings API
-*   Data Storage:
-    *   Neon Database (PostgreSQL + pgvector)
-    *   Vercel Blob (オプション)
-*   File Generation (Client-side):
-    *   Markdown→HTML→print dialog（新規ウィンドウに直接描画しブラウザ印刷）
-    *   csv-stringify
-
-## AIの種類と使い分け
-
-本アプリケーションでは、以下の3つのAIモデルから選択してメニュー生成を行います：
-
-### 1. OpenAI GPT-4o
-- **特徴**: 最も汎用的で高品質なAIモデル
-- **用途**: 複雑な指示や高品質な出力が必要な場合、専門的なトレーニングメニューの生成
-- **料金**: $0.005/1K tokens
-- **推奨**: 高品質・専門的な内容が必要な場合
-
-### 2. Anthropic Claude 3.5 Sonnet
-- **特徴**: 安全性と倫理性を重視したAIモデル
-- **用途**: 安全性を重視した内容生成、日常的なトレーニングメニューの生成
-- **料金**: $3/1M tokens
-- **推奨**: 日常的な利用、バランスの取れた品質が必要な場合
-
-### 3. Google Gemini 2.0 Flash
-- **特徴**: マルチモーダル対応の高速・軽量AI
-- **用途**: 高速で効率的なトレーニングメニューの生成、初回利用・学習目的
-- **料金**: $0.075/1M tokens
-- **推奨**: 初回利用・学習目的、コスト効率を重視する場合
-
-### 使い分けのポイント
-- **初回利用・学習目的**: Gemini 2.0 Flash
-- **日常的な利用**: Claude 3.5 Sonnet
-- **高品質・専門的な内容**: GPT-4o
-
-## APIキーの準備
-
-本アプリケーションでは、以下のAIサービスのいずれかのAPIキーが必要です：
-
-- OpenAI API (GPT-4o)
-  - メニュー生成用
-  - RAG機能用（類似メニュー検索に使用、オプション）
-- Google API (Gemini 2.0 Flash)
-- Anthropic API (Claude 3.5 Sonnet)
-
-APIキーは環境変数ではなく、アプリケーション内のフォームで直接入力する形式となっています。
-
-### APIキーの取得方法
-
-#### OpenAI APIキー
-1. [OpenAI Platform](https://platform.openai.com)にアクセス
-2. アカウントを作成またはログイン
-3. 左メニューから「API Keys」を選択
-4. 「Create new secret key」をクリック
-5. APIキーをコピーして安全に保管
-
-#### Anthropic Claude APIキー
-1. [Anthropic Console](https://console.anthropic.com)にアクセス
-2. アカウントを作成またはログイン
-3. 「Get API Key」をクリック
-4. APIキーをコピーして安全に保管
-
-#### Google Gemini APIキー
-1. [Google AI Studio](https://makersuite.google.com)にアクセス
-2. Googleアカウントでログイン
-3. 「Get API key」をクリック
-4. APIキーをコピーして安全に保管
-
-### 重要な注意事項
-- APIキーは絶対に他人と共有しないでください
-- GitHubなどの公開リポジトリにアップロードしないでください
-- APIキーが漏洩した場合は、すぐに再生成してください
-- 使用量と料金を定期的に確認してください
-
-### 詳細なヘルプ
-より詳しいAIの使い方やAPIキーの設定方法については、アプリケーション内の[ヘルプページ](/help)をご覧ください。
-
-## Neon Database 設定
-
-本アプリケーションはNeonデータベースを使用しています。Neonは以下の利点があります：
-
-- **永続的な無料プラン**: 月500MBのストレージと10GBの転送量が永続的に利用可能
-- **PostgreSQL互換**: より柔軟なスキーマ設計が可能
-- **pgvector対応**: 高速なベクトル検索が可能
-- **サーバーレス**: 自動スケーリング
-
-### 環境変数の設定
-
-以下の環境変数を設定してください：
-
-```
-DATABASE_URL="postgresql://username:password@hostname:port/database?sslmode=require"
+セットアップ:
+```bash
+pnpm install
+# または
+npm install
 ```
 
-### Neonデータベースのセットアップ
-
-1. [Neon](https://neon.tech)にアカウントを作成
-2. 新しいプロジェクトを作成
-3. 接続文字列を取得し、`DATABASE_URL`環境変数に設定
-4. アプリケーション起動時に`/api/init-db`エンドポイントを呼び出してデータベースを初期化
-
-## Vercel Blob 設定（オプション）
-
-ファイルストレージにはVercel Blobも使用可能です。以下の環境変数を設定してください：
-
-```
-BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
+開発サーバー:
+```bash
+pnpm dev
+# または
+npm run dev
 ```
 
-## セットアップ
+データベース初期化やAPIキーの詳細は下記「ドキュメント」を参照してください。
 
-1.  **環境構築:**
-    *   Node.js (v22.x 推奨)
-    *   pnpm (推奨) または npm
+## ドキュメント
 
-2.  **依存関係のインストール:**
-    ```bash
-    pnpm install
-    ```
-    または
-    ```bash
-    npm install
-    ```
+- アーキテクチャ概要: `memory_bank/ARCHITECTURE.md`
+- リファクタリング方針と結果: `memory_bank/REFACTORING.md`, `memory_bank/REFACTORING_RESULT.md`, `memory_bank/MIGRATION_REPORT.md`
+- AIモデルの使い分け・APIキー手順: `memory_bank/AI_GUIDE.md`
+- データベースとデプロイ設定（Neon/Vercel など）: `memory_bank/DEPLOYMENT.md`
+- Markdown印刷（PDF保存）の詳細: `memory_bank/PRINTING.md`
+- テスト計画: `memory_bank/test-plan.md`
 
-## デプロイ
+## 技術スタック（概要）
 
-### 前提条件
-
-1. Node.js（v18以上）のインストール
-2. pnpm（推奨）またはnpmのインストール
-3. 必要なAIサービスのAPIキー：
-   - OpenAI API（GPT-4o、メニュー生成用とRAG機能用）
-   - Google API（Gemini 2.0 Flash）
-   - Anthropic API（Claude 3.5 Sonnet）
-   のいずれか
-
-### Vercelへのデプロイ
-
-1. [Vercel](https://vercel.com)にアカウントを作成し、ログインします。
-2. GitHubリポジトリと連携し、このプロジェクトをインポートします。
-3. Neon Databaseをセットアップします：
-   - [Neon](https://neon.tech)でアカウント作成・プロジェクト作成
-   - 接続文字列を取得
-   - Vercelの環境変数に`DATABASE_URL`を設定
-4. 以下のビルド設定を確認します：
-   - ファイルアップロード機能を使用するページ（`app/upload/page.tsx`）では、`dynamic = 'force-dynamic'` を設定
-   - `jspdf-autotable` パッケージが `dependencies` に含まれていることを確認
-5. デプロイを実行します。
-6. デプロイ後、`/api/init-db`エンドポイントを呼び出してデータベースを初期化します。
-
-### ローカル開発
-
-1. リポジトリをクローン：
-   ```bash
-   git clone https://github.com/[your-username]/swim-training-app.git
-   cd swim-training-app
-   ```
-
-2. 依存関係のインストール：
-   ```bash
-   pnpm install
-   # または
-   npm install
-   ```
-
-3. 環境変数の設定：
-   ```bash
-   # .env.local ファイルを作成
-   DATABASE_URL="postgresql://username:password@hostname:port/database?sslmode=require"
-   ```
-
-4. データベースの初期化：
-   ```bash
-   pnpm init-db
-   ```
-
-5. 開発サーバーの起動：
-   ```bash
-   pnpm dev
-   # または
-   npm run dev
-   ```
-
-### PDF保存（ユーザー操作）
-
-アプリ内の「ダウンロード → PDF形式」を選択すると、新しいウィンドウにHTMLが描画され、数百ms後に印刷ダイアログが開きます。そのまま「PDFに保存」を選択してください。
-
-開発者向けの詳細は本README内「Markdown印刷（MD→HTML→印刷）」セクションを参照してください。
-
-### その他のプラットフォームへのデプロイ
-
-他のプラットフォームにデプロイする場合は、以下の点に注意してください：
-
-1. Neon Databaseの接続設定
-2. 環境変数の適切な設定（`DATABASE_URL`）
-3. Node.js v18以上の実行環境の確保
-4. PostgreSQL + pgvectorのサポート
+- Next.js 15 / React 19 / TypeScript 5
+- Tailwind CSS / Radix UI
+- DB: Neon Database（PostgreSQL + pgvector）
+- Embeddings: OpenAI（text-embedding-3-small）
 
 ## テスト
 
-本アプリケーションでは、以下のテストを実施しています。
-
-*   **単体テスト・結合テスト**: Jest (`__tests__/` ディレクトリ) を使用して自動化されています。主要なコンポーネントや関数の動作、API連携などを検証します。
-    ```bash
-    pnpm test
-    # または
-    npm test
-    ```
-*   **E2E (End-to-End) テスト**: 主要なユーザーフロー (`test_case.csv` に記載) については、手動でテストを実施します。ブラウザ上で実際に操作し、期待通りに動作するかを確認します。(2025/4/16: 全テストケースパス済み)
-
-## Markdown印刷（MD→HTML→印刷）
-
-MD形式で表や本文を生成し、印刷（PDF保存）できる仕組みを追加しました。新規ウィンドウにHTMLを直接描画し、ブラウザの印刷ダイアログを起動します（/print ページは不要）。
-
-使い方（例）:
-
-```ts
-import { toMarkdownTable } from '@/lib/markdown/mdTable'
-import { openPrintPopup } from '@/lib/markdown/printPopup'
-
-// ヘッダ・行データをMarkdown表に
-const mdTable = toMarkdownTable(
-  ['氏名', '長さ', '体重', '達成率', '備考'],
-  [
-    ['山田 太郎', '12.50 cm', '70.0 kg', '12.0 %', ''],
-    ['Suzuki', '125 mm', '68.0 kg', '12.0 %', '—'],
-  ],
-  ['left', 'right', 'right', 'right', 'left']
-)
-
-const markdown = `# 練習メニュー一覧\n\n${mdTable}`
-
-// 新しいウィンドウで印刷（ブラウザの印刷→PDF保存）
-openPrintPopup(markdown)
+Jest による単体・結合テストを用意しています。
+```bash
+pnpm test
+# または
+npm test
 ```
-
-印刷レイアウトの要点:
-- 固定レイアウト: `table { table-layout: fixed; }` で列幅の押し合いを抑制
-- 空欄保護: 空セルは `\u00A0`（NBSP）を自動挿入
-- 日本語/CJK: システムの日本語フォント（Noto Sans JP等）が利用されます
-- 自動印刷: ウィンドウロード後に `window.print()` を呼び出します
-
-必要に応じて `lib/markdown/printPopup.ts` 内のスタイルを調整してください。
-
-## 今後の展望
-
-*   メニューのカスタマイズ機能（手動編集など）
-*   RAG機能の改善：
-    * より高度な類似度計算アルゴリズムの導入
-    * メニュー内容の意味的な類似性の考慮
-    * 複数の埋め込みモデルのサポート
-    * キャッシュ機能の実装による応答速度の改善
-*   ファイルアップロード機能の改善（多様なフォーマット対応、解析精度向上）
-*   UI/UX の改善
-*   多言語対応
-*   PDFテンプレートのカスタマイズ機能
-
-## ライセンス
-
-このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](./LICENSE)ファイルをご覧ください。
+E2E は `memory_bank/test-plan.md` を参照してください。
 
 ## コントリビューション
 
-1. このリポジトリをフォーク
-2. 機能開発用のブランチを作成：`git checkout -b feature/amazing-feature`
-3. 変更をコミット：`git commit -m 'Add some amazing feature'`
-4. リモートにプッシュ：`git push origin feature/amazing-feature`
-5. プルリクエストを作成
+Pull Request を歓迎します。Issue での提案・不具合報告もお待ちしています。
 
-## 貢献者
+## ライセンス
 
-このプロジェクトに貢献していただいた皆様に感謝いたします。
-
-## サポート
-
-問題や提案がございましたら、GitHubのIssueセクションにてご報告ください。
+MIT License（詳細は LICENSE を参照）

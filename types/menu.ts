@@ -37,3 +37,24 @@ export interface GenerateMenuRequest {
   apiKey?: string;
   specialNotes?: string;
 }
+
+// AI応答の型定義（TrainingMenuと互換性のある形）
+export interface GeneratedMenuData {
+  title: string;
+  menu: Array<{
+    name: string;
+    items: Array<{
+      description: string;
+      distance: string | number;
+      sets: number;
+      circle: string;
+      equipment?: string;
+      notes?: string;
+      time?: number;
+    }>;
+    totalTime?: number;
+  }>;
+  totalTime: number;
+  intensity?: string | null;
+  targetSkills?: string[] | null;
+}

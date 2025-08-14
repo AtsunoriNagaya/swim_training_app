@@ -1,14 +1,38 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+function getAllowedOrigin(request: NextRequest): string | null {
+  const origin = request.headers.get('origin');
+  // Same-origin is always allowed
+  const sameOrigin = request.nextUrl.origin;
+  if (origin && origin === sameOrigin) return origin;
+
+  const allowList = (process.env.CORS_ALLOW_ORIGINS || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+  if (origin && allowList.includes(origin)) return origin;
+  return null;
+}
+
 export function middleware(request: NextRequest) {
+  const headers = new Headers();
+  const allowedOrigin = getAllowedOrigin(request);
+
+  if (allowedOrigin) {
+    headers.set('Access-Control-Allow-Origin', allowedOrigin);
+    headers.set('Vary', 'Origin');
+  }
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (request.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers });
+  }
+
   const response = NextResponse.next();
-
-  // CORSヘッダーを設定
-  response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
+  headers.forEach((value, key) => response.headers.set(key, value));
   return response;
 }
 

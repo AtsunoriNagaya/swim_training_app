@@ -111,14 +111,28 @@ export default function HelpPage() {
             <CardTitle>PDF保存の流れ</CardTitle>
             <CardDescription>
               結果画面の「ダウンロード → PDF形式」から、印刷プレビューを経由してPDFに保存できます。
+              既定はポップアップ印刷で、代替として/printページ方式も利用できます。
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-              <li>結果画面で「ダウンロード」→「PDF形式」をクリック</li>
-              <li>新しいタブで印刷プレビュー（/print）が開きます</li>
-              <li>ブラウザの印刷ダイアログから「PDFに保存」を選択</li>
-            </ol>
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <div>
+                <strong>既定（推奨）: ポップアップ印刷</strong>
+                <ol className="list-decimal list-inside mt-2 space-y-1">
+                  <li>「ダウンロード」→「PDF形式」をクリック</li>
+                  <li>ポップアップで印刷プレビューが開きます</li>
+                  <li>自動で印刷ダイアログが起動 → 「PDFに保存」</li>
+                </ol>
+              </div>
+              <div>
+                <strong>代替: /print ページ方式</strong>
+                <ol className="list-decimal list-inside mt-2 space-y-1">
+                  <li>「ダウンロード」→「PDF形式」をクリック</li>
+                  <li>/print ページで印刷プレビューが開きます</li>
+                  <li>印刷ダイアログから「PDFに保存」を選択</li>
+                </ol>
+              </div>
+            </div>
             <div className="mt-4 text-sm text-muted-foreground">
               <strong>レイアウトが安定する理由：</strong>
               <ul className="list-disc list-inside mt-2 space-y-1">
@@ -129,7 +143,7 @@ export default function HelpPage() {
             </div>
             <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded">
               <p className="text-xs text-muted-foreground">
-                印刷レイアウトは「/print」ページのスタイルで調整できます（フォント・余白・列幅など）。
+                印刷レイアウトはポップアップ内蔵スタイル、または「/print」ページのスタイルで調整できます（フォント・余白・列幅など）。
               </p>
             </div>
           </CardContent>
