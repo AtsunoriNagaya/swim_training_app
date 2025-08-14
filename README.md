@@ -20,8 +20,8 @@
     * 検索結果はAIプロンプトに含められ、参考情報として活用
 *   **自動時間調整**: AIが生成したメニューが指定時間を超過した場合、自動的に内容を調整して時間内に収めます。
 *   **メニュー履歴**: 過去に生成したメニューの履歴を確認し、再利用や参考にすることができます。
-*   **柔軟な出力形式**: 生成したメニューをクライアントサイドでPDFやCSV形式でダウンロードできます。
-    *   PDF出力では、距離と本数の表示を明確化、合計距離を各項目に追加、サイクルタイムの表示を整理、所要時間を右寄せで表示、セクション合計行のデザインを改善、総合計行に合計距離を追加しました。
+*   **柔軟な出力形式**: 生成したメニューをクライアントサイドでPDFやCSV形式で保存できます。
+    *   PDF出力は「Markdown→HTML→印刷プレビュー（/print）」方式に移行し、ブラウザの印刷ダイアログからPDF保存します。日本語・表の折返し・空欄セルに強く、レイアウトが安定します。
     *   CSV出力では、UTF-8 BOMを付与して日本語の文字化けを防止しました。
 *   **データベース移行完了**: UpstashからNeon Databaseへの移行が完了し、永続的な無料プランで安定したサービスを提供しています。
 
@@ -41,7 +41,7 @@
     *   Neon Database (PostgreSQL + pgvector)
     *   Vercel Blob (オプション)
 *   File Generation (Client-side):
-    *   jsPDF + jspdf-autotable
+    *   Markdown→HTML print preview（`/print` ページ経由でブラウザ印刷によりPDF保存）
     *   csv-stringify
 
 ## AIの種類と使い分け
@@ -219,6 +219,12 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
    npm run dev
    ```
 
+### PDF保存（ユーザー操作）
+
+アプリ内の「ダウンロード → PDF形式」を選択すると、新しいタブで印刷プレビュー（/print）が開き、ブラウザの印刷ダイアログからPDFに保存できます。
+
+開発者向けの詳細な使い方は本README内「Markdown印刷プレビュー（MD→HTML→PDF）」セクションを参照してください。
+
 ### その他のプラットフォームへのデプロイ
 
 他のプラットフォームにデプロイする場合は、以下の点に注意してください：
@@ -239,6 +245,40 @@ BLOB_READ_WRITE_TOKEN=YOUR_BLOB_READ_WRITE_TOKEN
     npm test
     ```
 *   **E2E (End-to-End) テスト**: 主要なユーザーフロー (`test_case.csv` に記載) については、手動でテストを実施します。ブラウザ上で実際に操作し、期待通りに動作するかを確認します。(2025/4/16: 全テストケースパス済み)
+
+## Markdown印刷プレビュー（MD→HTML→PDF）
+
+MD形式で表や本文を生成し、印刷（PDF保存）できるプレビューを追加しました。Next.jsの `/print` ページにBase64でMarkdownを渡すと、HTMLに整形して印刷します。
+
+使い方（例）:
+
+```ts
+import { toMarkdownTable } from '@/lib/markdown/mdTable'
+import { openPrintPreview } from '@/lib/markdown/openPrintPreview'
+
+// ヘッダ・行データをMarkdown表に
+const mdTable = toMarkdownTable(
+  ['氏名', '長さ', '体重', '達成率', '備考'],
+  [
+    ['山田 太郎', '12.50 cm', '70.0 kg', '12.0 %', ''],
+    ['Suzuki', '125 mm', '68.0 kg', '12.0 %', '—'],
+  ],
+  ['left', 'right', 'right', 'right', 'left']
+)
+
+const markdown = `# 練習メニュー一覧\n\n${mdTable}`
+
+// 新しいタブで印刷プレビューを開く（ブラウザの印刷→PDF保存）
+openPrintPreview(markdown)
+```
+
+印刷レイアウトの要点:
+- 固定レイアウト: `table { table-layout: fixed; }` で列幅の押し合いを抑制
+- 空欄保護: 空セルは `\u00A0`（NBSP）を自動挿入
+- 日本語/CJK: システムの日本語フォント（Noto Sans JP等）が利用されます
+- 自動印刷: `/print` ページは表示後に自動で `window.print()` を呼びます
+
+必要に応じて `app/print/page.tsx` 内のスタイルを調整してください。
 
 ## 今後の展望
 
