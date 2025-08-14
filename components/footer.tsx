@@ -57,7 +57,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} 水泳部練習メニュー作成アプリ
             </p>
             <div className="flex gap-4">
-              <Link href="https://github.com/AtsunoriNagaya/swim_training_app" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+              <a href="https://github.com/AtsunoriNagaya/swim_training_app" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="GitHub リポジトリを新規タブで開く">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -110,7 +110,7 @@ export default function Footer() {
                   <path d="M9 18c-4.51 2-5-2-7-2" />
                 </svg>
                 <span className="sr-only">GitHub</span>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
