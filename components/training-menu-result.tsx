@@ -149,7 +149,7 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
     try {
       if (format === "pdf") {
         const md = buildMarkdown();
-        openPrintPreview(md);
+        openPrintPreview(md, '_self');
       } else if (format === "csv") {
         const csvData = [
           ["水泳練習メニュー"],
