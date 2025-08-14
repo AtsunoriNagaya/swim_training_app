@@ -1,4 +1,4 @@
-// Open print preview page with given markdown via base64 in URL
+// Open print preview page with given markdown. Prefer sessionStorage to avoid long URLs.
 
 const base64EncodeUnicode = (str: string) => {
   const utf8 = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_m, p) =>
@@ -11,11 +11,19 @@ const base64EncodeUnicode = (str: string) => {
   return '';
 };
 
-export function openPrintPreview(markdown: string) {
-  const b64 = base64EncodeUnicode(markdown);
-  const url = `/print?data=${encodeURIComponent(b64)}`;
+export function openPrintPreview(markdown: string, target: '_blank' | '_self' = '_blank') {
   if (typeof window !== 'undefined') {
-    window.open(url, '_blank', 'noopener');
+    try {
+      const key = `print_md_${Date.now()}`;
+      window.sessionStorage.setItem(key, markdown);
+      const url = `/print#${encodeURIComponent(key)}`;
+      window.open(url, target, 'noopener');
+      return;
+    } catch {}
+    // Fallback to base64-in-query if sessionStorage is not available
+    const b64 = base64EncodeUnicode(markdown);
+    const url = `/print?data=${encodeURIComponent(b64)}`;
+    window.open(url, target, 'noopener');
   }
 }
 
