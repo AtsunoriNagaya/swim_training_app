@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import fontkit from '@pdf-lib/fontkit';
 
 import { stringify } from "csv-stringify";
 import { calculateTotalDistance } from "@/lib/utils";
+import { toMarkdownTable } from "@/lib/markdown/mdTable";
+import { openPrintPreview } from "@/lib/markdown/openPrintPreview";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -106,303 +106,50 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
     }
   };
 
+  const buildMarkdown = () => {
+    const lines: string[] = [];
+    lines.push(`# ${menuData.title}`);
+    lines.push("");
+    lines.push(`作成日時: ${formatDate(menuData.createdAt)}`);
+    lines.push(`負荷レベル: ${menuData.loadLevels.map(l => `${l}(${getLoadLevelLabel(l)})`).join(', ')}`);
+    lines.push(`予定時間: ${menuData.duration}分 / 実際の時間: ${menuData.totalTime}分`);
+    if (menuData.notes) {
+      lines.push("");
+      lines.push(`備考: ${menuData.notes}`);
+    }
+    
+    for (const section of menuData.menu) {
+      lines.push("");
+      lines.push(`## ${section.name}（${section.totalTime}分）`);
+      const headers = ["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間"];
+      const rows = section.items.map((item) => [
+        item.description,
+        item.distance,
+        `${item.sets}`,
+        `${calculateTotalDistance(item.distance, item.sets)}m`,
+        item.circle,
+        typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-',
+        `${item.time}分`
+      ]);
+      const align: ("left"|"center"|"right")[] = ["left","right","right","right","left","right","right"];
+      lines.push(toMarkdownTable(headers, rows, align));
+      // セクション合計
+      lines.push("");
+      lines.push(`_${section.name}合計: 所要時間 ${section.totalTime}分_`);
+    }
+    lines.push("");
+    lines.push(`### 総合計: ${menuData.totalTime}分`);
+    lines.push(`指定時間との差: ${menuData.cooldown}分`);
+    return lines.join("\n");
+  };
+
   const handleDownload = useCallback(async (format: "pdf" | "csv") => {
     setIsDownloading(true);
 
     try {
       if (format === "pdf") {
-        // PDFドキュメントを作成
-        const pdfDoc = await PDFDocument.create();
-        
-        // フォントの読み込み
-        const fontUrl = 'https://raw.githubusercontent.com/googlefonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf';
-        const fontResponse = await fetch(fontUrl);
-        const fontBytes = await fontResponse.arrayBuffer();
-        
-        // フォントを登録
-        await pdfDoc.registerFontkit(fontkit);
-        const customFont = await pdfDoc.embedFont(fontBytes);
-        
-        // ページを追加
-        let page = pdfDoc.addPage([595.28, 841.89]); // A4サイズ
-        const { width, height } = page.getSize();
-        
-        // フォントサイズの設定
-        const fontSize = {
-          title: 16,
-          normal: 12,
-          small: 10
-        };
-
-        // 現在のY位置（上から下に進む）
-        let yPos = height - 50;
-        
-        // タイトルを描画
-        page.drawText(menuData.title, {
-          x: 50,
-          y: yPos,
-          font: customFont,
-          size: fontSize.title,
-          color: rgb(0, 0, 0)
-        });
-        
-        yPos -= 30;
-        
-        // 基本情報を描画
-        page.drawText(`作成日時: ${formatDate(menuData.createdAt)}`, {
-          x: 50,
-          y: yPos,
-          font: customFont,
-          size: fontSize.normal,
-          color: rgb(0, 0, 0)
-        });
-        
-        yPos -= 20;
-        
-        page.drawText(`負荷レベル: ${menuData.loadLevels.map(l => `${l}(${getLoadLevelLabel(l)})`).join(', ')}`, {
-          x: 50,
-          y: yPos,
-          font: customFont,
-          size: fontSize.normal,
-          color: rgb(0, 0, 0)
-        });
-        
-        yPos -= 20;
-        
-        page.drawText(`予定時間: ${menuData.duration}分 / 実際の時間: ${menuData.totalTime}分`, {
-          x: 50,
-          y: yPos,
-          font: customFont,
-          size: fontSize.normal,
-          color: rgb(0, 0, 0)
-        });
-        
-        if (menuData.notes) {
-          yPos -= 20;
-          page.drawText('備考:', {
-            x: 50,
-            y: yPos,
-            font: customFont,
-            size: fontSize.normal,
-            color: rgb(0, 0, 0)
-          });
-          
-          yPos -= 15;
-          page.drawText(menuData.notes, {
-            x: 50,
-            y: yPos,
-            font: customFont,
-            size: fontSize.small,
-            color: rgb(0, 0, 0)
-          });
-        }
-        
-        yPos -= 30;
-        
-        // メニューセクションを描画
-        for (const section of menuData.menu) {
-          // セクションヘッダー
-          page.drawText(`${section.name} (${section.totalTime}分)`, {
-            x: 50,
-            y: yPos,
-            font: customFont,
-            size: fontSize.normal,
-            color: rgb(0, 0, 0)
-          });
-          
-          yPos -= 20;
-          
-          // テーブルヘッダー
-          const headers = ["内容", "距離", "本数", "合計距離", "サイクル", "休憩", "所要時間"];
-          const columnWidths = [150, 60, 50, 70, 60, 50, 60];
-          let xPos = 50;
-          
-          const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
-          const tableHeight = 20;
-
-          // ヘッダー背景
-          page.drawRectangle({
-            x: xPos,
-            y: yPos - 15,
-            width: tableWidth,
-            height: tableHeight,
-            color: rgb(0.9, 0.9, 0.9)
-          });
-
-          // テーブルの罫線を描画
-          page.drawLine({
-            start: { x: xPos, y: yPos - 15 },
-            end: { x: xPos + tableWidth, y: yPos - 15 },
-            color: rgb(0.2, 0.2, 0.2),
-            thickness: 0.5
-          });
-
-          // 縦線を描画
-          let currentX = xPos;
-          columnWidths.forEach(width => {
-            page.drawLine({
-              start: { x: currentX, y: yPos - 15 },
-              end: { x: currentX, y: yPos - 15 + tableHeight },
-              color: rgb(0.2, 0.2, 0.2),
-              thickness: 0.5
-            });
-            currentX += width;
-          });
-          // 最後の縦線
-          page.drawLine({
-            start: { x: currentX, y: yPos - 15 },
-            end: { x: currentX, y: yPos - 15 + tableHeight },
-            color: rgb(0.2, 0.2, 0.2),
-            thickness: 0.5
-          });
-          
-          // ヘッダーテキスト
-          headers.forEach((header, i) => {
-            page.drawText(header, {
-              x: xPos + 5,
-              y: yPos,
-              font: customFont,
-              size: fontSize.small,
-              color: rgb(0, 0, 0)
-            });
-            xPos += columnWidths[i];
-          });
-          
-          yPos -= 25;
-          
-          // アイテムの描画
-          for (const item of section.items) {
-            if (yPos < 50) {
-              // 新しいページを追加
-              page = pdfDoc.addPage([595.28, 841.89]);
-              yPos = height - 50;
-            }
-            
-            xPos = 50;
-            
-            // セルの内容を描画
-            const cells = [
-              item.description,
-              item.distance,
-              `${item.sets}本`,
-              `${calculateTotalDistance(item.distance, item.sets)}m`,
-              item.circle,
-              typeof item.rest === 'number' && item.rest > 0 ? `${item.rest}分` : '-',
-              `${item.time}分`
-            ];
-            
-            // セルの背景と罫線を描画
-            cells.forEach((cell, i) => {
-              const cellX = xPos;
-              const cellY = yPos - 15;
-              const cellWidth = columnWidths[i];
-              const cellHeight = 20;
-
-              // セルの罫線
-              page.drawLine({
-                start: { x: cellX, y: cellY },
-                end: { x: cellX + cellWidth, y: cellY },
-                color: rgb(0.2, 0.2, 0.2),
-                thickness: 0.5
-              });
-              page.drawLine({
-                start: { x: cellX, y: cellY + cellHeight },
-                end: { x: cellX + cellWidth, y: cellY + cellHeight },
-                color: rgb(0.2, 0.2, 0.2),
-                thickness: 0.5
-              });
-              page.drawLine({
-                start: { x: cellX, y: cellY },
-                end: { x: cellX, y: cellY + cellHeight },
-                color: rgb(0.2, 0.2, 0.2),
-                thickness: 0.5
-              });
-              page.drawLine({
-                start: { x: cellX + cellWidth, y: cellY },
-                end: { x: cellX + cellWidth, y: cellY + cellHeight },
-                color: rgb(0.2, 0.2, 0.2),
-                thickness: 0.5
-              });
-
-              // セルのテキスト
-              page.drawText(cell, {
-                x: xPos + 5,
-                y: yPos,
-                font: customFont,
-                size: fontSize.small,
-                color: rgb(0, 0, 0)
-              });
-              xPos += columnWidths[i];
-            });
-            
-            yPos -= 25;
-          }
-          
-          // セクション合計行
-          xPos = 50;
-          const totalRow = [
-            `${section.name}合計`,
-            '',
-            '',
-            `${section.items.reduce((sum, item) => sum + calculateTotalDistance(item.distance, item.sets), 0)}m`,
-            '',
-            '',
-            `${section.totalTime}分`
-          ];
-
-          // 合計行の背景
-          page.drawRectangle({
-            x: xPos,
-            y: yPos - 15,
-            width: tableWidth,
-            height: 20,
-            color: rgb(0.96, 0.96, 0.96)
-          });
-
-          // 合計行の罫線
-          page.drawLine({
-            start: { x: xPos, y: yPos - 15 },
-            end: { x: xPos + tableWidth, y: yPos - 15 },
-            color: rgb(0.2, 0.2, 0.2),
-            thickness: 0.5
-          });
-          page.drawLine({
-            start: { x: xPos, y: yPos + 5 },
-            end: { x: xPos + tableWidth, y: yPos + 5 },
-            color: rgb(0.2, 0.2, 0.2),
-            thickness: 0.5
-          });
-
-          // 合計行のテキスト
-          totalRow.forEach((cell, i) => {
-            if (cell) {
-              page.drawText(cell, {
-                x: i === 0 ? xPos + 5 : xPos + columnWidths[i] - (cell.length * fontSize.small * 0.6) - 5,
-                y: yPos,
-                font: customFont,
-                size: fontSize.small,
-                color: rgb(0.2, 0.2, 0.2)
-              });
-            }
-            xPos += columnWidths[i];
-          });
-
-          yPos -= 30;
-        }
-        
-        // PDFをバイナリデータとして取得
-        const pdfBytes = await pdfDoc.save();
-        
-        // Blobを作成してダウンロード
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `swimming-menu-${menuData.id}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        const md = buildMarkdown();
+        openPrintPreview(md);
       } else if (format === "csv") {
         const csvData = [
           ["水泳練習メニュー"],

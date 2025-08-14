@@ -100,6 +100,44 @@ export default function HelpPage() {
 
       <Separator className="my-8 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />
 
+      {/* PDF出力（Markdown→印刷プレビュー） */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+          <FileText className="h-6 w-6 text-primary" />
+          PDF出力（Markdown→印刷プレビュー）
+        </h2>
+        <Card className="card-hover border-primary/20">
+          <CardHeader>
+            <CardTitle>PDF保存の流れ</CardTitle>
+            <CardDescription>
+              結果画面の「ダウンロード → PDF形式」から、印刷プレビューを経由してPDFに保存できます。
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+              <li>結果画面で「ダウンロード」→「PDF形式」をクリック</li>
+              <li>新しいタブで印刷プレビュー（/print）が開きます</li>
+              <li>ブラウザの印刷ダイアログから「PDFに保存」を選択</li>
+            </ol>
+            <div className="mt-4 text-sm text-muted-foreground">
+              <strong>レイアウトが安定する理由：</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Markdown→HTML→CSS印刷によりCJKの折返し・禁則処理が堅牢</li>
+                <li>table-layout: fixed と空欄NBSPで列崩れを抑止</li>
+                <li>記号・空白の正規化により測定誤差を低減</li>
+              </ul>
+            </div>
+            <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded">
+              <p className="text-xs text-muted-foreground">
+                印刷レイアウトは「/print」ページのスタイルで調整できます（フォント・余白・列幅など）。
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <Separator className="my-8 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />
+
       {/* AIの種類と使い分けセクション */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
@@ -190,6 +228,7 @@ export default function HelpPage() {
                 <p className="text-sm text-muted-foreground">
                   画像やテキストの両方を理解できるAIです。
                   高速で効率的なトレーニングメニューの生成に適しています。
+                  基本無料で使用可能です。
                 </p>
                 <div className="text-sm text-muted-foreground">
                   <strong>RAGなしでの生成：</strong> 高速で基本的なトレーニングメニューを生成

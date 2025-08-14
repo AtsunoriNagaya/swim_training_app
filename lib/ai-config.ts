@@ -14,7 +14,7 @@ export const AI_MODEL_CONFIGS = {
     model: "gemini-2.0-flash",
     temperature: 0.4,
     displayName: "Google Gemini 2.0 Flash",
-    description: "高速・軽量。初回利用・学習目的やコスト効率を重視する場合に推奨。",
+    description: "基本無料で使用可能。高速・軽量。初回利用・学習目的やコスト効率を重視する場合に推奨。",
     apiKeyFormat: "AIza",
     apiKeyDescription: "Google Gemini APIキーを入力してください",
     icon: "🛡️",
