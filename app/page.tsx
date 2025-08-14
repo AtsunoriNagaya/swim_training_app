@@ -175,32 +175,32 @@ export default function Home() {
       </section>
 
       {/* ヘルプセクション */}
-      <section className="py-20">
+      <section className="py-12 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
               <span className="gradient-text">初めての方へ</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed break-words">
               AIの使い方やAPIキーの設定方法について詳しく説明しています
             </p>
           </div>
           
-          <div className="max-w-2xl mx-auto">
-            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-primary/20">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mx-auto mb-6">
+          <div className="max-w-xl md:max-w-2xl mx-auto">
+            <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 dark:from-primary/10 dark:to-secondary/10 border-primary/20">
+              <CardContent className="p-6 md:p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-6">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-semibold mb-4">AIの使い方とAPIキー設定</h3>
-                <p className="text-muted-foreground mb-6">
-                  各種AIの特徴や使い分け、APIキーの取得方法について詳しく説明しています。
-                  初めてAIを使う方にも分かりやすく解説しています。
+                <h3 className="text-xl md:text-2xl font-semibold mb-3 leading-tight break-words">AIの使い方とAPIキー設定</h3>
+                <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed break-words">
+                  各種AIの特徴や使い分け、APIキーの取得方法について解説。
+                  初めての方にも分かりやすくまとめています。
                 </p>
                 <Link href="/help">
-                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg hover:shadow-blue-500/20">
+                  <Button className="bg-gradient-to-r from-primary to-secondary hover:shadow-lg hover:shadow-primary/20">
                     ヘルプを見る
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
