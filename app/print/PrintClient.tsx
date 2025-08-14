@@ -20,6 +20,13 @@ export default function PrintClient() {
   const data = useMemo(() => {
     if (typeof window === 'undefined') return null;
     try {
+      // 0) window.name (same-tab persistence)
+      const wn = (window as any).name as string | undefined;
+      if (wn && wn.startsWith('PRINT_MD:')) {
+        const b64 = wn.slice('PRINT_MD:'.length);
+        try { (window as any).name = ''; } catch {}
+        return b64; // return as base64; will decode in next step
+      }
       // 1) Prefer hash key -> localStorage (cross-tab)
       const hash = (window.location.hash || '').replace(/^#/, '');
       if (hash) {

@@ -15,6 +15,12 @@ const base64EncodeUnicode = (str: string) => {
 export function openPrintPreview(markdown: string, target: '_blank' | '_self' = '_blank') {
   if (typeof window !== 'undefined') {
     try {
+      // Also stash to window.name to ensure availability across same-tab navigation
+      const prefix = 'PRINT_MD:';
+      try {
+        (window as any).name = prefix + base64EncodeUnicode(markdown);
+      } catch {}
+
       const key = `print_md_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       window.localStorage.setItem(key, markdown);
       const url = `/print#${encodeURIComponent(key)}`;
