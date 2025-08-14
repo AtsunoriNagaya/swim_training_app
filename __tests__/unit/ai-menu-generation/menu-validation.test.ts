@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node';
 import type { GenerateMenuRequest } from '../../../types/menu';
 
 // モックのインポート
-jest.mock('@/lib/kv-storage');
+jest.mock('@/lib/neon-db');
 
 // MSWサーバーのセットアップ（ハンドラーは外部からインポートせず、各it内で直接定義）
 const server = setupServer();
