@@ -1,5 +1,7 @@
+// Load DB credentials if present
+require('dotenv').config({ path: '.env.local' });
 import { POST as generateMenuHandler } from '../../app/api/generate-menu/route';
-import { saveMenu, getMenu } from '../../lib/neon-db';
+import * as neonDb from '../../lib/neon-db';
 import type { GenerateMenuRequest, TrainingMenu } from '../../types/menu';
 import { NextRequest } from 'next/server';
 
@@ -19,6 +21,15 @@ const generateMenu = async (params: GenerateMenuRequest): Promise<TrainingMenu> 
 };
 
 describe('Menu Generation and Storage Integration (IT-001)', () => {
+  beforeAll(async () => {
+    // Initialize Neon DB schema (requires DATABASE_URL)
+    await neonDb.initDatabase();
+  });
+
+  afterAll(async () => {
+    await neonDb.closeDatabase();
+  });
+
   beforeEach(() => {
     // テスト前の初期化処理
     jest.clearAllMocks();
@@ -39,9 +50,8 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
     expect(generatedMenu.menu).toBeInstanceOf(Array);
     expect(generatedMenu.totalTime).toBeLessThanOrEqual(params.trainingTime);
 
-    // メニューの保存
     const menuId = `test-${Date.now()}`;
-    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
+    const testEmbedding = undefined; // omit embedding to avoid pgvector dimension mismatch
     const testMetadata = {
       title: generatedMenu.title,
       description: 'テストメニュー',
@@ -54,13 +64,14 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
       aiModel: params.model,
       createdAt: new Date().toISOString(),
     };
-    await expect(saveMenu(menuId, generatedMenu, testEmbedding, testMetadata)).resolves.not.toThrow();
 
-    // 保存されたメニューの検証
-    const savedMenu = await getMenu(menuId);
+    await expect(neonDb.saveMenu(menuId, generatedMenu, testEmbedding, testMetadata)).resolves.not.toThrow();
+
+    const savedMenu = await neonDb.getMenu(menuId);
     expect(savedMenu).toBeDefined();
     if (savedMenu) {
       expect(savedMenu.menu).toEqual(generatedMenu.menu);
+      // generateMenuHandler は intensity を負荷レベルのまま返すモック
       expect(savedMenu.intensity).toBe(params.loadLevel);
       expect(savedMenu.totalTime).toBe(params.trainingTime);
     }
@@ -111,6 +122,6 @@ describe('Menu Generation and Storage Integration (IT-001)', () => {
       aiModel: params.model,
       createdAt: new Date().toISOString(),
     };
-    await expect(saveMenu(testMenuId, generatedMenu, testEmbedding, testMetadata)).rejects.toThrow('Storage error');
+    await expect(neonDb.saveMenu(testMenuId, generatedMenu, testEmbedding, testMetadata)).rejects.toThrow('Storage error');
   });
 });

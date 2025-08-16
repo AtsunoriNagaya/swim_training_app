@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">64.7% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>11/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>2/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">64.7% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>11/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -118,34 +118,34 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -168,26 +168,26 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { NextResponse } from "next/server";
 import { getMenu } from "@/lib/neon-db";
 &nbsp;
-export async function <span class="fstat-no" title="function not covered" >GET(</span>request: Request) {
-<span class="cstat-no" title="statement not covered" >  try {</span>
+export async function GET(request: Request) {
+  try {
     // デバッグ情報の強化: リクエスト情報を詳細に記録
-<span class="cstat-no" title="statement not covered" >    console.log(`[API] Request URL: ${request.url}`);</span>
-    const { searchParams } = <span class="cstat-no" title="statement not covered" >new URL(request.url);</span>
-    const menuId = <span class="cstat-no" title="statement not covered" >searchParams.get("id");</span>
+    console.log(`[API] Request URL: ${request.url}`);
+    const { searchParams } = new URL(request.url);
+    const menuId = searchParams.get("id");
 &nbsp;
     // リクエストパラメータの検証
-<span class="cstat-no" title="statement not covered" >    if (!menuId) {</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!menuId) {
 <span class="cstat-no" title="statement not covered" >      console.warn("[API] 🚨 API call without menu ID");</span>
 <span class="cstat-no" title="statement not covered" >      return NextResponse.json({ error: "Menu ID is required" }, { status: 400 });</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log(`[API] 🔍 Fetching menu with ID: ${menuId}`);</span>
+    console.log(`[API] 🔍 Fetching menu with ID: ${menuId}`);
     
     // Neonデータベースからメニューデータを取得
-<span class="cstat-no" title="statement not covered" >    console.log(`[API] 🔄 Calling getMenu function from neon-db`);</span>
-    const menuData = <span class="cstat-no" title="statement not covered" >await getMenu(menuId);</span>
+    console.log(`[API] 🔄 Calling getMenu function from neon-db`);
+    const menuData = await getMenu(menuId);
     
-<span class="cstat-no" title="statement not covered" >    if (!menuData) {</span>
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!menuData) {
 <span class="cstat-no" title="statement not covered" >      console.warn(`[API] 🚨 Menu not found for ID: ${menuId} after checking neon-db`);</span>
 <span class="cstat-no" title="statement not covered" >      return NextResponse.json({</span>
         error: "Menu not found",
@@ -195,8 +195,8 @@ export async function <span class="fstat-no" title="function not covered" >GET(<
       }, { status: 404 });
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log(`[API] ✅ Successfully retrieved menu for ID: ${menuId}`);</span>
-<span class="cstat-no" title="statement not covered" >    return NextResponse.json(menuData);</span>
+    console.log(`[API] ✅ Successfully retrieved menu for ID: ${menuId}`);
+    return NextResponse.json(menuData);
   } catch (error: any) {
     // 詳細なエラーログ
 <span class="cstat-no" title="statement not covered" >    console.error("[API] 🚨 Error fetching menu:", {</span>
@@ -223,7 +223,7 @@ export async function <span class="fstat-no" title="function not covered" >GET(<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-14T23:29:35.743Z
+                at 2025-08-16T02:55:38.873Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

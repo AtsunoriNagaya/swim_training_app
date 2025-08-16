@@ -45,7 +45,7 @@ describe('出力機能のテスト', () => {
       const mockPdfBlob = new Blob(['PDF content'], { type: 'application/pdf' });
       
       server.use(
-        rest.post('/api/generate-menu/pdf', (req, res, ctx) => { // Use rest and handler arguments
+        rest.post('http://localhost/api/generate-menu/pdf', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.set('Content-Type', 'application/pdf'),
@@ -55,7 +55,7 @@ describe('出力機能のテスト', () => {
         })
       );
 
-      const response = await fetch('/api/generate-menu/pdf', {
+      const response = await fetch('http://localhost/api/generate-menu/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,20 +71,19 @@ describe('出力機能のテスト', () => {
 
     it('メニューがCSVとしてエクスポートされる (UT-014)', async () => {
       const mockCsvContent = 'メニュー名,時間,強度\nテスト用メニュー,10,B';
-      const mockCsvBlob = new Blob([mockCsvContent], { type: 'text/csv' });
 
       server.use(
-        rest.post('/api/generate-menu/csv', (req, res, ctx) => { // Use rest and handler arguments
+        rest.post('http://localhost/api/generate-menu/csv', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.set('Content-Type', 'text/csv'),
             ctx.set('Content-Disposition', 'attachment; filename="training-menu.csv"'),
-            ctx.body(mockCsvBlob)
+            ctx.text(mockCsvContent)
           );
         })
       );
 
-      const response = await fetch('/api/generate-menu/csv', {
+      const response = await fetch('http://localhost/api/generate-menu/csv', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +101,7 @@ describe('出力機能のテスト', () => {
   describe('文字エンコーディング', () => {
     it('日本語が正しく表示される (UT-015)', async () => {
       server.use(
-        rest.get('/api/get-menu', (req, res, ctx) => { // Use rest and handler arguments
+        rest.get('http://localhost/api/get-menu', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.json(mockMenu)
@@ -110,7 +109,7 @@ describe('出力機能のテスト', () => {
         })
       );
 
-      const response = await fetch('/api/get-menu');
+      const response = await fetch('http://localhost/api/get-menu');
       const result = await response.json();
 
       expect(result.title).toBe('テスト用メニュー 日本語表示確認');
@@ -118,7 +117,7 @@ describe('出力機能のテスト', () => {
       expect(result.menu[0].items[0].description).toBe('クロール練習');
       
       // PDFでの日本語表示確認
-      const pdfResponse = await fetch('/api/generate-menu/pdf', {
+      const pdfResponse = await fetch('http://localhost/api/generate-menu/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +128,7 @@ describe('出力機能のテスト', () => {
       expect(pdfResponse.ok).toBe(true);
       
       // CSVでの日本語表示確認
-      const csvResponse = await fetch('/api/generate-menu/csv', {
+      const csvResponse = await fetch('http://localhost/api/generate-menu/csv', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

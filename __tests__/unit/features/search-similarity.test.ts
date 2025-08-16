@@ -64,13 +64,13 @@ describe('類似度検索機能のテスト', () => {
   describe('検索精度とスコア計算', () => {
     it('類似度の高い順に正確にメニューが表示される (UT-018)', async () => {
       server.use(
-        rest.post('/api/search-similar-menus', (req, res, ctx) => {
+        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
           const sortedMenus = [...mockMenus].sort((a, b) => b.similarityScore - a.similarityScore);
           return res(ctx.json(sortedMenus));
         })
       );
 
-      const response = await fetch('/api/search-similar-menus', {
+      const response = await fetch('http://localhost/api/search-similar-menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ searchQuery: 'スプリント' })
@@ -89,12 +89,12 @@ describe('類似度検索機能のテスト', () => {
 
     it('類似度スコアが正確に計算され表示される (UT-019)', async () => {
       server.use(
-        rest.post('/api/search-similar-menus', (req, res, ctx) => {
+        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
           return res(ctx.json(mockMenus));
         })
       );
 
-      const response = await fetch('/api/search-similar-menus', {
+      const response = await fetch('http://localhost/api/search-similar-menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ searchQuery: '高強度' })
