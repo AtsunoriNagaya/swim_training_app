@@ -29,7 +29,8 @@ const mockMenuResponse = {
   totalTime: 10,
   intensity: 'B',
   targetSkills: ['持久力'],
-  remainingTime: 110
+  remainingTime: 110,
+  specialNotes: 'テスト'
 };
 
 // MSWサーバーのセットアップ（"handlers" は使用せず空でセットアップ）
@@ -73,7 +74,7 @@ describe('メニュー生成機能のテスト', () => {
         rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
           return res(
             ctx.status(401),
-            ctx.json({ message: 'Invalid API key' })
+            ctx.json({ success: false, error: 'Invalid API key' })
           );
         })
       );
@@ -81,7 +82,8 @@ describe('メニュー生成機能のテスト', () => {
       const params: GenerateMenuRequest = {
         loadLevel: '中',
         trainingTime: 120,
-        model: 'openai'
+        model: 'openai',
+        apiKey: 'invalid_key'
       };
 
       // アサーション
@@ -143,13 +145,20 @@ describe('メニュー生成機能のテスト', () => {
 
   describe('練習時間指定機能のテスト', () => {
     it('指定した練習時間に応じたメニューが生成される (UT-006)', async () => {
-      server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenuResponse));
-        })
-      );
       const times = [30, 60, 90];
       for (const time of times) {
+        server.use(
+          rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
+            // 要求された時間に応じて動的にレスポンスを調整
+            const adjustedResponse = {
+              ...mockMenuResponse,
+              totalTime: Math.min(time, mockMenuResponse.totalTime),
+              remainingTime: Math.max(0, time - mockMenuResponse.totalTime)
+            };
+            return res(ctx.json(adjustedResponse));
+          })
+        );
+
         const params: GenerateMenuRequest = {
           loadLevel: '中',
           trainingTime: time,
@@ -194,7 +203,7 @@ describe('メニュー生成機能のテスト', () => {
 
 // メニュー生成関数
 async function generateTrainingMenu(params: GenerateMenuRequest): Promise<TrainingMenu> {
-  const { loadLevel, trainingTime, model, apiKey } = params;
+  const { loadLevel, trainingTime, model, apiKey, specialNotes } = params;
   const response = await fetch('http://localhost/api/generate-menu', {
     method: 'POST',
     headers: {
@@ -205,14 +214,17 @@ async function generateTrainingMenu(params: GenerateMenuRequest): Promise<Traini
       apiKey,
       loadLevels: loadLevel,
       duration: trainingTime,
+      specialNotes,
     }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    // エラーメッセージが { message: '...' } 形式ならそれを使う
-    throw new Error(error.message || 'メニュー生成に失敗しました');
+    // エラーメッセージが { error: '...' } 形式ならそれを使う
+    throw new Error(error.error || error.message || 'メニュー生成に失敗しました');
   }
 
-  return response.json();
+  const result = await response.json();
+  // 実際のAPIレスポンス形式 { success: true, menu: TrainingMenu } から menu を取得
+  return result.menu || result;
 }

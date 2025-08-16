@@ -1,30 +1,12 @@
-import { type GeneratedMenuData } from "@/app/api/generate-menu/route";
+import { type GeneratedMenuData } from "@/types/menu";
+import { extractAndValidateJSON } from "@/lib/json-sanitizer";
 
 // AI応答のクリーニングとJSON抽出
 export function cleanAIResponse(text: string): string {
   console.log("AIモデルからの生の応答:", text.substring(0, 200) + "...");
   
-  let cleanedText = text;
-  
-  // ```json などのコードブロックを検出してクリーニング
-  const jsonBlockRegex = /```(?:json)?\s*\n([\s\S]*?)\n```/;
-  const match = text.match(jsonBlockRegex);
-  if (match && match[1]) {
-    cleanedText = match[1].trim();
-    console.log("マークダウンコードブロックを検出してクリーニングしました");
-  }
-  
-  // 先頭と末尾の余分なテキストを除去 (JSON以外のテキストを取り除く試み)
-  const jsonStartIndex = cleanedText.indexOf('{');
-  const jsonEndIndex = cleanedText.lastIndexOf('}');
-  
-  if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
-    cleanedText = cleanedText.substring(jsonStartIndex, jsonEndIndex + 1);
-    console.log("JSONオブジェクトのみを抽出しました");
-  }
-  
+  const cleanedText = extractAndValidateJSON(text);
   console.log("クリーニング後のテキスト:", cleanedText.substring(0, 100) + "...");
-  
   return cleanedText;
 }
 

@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_MODEL_CONFIGS, type AIModelKey } from "./ai-config";
+import { extractAndValidateJSON } from "./json-sanitizer";
 
 // AIクライアントの初期化関数
 export function initializeAIClient(aiModel: string, apiKey: string) {
@@ -17,32 +18,7 @@ export function initializeAIClient(aiModel: string, apiKey: string) {
   }
 }
 
-// JSONレスポンスを抽出・検証する関数
-function extractAndValidateJSON(content: string): string {
-  // コードブロックを除去
-  let cleanedContent = content.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
-  
-  // 前後の余分なテキストを除去
-  cleanedContent = cleanedContent.trim();
-  
-  // JSONの開始と終了を探す
-  const jsonStart = cleanedContent.indexOf('{');
-  const jsonEnd = cleanedContent.lastIndexOf('}');
-  
-  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-    cleanedContent = cleanedContent.substring(jsonStart, jsonEnd + 1);
-  }
-  
-  // JSONとして有効かチェック
-  try {
-    JSON.parse(cleanedContent);
-    return cleanedContent;
-  } catch (e) {
-    // JSONとして無効な場合、元のコンテンツを返す
-    console.warn("JSON形式の検証に失敗しました。元のコンテンツを返します。", e);
-    return content;
-  }
-}
+// JSONレスポンスの抽出・検証は json-sanitizer に集約
 
 // AIモデルの生成ロジック
 export const AI_MODELS = {

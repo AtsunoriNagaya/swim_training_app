@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 
 // Neonデータベース接続（遅延初期化）
 let pool: Pool;
-function getPool(): Pool {
+export function getPool(): Pool {
   if (!pool) {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
@@ -223,5 +223,5 @@ export async function closeDatabase() {
   }
 }
 
-export default getPool();
+// デフォルトエクスポートは副作用を生むため廃止
 
