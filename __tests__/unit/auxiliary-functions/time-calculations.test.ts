@@ -39,7 +39,7 @@ describe('時間計算機能のテスト', () => {
       };
 
       server.use(
-        rest.post('/api/generate-menu', (req, res, ctx) => { // http を rest に変更し、引数を追加
+        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
           const adjustedMenu = {
             ...longMenu,
             menu: [
@@ -54,23 +54,31 @@ describe('時間計算機能のテスト', () => {
             ],
             totalTime: 25
           };
-          // msw v1 スタイルに変更
-          return res(ctx.json(adjustedMenu));
+          // 実際のAPIレスポンス形式に合わせる
+          return res(ctx.json({
+            success: true,
+            menuId: adjustedMenu.menuId,
+            menu: adjustedMenu,
+            message: "メニューが正常に生成されました"
+          }));
         })
       );
 
-      const responseFetch = await fetch('/api/generate-menu', {
+      const responseFetch = await fetch('http://localhost/api/generate-menu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          requestedTime: 25,
-          menu: longMenu
+          duration: 25,
+          loadLevels: ['中'],
+          aiModel: 'openai',
+          apiKey: 'test-key'
         })
       });
 
-      const result: TrainingMenu = await responseFetch.json(); // response 変数名を使用
+      const response = await responseFetch.json();
+      const result: TrainingMenu = response.menu; // APIレスポンス形式に合わせて修正
       expect(result.totalTime).toBeLessThanOrEqual(25);
       expect(result.menu.length).toBe(2);
       expect(result.menu[1].items[0].sets).toBe(6);

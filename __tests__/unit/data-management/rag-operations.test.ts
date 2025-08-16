@@ -18,7 +18,7 @@ describe('RAG機能のテスト', () => {
     it('RAG機能の切り替えが正しく動作する (UT-020)', async () => {
       // RAG機能の有効化
       server.use(
-        rest.post('/api/settings/rag', (req, res, ctx) => {
+        rest.post('http://localhost/api/settings/rag', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.json({ 
@@ -30,7 +30,7 @@ describe('RAG機能のテスト', () => {
         })
       );
 
-      let response = await fetch('/api/settings/rag', {
+      let response = await fetch('http://localhost/api/settings/rag', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ describe('RAG機能のテスト', () => {
 
       // RAG機能の無効化
       server.use(
-        rest.post('/api/settings/rag', (req, res, ctx) => {
+        rest.post('http://localhost/api/settings/rag', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.json({ 
@@ -56,7 +56,7 @@ describe('RAG機能のテスト', () => {
         })
       );
 
-      response = await fetch('/api/settings/rag', {
+      response = await fetch('http://localhost/api/settings/rag', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -93,22 +93,25 @@ describe('RAG機能のテスト', () => {
         ],
         totalTime: 20,
         intensity: 'B',
-        targetSkills: ['持久力']
+        targetSkills: ['持久力'],
+        usedRAG: true
       };
 
       server.use(
-        rest.post('/api/generate-menu', (req, res, ctx) => {
+        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.json({
-              ...mockRAGMenu,
-              usedRAG: true
+              success: true,
+              menuId: mockRAGMenu.menuId,
+              menu: mockRAGMenu,
+              message: "メニューが正常に生成されました"
             })
           );
         })
       );
 
-      const response = await fetch('/api/generate-menu', {
+      const response = await fetch('http://localhost/api/generate-menu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,14 +125,14 @@ describe('RAG機能のテスト', () => {
       });
 
       const result = await response.json();
-      expect(result.usedRAG).toBe(true);
-      expect(result.title).toContain('RAGを使用して生成された');
+      expect(result.menu.usedRAG).toBe(true);
+      expect(result.menu.title).toContain('RAGを使用して生成された');
     });
 
     it('RAG機能の設定が永続化される', async () => {
       // 設定の保存
       server.use(
-        rest.post('/api/settings/rag', (req, res, ctx) => {
+        rest.post('http://localhost/api/settings/rag', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.json({ 
@@ -141,7 +144,7 @@ describe('RAG機能のテスト', () => {
         })
       );
 
-      const saveResponse = await fetch('/api/settings/rag', {
+      const saveResponse = await fetch('http://localhost/api/settings/rag', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +156,7 @@ describe('RAG機能のテスト', () => {
 
       // 設定の読み込み
       server.use(
-        rest.get('/api/settings/rag', (req, res, ctx) => {
+        rest.get('http://localhost/api/settings/rag', (req, res, ctx) => {
           return res(
             ctx.status(200),
             ctx.json({ 
@@ -163,7 +166,7 @@ describe('RAG機能のテスト', () => {
         })
       );
 
-      const loadResponse = await fetch('/api/settings/rag');
+      const loadResponse = await fetch('http://localhost/api/settings/rag');
       const settings = await loadResponse.json();
       expect(settings.enabled).toBe(true);
     });

@@ -69,7 +69,7 @@ describe('出力と表示機能のテスト', () => {
         rest.post('http://localhost/api/export-csv', (req, res, ctx) => {
           return res(
             ctx.set('Content-Type', 'text/csv'),
-            ctx.body('name,description,distance,sets,time\nW-up,軽めのフリースタイル,400,1,10')
+            ctx.text('name,description,distance,sets,time\nW-up,軽めのフリースタイル,400,1,10')
           );
         })
       );

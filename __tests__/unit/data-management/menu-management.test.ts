@@ -93,7 +93,7 @@ describe('メニュー管理機能のテスト', () => {
     // Test case for searching similar menus (UT-011)
     it('類似メニューが正しく検索される (UT-011)', async () => {
       server.use(
-        rest.post('/api/search-similar-menus', (req, res, ctx) => {
+        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
           // Simulate API response for similar menus based on query
           return res(
             ctx.json({
@@ -104,7 +104,7 @@ describe('メニュー管理機能のテスト', () => {
         })
       );
 
-      const fetchResponse = await fetch('/api/search-similar-menus', {
+      const fetchResponse = await fetch('http://localhost/api/search-similar-menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: '持久力' }) // Search query
@@ -118,13 +118,13 @@ describe('メニュー管理機能のテスト', () => {
     // Test case for getting menu history
     it('メニュー履歴が正しく取得される', async () => {
        server.use(
-        rest.get('/api/get-menu-history', (req, res, ctx) => {
+        rest.get('http://localhost/api/get-menu-history', (req, res, ctx) => {
           // Simulate API response for menu history
           return res(ctx.json({ menus: mockMenus })); // Correct usage of res and ctx
         })
       );
 
-      const fetchResponse = await fetch('/api/get-menu-history'); // Use different variable name
+      const fetchResponse = await fetch('http://localhost/api/get-menu-history'); // Use different variable name
       const result = await fetchResponse.json(); // Use different variable name
 
       expect(result.menus).toHaveLength(2);
@@ -142,7 +142,7 @@ describe('メニュー管理機能のテスト', () => {
       }; // Correctly defined object
 
       server.use(
-        rest.post('/api/search-similar-menus', (req, res, ctx) => {
+        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
            // Simulate API response for a specific high-similarity menu
           return res(
             ctx.json({
@@ -153,7 +153,7 @@ describe('メニュー管理機能のテスト', () => {
         }) // Removed extra closing brackets/parentheses
       );
 
-      const fetchResponse = await fetch('/api/search-similar-menus', {
+      const fetchResponse = await fetch('http://localhost/api/search-similar-menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(searchQuery) // Send the search query
@@ -168,7 +168,7 @@ describe('メニュー管理機能のテスト', () => {
     // Test case for low similarity between different menus
     it('特性が異なるメニュー間の類似度が低い', async () => {
        server.use(
-        rest.post('/api/search-similar-menus', (req, res, ctx) => {
+        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
           // Simulate API response for low similarity comparison
           return res(
             ctx.json({
@@ -176,10 +176,10 @@ describe('メニュー管理機能のテスト', () => {
               menus: [comparisonMenu] // Return the comparison menu
             })
           );
-        }) // Removed duplicated block and extra brackets
+        })
       );
 
-      const fetchResponse = await fetch('/api/search-similar-menus', {
+      const fetchResponse = await fetch('http://localhost/api/search-similar-menus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ menu: baseMenu }) // Send the base menu for comparison

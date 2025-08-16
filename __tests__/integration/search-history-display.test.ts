@@ -1,89 +1,24 @@
+// Load DB credentials if present
+require('dotenv').config({ path: '.env.local' });
 import { POST as generateMenuHandler } from '../../app/api/generate-menu/route';
-import { searchSimilarMenus as searchMenus, getMenu } from '../../lib/neon-db';
+import { POST as searchSimilarHandler } from '../../app/api/search-similar-menus/route';
+import * as neonDb from '../../lib/neon-db';
+import { getEmbedding } from '../../lib/embedding';
 import type { GenerateMenuRequest, TrainingMenu } from '../../types/menu';
 import { NextRequest } from 'next/server';
 
-// モックの検索結果の型定義
-interface MockSearchResult {
-  menus: TrainingMenu[];
-  similarities: number[];
-}
-
-// searchMenusのモックを上書き
-jest.mock('../../lib/neon-db', () => {
-  const originalModule = jest.requireActual('../../lib/neon-db');
-  return {
-    ...originalModule,
-    searchSimilarMenus: jest.fn().mockImplementation(
-      async (query: string, duration: number, apiKey?: string) => {
-        if (query === '存在しないメニュー') {
-          return { menus: [], similarities: [] };
-        }
-
-        const mockMenus = [
-          {
-            menuId: 'menu-1',
-            title: query?.includes('高強度') ? '高強度トレーニング' : '類似メニュー1',
-            menu: [
-              {
-                name: 'ウォームアップ',
-                items: [{ description: 'フリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
-                totalTime: 10
-              }
-            ],
-            totalTime: 30,
-            intensity: query?.includes('高強度') ? 'C' : 'B'
-          },
-          {
-            menuId: 'menu-2',
-            title: '類似メニュー2',
-            menu: [
-              {
-                name: 'ウォームアップ',
-                items: [{ description: 'キック', distance: '100m', sets: 2, circle: '2:00', rest: 20 }],
-                totalTime: 10
-              }
-            ],
-            totalTime: 30,
-            intensity: 'B'
-          }
-        ];
-
-        const similarities = [0.95, 0.45];
-
-        return {
-          menus: mockMenus,
-          similarities
-        };
-      }
-    ),
-    getMenu: jest.fn().mockImplementation(async (menuId: string) => {
-      if (menuId === 'non_existent_menu_id') {
-        return null;
-      }
-      return {
-        menuId: menuId,
-        title: 'テスト用メニュー',
-        createdAt: new Date().toISOString(),
-        menu: [
-          {
-            name: 'ウォームアップ',
-            items: [{ description: '軽めのフリースタイル', distance: '200m', sets: 1, circle: '4:00', rest: 30 }],
-            totalTime: 10
-          }
-        ],
-        totalTime: 60,
-        intensity: 'B',
-        targetSkills: ['持久力'],
-        remainingTime: 0,
-        specialNotes: 'テスト用のメニューです'
-      };
-    })
-  };
-});
+// Neon DB を実際に利用
 
 describe('Search and History Display Integration (IT-004)', () => {
   let savedMenuId: string;
+
+  beforeAll(async () => {
+    await neonDb.initDatabase();
+  });
+
+  afterAll(async () => {
+    await neonDb.closeDatabase();
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -103,80 +38,94 @@ describe('Search and History Display Integration (IT-004)', () => {
     const response = await generateMenuHandler(request);
     const menu = await response.json();
     savedMenuId = menu.menuId;
+
+    // 生成されたメニューを Neon に保存（検索のために埋め込み付きで保存）
+    const menuText = `${menu.menu.title ?? menu.menu.title ?? ''}`;
+    const embed = await getEmbedding(menuText, process.env.OPENAI_API_KEY as string);
+    const metadata = {
+      title: menu.menu.title,
+      description: '検索テスト用メニュー',
+      duration: String(menu.menu.totalTime ?? 60),
+      totalTime: String(menu.menu.totalTime ?? 60),
+      intensity: menu.menu.intensity ?? '中',
+      createdAt: new Date().toISOString(),
+    };
+    await neonDb.saveMenu(savedMenuId, menu, embed, metadata);
   });
 
   test('検索結果から履歴の詳細表示が正しく機能する', async () => {
     // 検索条件に基づいてメニューを検索
-    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
-    const searchResult = await searchMenus(
-      testEmbedding,
-      5,
-      60
-    );
+    // API ルートを直接呼び出して検索
+    const req = new Request('http://localhost/api/search-similar-menus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: '検索テスト用メニュー',
+        duration: 60,
+        openaiApiKey: process.env.OPENAI_API_KEY,
+      }),
+    });
+    const apiRes = await searchSimilarHandler(req as any);
+    const payload = await apiRes.json();
 
-    // 型アサーションを使用
-    const result = searchResult as unknown as MockSearchResult;
+    expect(Array.isArray(payload.menus)).toBe(true);
+    expect(payload.menus.length).toBeGreaterThan(0);
 
-    expect(result.menus).toBeInstanceOf(Array);
-    expect(result.menus.length).toBeGreaterThan(0);
+    const found = payload.menus[0];
+    expect(found.menuId).toBeDefined();
+    expect(found.similarityScore).toBeGreaterThanOrEqual(0);
 
-    // 検索結果の最初のメニューの詳細を取得
-    const foundMenu = result.menus[0];
-    expect(foundMenu).toBeDefined();
-    expect(foundMenu.title).toBe('類似メニュー1');
-
-    // 詳細表示の検証
-    const menuDetail = await getMenu(foundMenu.menuId);
+    // 詳細表示の検証（Neon DB 実体から取得）
+    const menuDetail = await neonDb.getMenu(found.menuId);
     expect(menuDetail).toBeDefined();
     if (menuDetail) {
-      expect(menuDetail.title).toBe('テスト用メニュー');
+      expect(menuDetail.title).toBeDefined();
       expect(menuDetail.menu).toBeDefined();
     }
   });
 
   test('複数の検索条件で正しく結果が絞り込まれる', async () => {
     // 複数条件での検索
-    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
-    const searchResult = await searchMenus(
-      testEmbedding,
-      5,
-      60
-    );
+    const req = new Request('http://localhost/api/search-similar-menus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: '検索テスト用メニュー',
+        duration: 60,
+        openaiApiKey: process.env.OPENAI_API_KEY,
+      }),
+    });
+    const apiRes = await searchSimilarHandler(req as any);
+    const payload = await apiRes.json();
 
-    // 型アサーションを使用
-    const result = searchResult as unknown as MockSearchResult;
-
-    expect(result.menus).toBeInstanceOf(Array);
-    expect(result.similarities).toBeInstanceOf(Array);
-    
-    result.menus.forEach((menu, index) => {
-      expect(menu.intensity).toBe('B');
-      expect(menu.totalTime).toBe(30);
-      expect(result.similarities[index]).toBeGreaterThan(0);
+    expect(Array.isArray(payload.menus)).toBe(true);
+    payload.menus.forEach((m: any) => {
+      expect(m.menuData).toBeDefined();
+      expect(m.similarityScore).toBeGreaterThanOrEqual(0);
     });
   });
 
   test('検索結果が存在しない場合、空配列が返される', async () => {
     // 存在しない条件で検索
-    const testEmbedding = [0.1, 0.2, 0.3]; // テスト用のembedding
-    const searchResult = await searchMenus(
-      testEmbedding,
-      5,
-      120
-    );
+    const req = new Request('http://localhost/api/search-similar-menus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: '存在しないメニュー',
+        duration: 120,
+        openaiApiKey: process.env.OPENAI_API_KEY,
+      }),
+    });
+    const apiRes = await searchSimilarHandler(req as any);
+    const payload = await apiRes.json();
 
-    // 型アサーションを使用
-    const result = searchResult as unknown as MockSearchResult;
-
-    expect(result.menus).toBeInstanceOf(Array);
-    expect(result.menus.length).toBe(0);
-    expect(result.similarities).toBeInstanceOf(Array);
-    expect(result.similarities.length).toBe(0);
+    expect(Array.isArray(payload.menus)).toBe(true);
+    expect(payload.menus.length).toBe(0);
   });
 
   test('無効なメニューIDでの詳細表示要求時にnullが返される', async () => {
     const invalidId = 'non_existent_menu_id';
-    const menuDetail = await getMenu(invalidId);
+    const menuDetail = await neonDb.getMenu(invalidId);
     expect(menuDetail).toBeNull();
   });
 });
