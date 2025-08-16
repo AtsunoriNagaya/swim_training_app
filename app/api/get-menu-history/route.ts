@@ -3,17 +3,19 @@ import { getMenuHistory } from "@/lib/neon-db";
 
 export async function GET() {
   try {
+    console.log("[API] メニュー履歴取得開始");
     const menuHistory = await getMenuHistory();
+    console.log("[API] 取得したメニュー数:", menuHistory.length);
 
     const formattedMenuHistory = menuHistory.map((menu) => ({
       id: menu.id,
       title: menu.title,
       description: menu.description,
-      fileType: menu.fileType,
-      fileSize: menu.fileSize,
-      uploadedAt: menu.uploadedAt,
-      fileUrl: menu.fileUrl,
+      createdAt: menu.createdAt,
+      // AI生成メニューにはfileTypeなどのフィールドはない
     }));
+
+    console.log("[API] フォーマット済みメニュー履歴:", formattedMenuHistory);
 
     return NextResponse.json({
       menuHistory: formattedMenuHistory,
