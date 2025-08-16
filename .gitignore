@@ -30,3 +30,55 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing
+/coverage
+
+# logs
+*.log
+logs/
+
+# runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# cache
+.cache/
+.npm
+.eslintcache
+
+# temporary folders
+tmp/
+temp/
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# package managers
+.yarn/
+.pnp.*
+
+# backup files
+*.bak
+*.backup
+*.old
+
+# misc
+*.tgz
+*.tar.gz

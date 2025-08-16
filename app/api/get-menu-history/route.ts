@@ -32,6 +32,7 @@ export async function GET() {
       {
         error: error.message || "メニュー履歴の取得に失敗しました",
         details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
