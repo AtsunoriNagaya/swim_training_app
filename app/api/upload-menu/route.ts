@@ -1,83 +1,111 @@
-import { NextResponse } from "next/server";
-import { parse } from "csv-parse/sync";
-import { saveMenu } from "../../../lib/neon-db";
-import { getEmbedding } from "../../../lib/embedding";
-import { parsePdf } from "../../../lib/pdf-parser";
+import { NextRequest, NextResponse } from "next/server";
+import { saveUploadedFile } from "@/lib/neon-db";
 
-/**
- * POSTリクエストでアップロードされたファイルを処理し、
- * CSVの場合は各レコードの埋め込みを、PDFの場合は全体の埋め込みを計算してNeonデータベースに保存します。
- */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "ファイルがアップロードされていません" }, { status: 400 });
+    const file = formData.get('file') as File;
+    const description = formData.get('description') as string;
+
+    if (!file) {
+      return NextResponse.json({ 
+        success: false,
+        error: "ファイルが選択されていません" 
+      }, { status: 400 });
     }
 
-    // PDFファイルの場合の処理
-    if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-      const arrayBuffer = await file.arrayBuffer();
-      // parsePDFはArrayBufferまたはBufferを受け取ると仮定
-      const pdfText = await parsePdf(Buffer.from(arrayBuffer));
-      if (!pdfText) {
-        return NextResponse.json({ error: "PDFの解析に失敗しました" }, { status: 500 });
+    // ファイルサイズチェック (5MB)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ 
+        success: false,
+        error: "ファイルサイズは5MB以下にしてください" 
+      }, { status: 400 });
+    }
+
+    // ファイルタイプチェック
+    const ACCEPTED_FILE_TYPES = ["application/pdf", "text/csv"];
+    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+      return NextResponse.json({ 
+        success: false,
+        error: "PDFまたはCSV形式のファイルのみアップロード可能です" 
+      }, { status: 400 });
+    }
+
+    const menuId = `upload-${Date.now()}`;
+    const fileSize = `${(file.size / 1024).toFixed(1)} KB`;
+    
+    let content: string;
+
+    if (file.type === 'application/pdf') {
+      // PDFファイルをBase64エンコードしてデータベースに保存
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const binaryString = Array.from(uint8Array, byte => String.fromCharCode(byte)).join('');
+        content = btoa(binaryString); // Base64エンコード
+      } catch (error) {
+        console.error('PDF エンコードエラー:', error);
+        return NextResponse.json({ 
+          success: false,
+          error: "PDFファイルの処理に失敗しました" 
+        }, { status: 500 });
       }
-      const embedding = await getEmbedding(pdfText, process.env.OPENAI_API_KEY || '');
-      // PDFの場合、ファイル名をIDとして利用
-      const menuId = file.name;
-      
-      const metadata = {
-        uploadedAt: new Date().toISOString(),
-        type: "pdf",
-        fileName: file.name,
-        fileSize: file.size,
-        contentPreview: pdfText.substring(0, 200), // プレビュー用に最初の200文字を保存
-        title: file.name.replace('.pdf', ''),
-        description: pdfText.substring(0, 100)
-      };
-      
-      await saveMenu(menuId, { content: pdfText }, embedding, metadata);
-      return NextResponse.json({ success: true, type: "pdf", id: menuId });
+    } else if (file.type === 'text/csv') {
+      // CSVファイルの内容をテキストとして読み込み
+      try {
+        content = await file.text();
+      } catch (error) {
+        console.error('CSV 読み込みエラー:', error);
+        return NextResponse.json({ 
+          success: false,
+          error: "CSVファイルの読み込みに失敗しました" 
+        }, { status: 500 });
+      }
+    } else {
+      return NextResponse.json({ 
+        success: false,
+        error: "サポートされていないファイル形式です" 
+      }, { status: 400 });
     }
 
-    // CSVファイルの場合の処理（テキスト/その他のファイルもCSVとして処理）
-    const text = await file.text();
-    const records = parse(text, {
-      columns: true,
-      skip_empty_lines: true,
+    // データベースに保存
+    try {
+      await saveUploadedFile(
+        menuId,
+        file.name,
+        description || '',
+        file.type,
+        fileSize,
+        undefined, // fileUrl は使用しない
+        content
+      );
+
+      return NextResponse.json({
+        success: true,
+        menuId: menuId,
+        message: "ファイルが正常にアップロードされました"
+      });
+    } catch (error) {
+      console.error('データベース保存エラー:', error);
+      return NextResponse.json({ 
+        success: false,
+        error: "データベースへの保存に失敗しました" 
+      }, { status: 500 });
+    }
+  } catch (error: any) {
+    console.error("ファイルアップロードエラー:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
     });
 
-    if (records.length === 0) {
-      return NextResponse.json({ error: "CSVファイルに有効なデータが含まれていません" }, { status: 400 });
-    }
-
-    // 各レコードの埋め込みを計算して保存
-    const menuId = file.name;
-    const metadata = {
-      uploadedAt: new Date().toISOString(),
-      type: "csv",
-      fileName: file.name,
-      fileSize: file.size,
-      recordCount: records.length,
-      title: file.name.replace('.csv', ''),
-      description: `CSVファイル: ${records.length}件のレコード`
-    };
-
-    // CSVの内容をテキストとして結合してembeddingを生成
-    const csvText = records.map((record: any) => 
-      Object.values(record).join(' ')
-    ).join(' ');
-    
-    const embedding = await getEmbedding(csvText, process.env.OPENAI_API_KEY || '');
-    
-    await saveMenu(menuId, { records, content: csvText }, embedding, metadata);
-    return NextResponse.json({ success: true, type: "csv", id: menuId, recordCount: records.length });
-  } catch (error) {
-    console.error("ファイルアップロードエラー:", error);
     return NextResponse.json(
-      { error: "ファイルの処理中にエラーが発生しました" },
+      {
+        success: false,
+        error: error.message || "ファイルのアップロードに失敗しました",
+        details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }

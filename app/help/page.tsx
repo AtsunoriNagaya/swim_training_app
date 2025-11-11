@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Key, Sparkles, Brain, Zap, Shield, FileText, Upload } from "lucide-react";
+import { Info, Key, Sparkles, Brain, Zap, Shield, FileText, Upload, History, Eye, Trash2 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "ヘルプ - AIの使い方とAPIキー設定",
@@ -100,54 +100,201 @@ export default function HelpPage() {
 
       <Separator className="my-8 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />
 
-      {/* PDF出力（Markdown→印刷プレビュー） */}
+      {/* PDF出力の使い方 */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
           <FileText className="h-6 w-6 text-primary" />
-          PDF出力（Markdown→印刷プレビュー）
+          PDF出力の使い方
         </h2>
         <Card className="card-hover border-primary/20">
           <CardHeader>
-            <CardTitle>PDF保存の流れ</CardTitle>
+            <CardTitle>メニューをPDFで保存する</CardTitle>
             <CardDescription>
-              結果画面の「ダウンロード → PDF形式」から、印刷プレビューを経由してPDFに保存できます。
-              既定はポップアップ印刷で、代替として/printページ方式も利用できます。
+              生成されたトレーニングメニューをPDF形式で保存できます。
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 text-sm text-muted-foreground">
-              <div>
-                <strong>既定（推奨）: ポップアップ印刷</strong>
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                <strong>手順：</strong>
                 <ol className="list-decimal list-inside mt-2 space-y-1">
-                  <li>「ダウンロード」→「PDF形式」をクリック</li>
-                  <li>ポップアップで印刷プレビューが開きます</li>
-                  <li>自動で印刷ダイアログが起動 → 「PDFに保存」</li>
+                  <li>メニュー結果画面で「ダウンロード」ボタンをクリック</li>
+                  <li>「PDF形式」を選択</li>
+                  <li>印刷プレビューが開くので「PDFに保存」を選択</li>
                 </ol>
               </div>
-              <div>
-                <strong>代替: /print ページ方式</strong>
-                <ol className="list-decimal list-inside mt-2 space-y-1">
-                  <li>「ダウンロード」→「PDF形式」をクリック</li>
-                  <li>/print ページで印刷プレビューが開きます</li>
-                  <li>印刷ダイアログから「PDFに保存」を選択</li>
-                </ol>
+              <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded">
+                <p className="text-xs text-muted-foreground">
+                  PDFは印刷に適したレイアウトで保存されます。
+                </p>
               </div>
-            </div>
-            <div className="mt-4 text-sm text-muted-foreground">
-              <strong>レイアウトが安定する理由：</strong>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Markdown→HTML→CSS印刷によりCJKの折返し・禁則処理が堅牢</li>
-                <li>table-layout: fixed と空欄NBSPで列崩れを抑止</li>
-                <li>記号・空白の正規化により測定誤差を低減</li>
-              </ul>
-            </div>
-            <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded">
-              <p className="text-xs text-muted-foreground">
-                印刷レイアウトはポップアップ内蔵スタイル、または「/print」ページのスタイルで調整できます（フォント・余白・列幅など）。
-              </p>
             </div>
           </CardContent>
         </Card>
+      </section>
+
+      <Separator className="my-8 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />
+
+      {/* メニュー履歴の見方セクション */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+          <History className="h-6 w-6 text-primary" />
+          メニュー履歴の見方
+        </h2>
+        
+        <div className="space-y-6">
+          {/* 履歴ページへのアクセス */}
+          <Card className="card-hover border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                履歴ページへのアクセス
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                ナビゲーションメニューから「履歴」をクリックすると、過去に生成したメニューやアップロードしたファイルの一覧を確認できます。
+              </p>
+              <div className="p-3 bg-primary/5 border border-primary/20 rounded">
+                <p className="text-xs text-muted-foreground">
+                  履歴は作成日時の新しい順に表示されます。
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* メニューの種類の見分け方 */}
+          <Card className="card-hover border-secondary/20">
+            <CardHeader>
+              <CardTitle>メニューの種類の見分け方</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">AI生成</Badge>
+                    <span className="text-sm text-muted-foreground">青いバッジ</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    AIによって生成されたトレーニングメニューです。クリックすると結果ページで詳細を確認できます。
+                  </p>
+                </div>
+                <div className="p-4 border border-secondary/20 rounded-lg bg-secondary/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">アップロード</Badge>
+                    <span className="text-sm text-muted-foreground">緑のバッジ</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    アップロードされたPDFやCSVファイルです。クリックするとファイル内容をプレビューできます。
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 表示される情報 */}
+          <Card className="card-hover border-accent/20">
+            <CardHeader>
+              <CardTitle>表示される情報</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <strong>タイトル:</strong> メニュー名またはファイル名
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <strong>作成日時:</strong> メニュー生成日またはファイルアップロード日
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <strong>ファイル形式:</strong> アップロードファイルの場合、PDFまたはCSVと表示
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <strong>ファイルサイズ:</strong> アップロードファイルのサイズ
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+                  <div>
+                    <strong>説明文:</strong> 入力された説明やメニューの概要
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 操作方法 */}
+          <Card className="card-hover border-primary/20">
+            <CardHeader>
+              <CardTitle>メニューの操作方法</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 border border-primary/20 rounded-lg">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-primary" />
+                    メニューをクリック
+                  </h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p><strong>AI生成メニュー:</strong> 結果ページで詳細内容を確認</p>
+                    <p><strong>アップロードファイル:</strong> ファイル内容をプレビュー表示</p>
+                  </div>
+                </div>
+                <div className="p-4 border border-red-100 rounded-lg bg-red-50">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                    削除ボタン（ゴミ箱アイコン）
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    個別のメニューを削除できます。削除前に確認ダイアログが表示されます。
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ファイル表示の違い */}
+          <Card className="card-hover border-secondary/20">
+            <CardHeader>
+              <CardTitle>ファイル表示の違い</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+                  <h4 className="font-semibold mb-2 text-red-700">PDFファイル</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• ブラウザ内でプレビュー表示</li>
+                    <li>• iframe内でPDFを直接表示</li>
+                    <li>• ダウンロードボタンでPDF形式で保存</li>
+                  </ul>
+                </div>
+                <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                  <h4 className="font-semibold mb-2 text-green-700">CSVファイル</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• テーブル形式で内容を表示</li>
+                    <li>• 行と列が見やすく整理</li>
+                    <li>• ダウンロードボタンでCSV形式で保存</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-secondary/5 border border-secondary/20 rounded">
+                <p className="text-xs text-muted-foreground">
+                  どちらのファイル形式でも、元のファイル形式でダウンロードが可能です。
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       <Separator className="my-8 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20" />

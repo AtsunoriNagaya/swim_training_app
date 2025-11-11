@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { initDatabase } from "@/lib/neon-db";
 
-export async function POST() {
+async function handleInitDatabase() {
   try {
     console.log("[API] 🔧 Initializing database");
     
@@ -25,4 +25,12 @@ export async function POST() {
       details: process.env.NODE_ENV === "development" ? error.message : undefined
     }, { status: 500 });
   }
+}
+
+export async function POST() {
+  return handleInitDatabase();
+}
+
+export async function GET() {
+  return handleInitDatabase();
 }

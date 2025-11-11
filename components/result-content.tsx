@@ -2,6 +2,9 @@
 
 import React from "react";
 import { useSearchParams } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import TrainingMenuResult from "@/components/training-menu-result"
 
 export default function ResultContent() {
@@ -115,6 +118,15 @@ export default function ResultContent() {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      <div className="mb-6">
+        <Link href="/history">
+          <Button variant="ghost" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            履歴に戻る
+          </Button>
+        </Link>
+      </div>
+      
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-4">生成されたメニュー</h1>
         <p className="text-lg text-muted-foreground max-w-3xl">
