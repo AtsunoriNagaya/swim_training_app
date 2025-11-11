@@ -11,8 +11,9 @@ export async function GET() {
       id: menu.id,
       title: menu.title,
       description: menu.description,
+      fileType: menu.fileType,
+      fileSize: menu.fileSize,
       createdAt: menu.createdAt,
-      // AI生成メニューにはfileTypeなどのフィールドはない
     }));
 
     console.log("[API] フォーマット済みメニュー履歴:", formattedMenuHistory);
