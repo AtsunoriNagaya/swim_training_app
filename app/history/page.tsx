@@ -188,7 +188,7 @@ export default function HistoryPage() {
       ) : error ? (
         <div className="space-y-4">
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" aria-hidden="true" />
             <AlertTitle>エラー: メニュー履歴を取得できませんでした</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>

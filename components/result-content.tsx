@@ -73,7 +73,7 @@ export default function ResultContent() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto space-y-4">
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" aria-hidden="true" />
             <AlertTitle>メニューの取得に失敗しました</AlertTitle>
             <AlertDescription>{error.message}</AlertDescription>
           </Alert>

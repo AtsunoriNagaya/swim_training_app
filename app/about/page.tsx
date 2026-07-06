@@ -20,7 +20,7 @@ export default function AboutPage() {
       {/* 概要（利用者向け） */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Info className="h-6 w-6 text-primary" />
+          <Info className="h-6 w-6 text-primary" aria-hidden="true" />
           概要
         </h2>
         <Card className="card-hover border-primary/20">
@@ -45,7 +45,7 @@ export default function AboutPage() {
       {/* 主な特徴（利用者向け） */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-primary" />
+          <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
           主な特徴
         </h2>
         <div className="space-y-4">
@@ -96,7 +96,7 @@ export default function AboutPage() {
       {/* 出力とサポート */}
       <section className="mb-6">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Printer className="h-6 w-6 text-primary" />
+          <Printer className="h-6 w-6 text-primary" aria-hidden="true" />
           出力とサポート
         </h2>
         <Card className="card-hover border-primary/20">
@@ -111,7 +111,7 @@ export default function AboutPage() {
       </section>
 
       <div className="mt-8 text-xs text-muted-foreground flex items-center gap-2">
-        <History className="h-4 w-4" />
+        <History className="h-4 w-4" aria-hidden="true" />
         <span>このページは利用者向けに README の内容を要約しています。</span>
       </div>
     </div>

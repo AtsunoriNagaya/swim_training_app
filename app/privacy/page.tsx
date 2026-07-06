@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       {/* はじめに */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Info className="h-6 w-6 text-primary" />
+          <Info className="h-6 w-6 text-primary" aria-hidden="true" />
           はじめに
         </h2>
         <Card className="card-hover border-primary/20">
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
       {/* 収集する情報 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+          <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
           収集・扱う情報
         </h2>
         <Card className="card-hover border-primary/20">
@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       {/* 利用目的 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
+          <Shield className="h-6 w-6 text-primary" aria-hidden="true" />
           利用目的
         </h2>
         <Card className="card-hover border-primary/20">
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
       {/* 保存場所と期間 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Database className="h-6 w-6 text-primary" />
+          <Database className="h-6 w-6 text-primary" aria-hidden="true" />
           保存場所と期間
         </h2>
         <Card className="card-hover border-primary/20">
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
       {/* 第三者提供・外部サービス */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <ExternalLink className="h-6 w-6 text-primary" />
+          <ExternalLink className="h-6 w-6 text-primary" aria-hidden="true" />
           第三者提供・外部サービス
         </h2>
         <Card className="card-hover border-primary/20">
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
       {/* 安全管理措置 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Lock className="h-6 w-6 text-primary" />
+          <Lock className="h-6 w-6 text-primary" aria-hidden="true" />
           安全管理措置
         </h2>
         <Card className="card-hover border-primary/20">
@@ -147,7 +147,7 @@ export default function PrivacyPage() {
       {/* クッキー等の利用 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Cookie className="h-6 w-6 text-primary" />
+          <Cookie className="h-6 w-6 text-primary" aria-hidden="true" />
           クッキー等の利用
         </h2>
         <Card className="card-hover border-primary/20">
@@ -164,7 +164,7 @@ export default function PrivacyPage() {
       {/* 利用者の権利 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
+          <Shield className="h-6 w-6 text-primary" aria-hidden="true" />
           利用者の権利
         </h2>
         <Card className="card-hover border-primary/20">
@@ -183,7 +183,7 @@ export default function PrivacyPage() {
       {/* 規約との関係・改定・連絡先 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Info className="h-6 w-6 text-primary" />
+          <Info className="h-6 w-6 text-primary" aria-hidden="true" />
           規約との関係・改定・連絡先
         </h2>
         <Card className="card-hover border-primary/20">

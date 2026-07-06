@@ -23,7 +23,7 @@ export default function HelpPage() {
       {/* メニュー生成の2つの方法セクション */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+          <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
           メニュー生成の2つの方法
         </h2>
         
@@ -32,7 +32,7 @@ export default function HelpPage() {
           <Card className="card-hover border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
+                <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />
                 RAGなしでの生成
               </CardTitle>
               <CardDescription>
@@ -66,7 +66,7 @@ export default function HelpPage() {
           <Card className="card-hover border-secondary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5 text-secondary" />
+                <Upload className="h-5 w-5 text-secondary" aria-hidden="true" />
                 RAGありでの生成
               </CardTitle>
               <CardDescription>
@@ -103,7 +103,7 @@ export default function HelpPage() {
       {/* PDF出力の使い方 */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+          <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
           PDF出力の使い方
         </h2>
         <Card className="card-hover border-primary/20">
@@ -138,7 +138,7 @@ export default function HelpPage() {
       {/* メニュー履歴の見方セクション */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-          <History className="h-6 w-6 text-primary" />
+          <History className="h-6 w-6 text-primary" aria-hidden="true" />
           メニュー履歴の見方
         </h2>
         
@@ -147,7 +147,7 @@ export default function HelpPage() {
           <Card className="card-hover border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-primary" />
+                <Eye className="h-5 w-5 text-primary" aria-hidden="true" />
                 履歴ページへのアクセス
               </CardTitle>
             </CardHeader>
@@ -242,7 +242,7 @@ export default function HelpPage() {
               <div className="space-y-4">
                 <div className="p-4 border border-primary/20 rounded-lg">
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-primary" />
+                    <Eye className="h-4 w-4 text-primary" aria-hidden="true" />
                     メニューをクリック
                   </h3>
                   <div className="space-y-2 text-sm text-muted-foreground">
@@ -252,7 +252,7 @@ export default function HelpPage() {
                 </div>
                 <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                     削除ボタン（ゴミ箱アイコン）
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -302,7 +302,7 @@ export default function HelpPage() {
       {/* AIの種類と使い分けセクション */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-primary" />
+          <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
           AIの種類と使い分け
         </h2>
         
@@ -311,7 +311,7 @@ export default function HelpPage() {
           <Card className="card-hover border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-primary" />
+                <Brain className="h-5 w-5 text-primary" aria-hidden="true" />
                 OpenAI GPT
               </CardTitle>
               <CardDescription>
@@ -342,7 +342,7 @@ export default function HelpPage() {
           <Card className="card-hover border-secondary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-secondary" />
+                <Zap className="h-5 w-5 text-secondary" aria-hidden="true" />
                 Anthropic Claude
               </CardTitle>
               <CardDescription>
@@ -373,7 +373,7 @@ export default function HelpPage() {
           <Card className="card-hover border-accent/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-accent" />
+                <Shield className="h-5 w-5 text-accent" aria-hidden="true" />
                 Google Gemini
               </CardTitle>
               <CardDescription>
@@ -405,7 +405,7 @@ export default function HelpPage() {
           <Card className="md:col-span-2 card-hover border-primary/20 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-primary" />
+                <Info className="h-5 w-5 text-primary" aria-hidden="true" />
                 使い分けのポイント
               </CardTitle>
             </CardHeader>
@@ -456,7 +456,7 @@ export default function HelpPage() {
       {/* APIキーの取得方法セクション */}
       <section className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-          <Key className="h-6 w-6 text-primary" />
+          <Key className="h-6 w-6 text-primary" aria-hidden="true" />
           APIキーの取得方法
         </h2>
 
@@ -465,7 +465,7 @@ export default function HelpPage() {
           <Card className="card-hover border-primary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-primary" />
+                <Brain className="h-5 w-5 text-primary" aria-hidden="true" />
                 OpenAI APIキーの取得
               </CardTitle>
             </CardHeader>
@@ -491,7 +491,7 @@ export default function HelpPage() {
                   </div>
                 </div>
                 <Alert className="border-primary/20 bg-primary/5">
-                  <Info className="h-4 w-4 text-primary" />
+                  <Info className="h-4 w-4 text-primary" aria-hidden="true" />
                   <AlertDescription>
                     APIキーは絶対に他人と共有しないでください。また、GitHubなどの公開リポジトリにアップロードしないようご注意ください。
                   </AlertDescription>
@@ -504,7 +504,7 @@ export default function HelpPage() {
           <Card className="card-hover border-secondary/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-secondary" />
+                <Zap className="h-5 w-5 text-secondary" aria-hidden="true" />
                 Anthropic Claude APIキーの取得
               </CardTitle>
             </CardHeader>
@@ -536,7 +536,7 @@ export default function HelpPage() {
           <Card className="card-hover border-accent/20">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-accent" />
+                <Shield className="h-5 w-5 text-accent" aria-hidden="true" />
                 Google Gemini APIキーの取得
               </CardTitle>
             </CardHeader>
