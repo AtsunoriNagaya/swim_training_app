@@ -241,20 +241,20 @@ export default function HelpPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="p-4 border border-primary/20 rounded-lg">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
                     <Eye className="h-4 w-4 text-primary" />
                     メニューをクリック
-                  </h4>
+                  </h3>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p><strong>AI生成メニュー:</strong> 結果ページで詳細内容を確認</p>
                     <p><strong>アップロードファイル:</strong> ファイル内容をプレビュー表示</p>
                   </div>
                 </div>
                 <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
                     <Trash2 className="h-4 w-4 text-destructive" />
                     削除ボタン（ゴミ箱アイコン）
-                  </h4>
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     個別のメニューを削除できます。削除前に確認ダイアログが表示されます。
                   </p>
@@ -271,7 +271,7 @@ export default function HelpPage() {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:border-red-800/30 dark:bg-red-900/20">
-                  <h4 className="font-semibold mb-2 text-red-700 dark:text-red-300">PDFファイル</h4>
+                  <h3 className="font-semibold mb-2 text-red-700 dark:text-red-300">PDFファイル</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• ブラウザ内でプレビュー表示</li>
                     <li>• iframe内でPDFを直接表示</li>
@@ -279,7 +279,7 @@ export default function HelpPage() {
                   </ul>
                 </div>
                 <div className="p-4 border border-green-200 rounded-lg bg-green-50 dark:border-green-800/30 dark:bg-green-900/20">
-                  <h4 className="font-semibold mb-2 text-green-700 dark:text-green-300">CSVファイル</h4>
+                  <h3 className="font-semibold mb-2 text-green-700 dark:text-green-300">CSVファイル</h3>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• テーブル形式で内容を表示</li>
                     <li>• 行と列が見やすく整理</li>
@@ -412,7 +412,7 @@ export default function HelpPage() {
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="text-center p-4 border border-accent/20 rounded-lg bg-accent/5">
-                  <h4 className="font-semibold mb-2 text-accent">初回利用・学習目的</h4>
+                  <h3 className="font-semibold mb-2 text-accent">初回利用・学習目的</h3>
                   <p className="text-sm text-muted-foreground mb-2">
                     Gemini 2.0 Flash
                   </p>
@@ -421,7 +421,7 @@ export default function HelpPage() {
                   </p>
                 </div>
                 <div className="text-center p-4 border border-secondary/20 rounded-lg bg-secondary/5">
-                  <h4 className="font-semibold mb-2 text-secondary">日常的な利用</h4>
+                  <h3 className="font-semibold mb-2 text-secondary">日常的な利用</h3>
                   <p className="text-sm text-muted-foreground mb-2">
                     Claude 3.5 Sonnet
                   </p>
@@ -430,7 +430,7 @@ export default function HelpPage() {
                   </p>
                 </div>
                 <div className="text-center p-4 border border-primary/20 rounded-lg bg-primary/5">
-                  <h4 className="font-semibold mb-2 text-primary">高品質・専門的な内容</h4>
+                  <h3 className="font-semibold mb-2 text-primary">高品質・専門的な内容</h3>
                   <p className="text-sm text-muted-foreground mb-2">
                     GPT-4o
                   </p>
@@ -473,7 +473,7 @@ export default function HelpPage() {
               <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <h4 className="font-semibold mb-2">手順</h4>
+                    <h3 className="font-semibold mb-2">手順</h3>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                       <li>OpenAIの公式サイト（<a href="https://platform.openai.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">platform.openai.com</a>）にアクセス</li>
                       <li>アカウントを作成またはログイン</li>
@@ -483,7 +483,7 @@ export default function HelpPage() {
                     </ol>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">料金</h4>
+                    <h3 className="font-semibold mb-2">料金</h3>
                     <p className="text-sm text-muted-foreground">
                       GPT-4o: $0.005/1K tokens<br/>
                       <span className="text-xs">※料金は変更される場合があります</span>
@@ -512,7 +512,7 @@ export default function HelpPage() {
               <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <h4 className="font-semibold mb-2">手順</h4>
+                    <h3 className="font-semibold mb-2">手順</h3>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                       <li>Anthropicの公式サイト（<a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary/80 underline">console.anthropic.com</a>）にアクセス</li>
                       <li>アカウントを作成またはログイン</li>
@@ -521,7 +521,7 @@ export default function HelpPage() {
                     </ol>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">料金</h4>
+                    <h3 className="font-semibold mb-2">料金</h3>
                     <p className="text-sm text-muted-foreground">
                       Claude 3.5 Sonnet: $3/1M tokens<br/>
                       <span className="text-xs">※料金は変更される場合があります</span>
@@ -544,7 +544,7 @@ export default function HelpPage() {
               <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <h4 className="font-semibold mb-2">手順</h4>
+                    <h3 className="font-semibold mb-2">手順</h3>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                       <li>Google AI Studio（<a href="https://makersuite.google.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent/80 underline">makersuite.google.com</a>）にアクセス</li>
                       <li>Googleアカウントでログイン</li>
@@ -553,7 +553,7 @@ export default function HelpPage() {
                     </ol>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-2">料金</h4>
+                    <h3 className="font-semibold mb-2">料金</h3>
                     <p className="text-sm text-muted-foreground">
                       Gemini 2.0 Flash: $0.075/1M tokens<br/>
                       <span className="text-xs">※料金は変更される場合があります</span>

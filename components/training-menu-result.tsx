@@ -12,6 +12,7 @@ import {
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -63,13 +64,14 @@ export default function TrainingMenuResult({ menuData }: { menuData: MenuData })
               {/* 幅の狭い画面ではテーブル側を横スクロールさせ、ページ全体は崩さない */}
               <div className="overflow-x-auto">
                 <Table>
+                  <TableCaption className="sr-only">{section.name}の練習内容</TableCaption>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[40%]">内容</TableHead>
-                      <TableHead className="w-[15%]">距離</TableHead>
-                      <TableHead className="w-[10%]">本数</TableHead>
-                      <TableHead className="w-[15%]">サイクル</TableHead>
-                      <TableHead className="text-right w-[20%]">所要時間</TableHead>
+                      <TableHead scope="col" className="w-[40%]">内容</TableHead>
+                      <TableHead scope="col" className="w-[15%]">距離</TableHead>
+                      <TableHead scope="col" className="w-[10%]">本数</TableHead>
+                      <TableHead scope="col" className="w-[15%]">サイクル</TableHead>
+                      <TableHead scope="col" className="text-right w-[20%]">所要時間</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

@@ -195,7 +195,8 @@ describe('History Display Integration (IT-005)', () => {
     render(React.createElement(HistoryPage));
 
     await waitFor(() => {
-      const menuTitles = screen.getAllByRole('heading', { level: 3 });
+      // カード見出しは h1 直下のため h2(見出し階層のスキップ回避)
+      const menuTitles = screen.getAllByRole('heading', { level: 2 });
       // 新しいメニューが最初に表示される
       expect(menuTitles[0]).toHaveTextContent('新しいメニュー');
       expect(menuTitles[1]).toHaveTextContent('古いメニュー');

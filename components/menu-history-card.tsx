@@ -30,7 +30,8 @@ export default function MenuHistoryCard({ menu, deleting, onDeleteClick }: MenuH
     <Card className="relative overflow-hidden transition-shadow hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-lg font-medium">
+          {/* ページの h1 直下に来るため h2(見出し階層のスキップを避ける) */}
+          <h2 className="text-lg font-medium">
             {/* リンクの after 疑似要素でカード全体をクリック領域にする(stretched link) */}
             <Link
               href={href}
@@ -38,7 +39,7 @@ export default function MenuHistoryCard({ menu, deleting, onDeleteClick }: MenuH
             >
               {menu.title}
             </Link>
-          </h3>
+          </h2>
           <div className="flex shrink-0 items-center gap-2">
             <Badge
               variant="outline"
