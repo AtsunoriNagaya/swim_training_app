@@ -13,7 +13,10 @@ export default function AboutPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-3 gradient-text">水泳部練習メニュー作成アプリ</h1>
+        {/* break-keep は wbr の位置でしか折り返さないため、文言を変えるときは wbr の位置も見直すこと */}
+        <h1 className="text-3xl font-bold mb-3 gradient-text break-keep">
+          水泳部<wbr />練習メニュー<wbr />作成アプリ
+        </h1>
         <p className="text-muted-foreground break-phrase">AIを活用して効率的に練習メニューを作成・保存・再利用</p>
       </div>
 
