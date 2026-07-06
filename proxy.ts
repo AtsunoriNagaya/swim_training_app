@@ -16,7 +16,7 @@ function getAllowedOrigin(request: NextRequest): string | null {
   return null;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const headers = new Headers();
   const allowedOrigin = getAllowedOrigin(request);
 
@@ -36,7 +36,7 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
-// ミドルウェアを適用するパスを指定
+// プロキシを適用するパスを指定
 export const config = {
   matcher: '/api/:path*',
 }
