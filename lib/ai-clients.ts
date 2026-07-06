@@ -49,6 +49,10 @@ export const AI_MODELS = {
           if (error.message.includes('insufficient_quota')) {
             throw new Error("OpenAI APIの使用量制限に達しました。アカウントの使用量を確認してください。");
           }
+          // モデル廃止・名称誤りを総称エラーに丸めない（原因特定を容易にする）
+          if (error.message.includes('model_not_found') || error.message.includes('does not exist')) {
+            throw new Error(`指定された OpenAI モデル（${AI_MODEL_CONFIGS.openai.model}）が見つかりません。モデルが廃止された可能性があります。`);
+          }
         }
         throw new Error("OpenAIからの応答の取得に失敗しました");
       }
@@ -106,6 +110,10 @@ ${prompt}
           if (error.message.includes('API_KEY_INVALID') || error.message.includes('Invalid API key')) {
             throw new Error("Google Gemini APIキーが無効です。正しいAPIキーを入力してください。");
           }
+          // モデル廃止・名称誤りを総称エラーに丸めない（原因特定を容易にする）
+          if (error.message.includes('not found') || error.message.includes('NOT_FOUND') || error.message.includes('404')) {
+            throw new Error(`指定された Gemini モデル（${AI_MODEL_CONFIGS.google.model}）が見つかりません。モデルが廃止された可能性があります。`);
+          }
           if (error.message.includes('QUOTA_EXCEEDED') || error.message.includes('quota exceeded')) {
             throw new Error("Google Gemini APIの使用量制限に達しました。しばらく待ってから再試行してください。");
           }
@@ -132,7 +140,6 @@ ${prompt}
           model: AI_MODEL_CONFIGS.anthropic.model,
           max_tokens: AI_MODEL_CONFIGS.anthropic.maxTokens,
           system: systemPrompt,
-          temperature: AI_MODEL_CONFIGS.anthropic.temperature,
           messages: [{ role: "user", content: fullPrompt }],
         });
         
