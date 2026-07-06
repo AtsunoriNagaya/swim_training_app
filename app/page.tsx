@@ -18,11 +18,14 @@ export default function Home() {
         <div className="absolute inset-0 bg-wave-pattern opacity-20 animate-wave motion-reduce:animate-none"></div>
         <div className="container relative z-10 mx-auto px-4">
           <div className="flex flex-col items-center justify-center text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              <span className="gradient-text">水泳部練習メニュー作成</span>
+            {/* break-keep は wbr の位置でしか折り返さないため、文言を変えるときは wbr の位置も見直すこと */}
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 break-keep">
+              <span className="gradient-text">
+                水泳部<wbr />練習メニュー<wbr />作成
+              </span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mb-8">
-              AIを活用して効率的に水泳部の練習メニューを作成するアプリケーション
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mb-8 break-keep">
+              AIを<wbr />活用して<wbr />効率的に<wbr />水泳部の<wbr />練習メニューを<wbr />作成する<wbr />アプリケーション
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild>
@@ -208,7 +211,9 @@ export default function Home() {
           <div className="relative max-w-4xl mx-auto rounded-lg overflow-hidden bg-primary">
             <div className="absolute inset-0 bg-wave-pattern opacity-10 animate-wave motion-reduce:animate-none"></div>
             <div className="relative z-10 p-8 md:p-12 text-primary-foreground text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">効率的な練習メニュー作成を始めましょう</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 break-keep">
+                効率的な<wbr />練習メニュー作成を<wbr />始めましょう
+              </h2>
               <p className="text-xl mb-8 text-primary-foreground/90 max-w-2xl mx-auto break-phrase">
                 AIと過去のデータを活用して、質の高い練習メニューを短時間で作成できます。 今すぐ試してみましょう。
               </p>
