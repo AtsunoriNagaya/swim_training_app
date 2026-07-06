@@ -11,19 +11,21 @@ export const AI_MODEL_CONFIGS = {
     icon: "🤖",
   },
   google: {
-    model: "gemini-2.0-flash",
+    // gemini-2.0-flash は 2026-06-01 に提供終了。公式推奨の後継モデルを使用
+    model: "gemini-3.5-flash",
     temperature: 0.4,
-    displayName: "Google Gemini 2.0 Flash",
+    displayName: "Google Gemini 3.5 Flash",
     description: "基本無料で使用可能。高速・軽量。初回利用・学習目的やコスト効率を重視する場合に推奨。",
     apiKeyFormat: "AIza",
     apiKeyDescription: "Google Gemini APIキーを入力してください",
     icon: "🛡️",
   },
   anthropic: {
-    model: "claude-3-5-sonnet-20241022",
-    temperature: 0.5,
+    // claude-3-5-sonnet-20241022 は 2025-10-28 に提供終了。
+    // 後継の claude-sonnet-5 は temperature 指定を受け付けないため設定しない
+    model: "claude-sonnet-5",
     maxTokens: 4000,
-    displayName: "Anthropic Claude 3.5 Sonnet",
+    displayName: "Anthropic Claude Sonnet 5",
     description: "安全性と倫理性を重視。日常的な利用やバランスの取れた品質に最適。",
     apiKeyFormat: "sk-ant-",
     apiKeyDescription: "Anthropic Claude APIキーを入力してください（sk-ant-で始まる形式）",
