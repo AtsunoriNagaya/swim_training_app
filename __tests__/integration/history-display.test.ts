@@ -1,27 +1,17 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import React from 'react';
 import HistoryPage from '../../app/history/page';
 
 // fetchをモック
+// setup.ts の msw サーバーが beforeAll で global.fetch を差し替えるため、
+// それより後に実行される beforeEach で毎回モックを代入し直す
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
-global.fetch = mockFetch;
-
-// localStorageをモック
-const mockLocalStorage = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage,
-});
 
 describe('History Display Integration (IT-005)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLocalStorage.getItem.mockClear();
+    global.fetch = mockFetch;
   });
 
   test('データベースからの履歴が正常に表示される', async () => {
@@ -50,9 +40,6 @@ describe('History Display Integration (IT-005)', () => {
       json: async () => mockApiResponse,
     } as Response);
 
-    // ローカルストレージは空
-    mockLocalStorage.getItem.mockReturnValue('[]');
-
     render(React.createElement(HistoryPage));
 
     // ローディング状態の確認
@@ -67,14 +54,12 @@ describe('History Display Integration (IT-005)', () => {
     const aiGeneratedBadges = screen.getAllByText('AI生成');
     expect(aiGeneratedBadges).toHaveLength(2);
 
-    // メニュー表示リンクが存在することを確認
-    const menuLinks = screen.getAllByText('メニューを表示');
-    expect(menuLinks).toHaveLength(2);
-    expect(menuLinks[0]).toHaveAttribute('href', '/result?menuId=menu_1234567890_abc123');
+    // タイトルが結果ページへのリンクになっていることを確認
+    const menuLink = screen.getByRole('link', { name: '高強度の60分トレーニングメニュー' });
+    expect(menuLink).toHaveAttribute('href', '/result?id=menu_1234567890_abc123');
   });
 
-  test('ローカルストレージとデータベースの統合表示', async () => {
-    // APIレスポンスをモック（AI生成メニュー）
+  test('アップロードメニューは専用ページへのリンクとファイル情報を表示する', async () => {
     const mockApiResponse = {
       menuHistory: [
         {
@@ -83,8 +68,17 @@ describe('History Display Integration (IT-005)', () => {
           description: 'AI生成メニュー: 高強度 60分',
           createdAt: '2024-08-16T05:00:00.000Z',
         },
+        {
+          id: 'upload_file_123',
+          title: 'アップロードされたメニュー',
+          description: 'CSVファイルからアップロード',
+          fileType: 'text/csv',
+          fileSize: '2KB',
+          createdAt: '2024-08-14T10:00:00.000Z',
+          content: 'メニュー内容...',
+        },
       ],
-      count: 1,
+      count: 2,
     };
 
     mockFetch.mockResolvedValueOnce({
@@ -92,20 +86,6 @@ describe('History Display Integration (IT-005)', () => {
       status: 200,
       json: async () => mockApiResponse,
     } as Response);
-
-    // ローカルストレージにアップロードファイルのデータ
-    const localStorageData = [
-      {
-        id: 'upload_file_123',
-        title: 'アップロードされたメニュー',
-        description: 'CSVファイルからアップロード',
-        fileType: 'text/csv',
-        fileSize: '2KB',
-        createdAt: '2024-08-14T10:00:00.000Z',
-        content: 'メニュー内容...',
-      },
-    ];
-    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(localStorageData));
 
     render(React.createElement(HistoryPage));
 
@@ -118,83 +98,50 @@ describe('History Display Integration (IT-005)', () => {
     expect(screen.getByText('AI生成')).toBeInTheDocument();
     expect(screen.getByText('アップロード')).toBeInTheDocument();
 
-    // AI生成メニューにはメニュー表示リンクがある
-    expect(screen.getByText('メニューを表示')).toBeInTheDocument();
+    // アップロードメニューは専用ページへのリンクになる
+    const uploadLink = screen.getByRole('link', { name: 'アップロードされたメニュー' });
+    expect(uploadLink).toHaveAttribute('href', '/upload-result?id=upload_file_123');
 
     // アップロードファイルにはファイル情報が表示される
     expect(screen.getByText('ファイル形式: CSV')).toBeInTheDocument();
     expect(screen.getByText('ファイルサイズ: 2KB')).toBeInTheDocument();
   });
 
-  test('重複メニューの処理（データベース優先）', async () => {
-    // 同じIDのメニューがデータベースとローカルストレージに存在
-    const duplicateId = 'menu_duplicate_123';
-    
-    const mockApiResponse = {
-      menuHistory: [
-        {
-          id: duplicateId,
-          title: 'データベースのメニュー',
-          description: 'データベースから取得',
-          createdAt: '2024-08-16T05:00:00.000Z',
-        },
-      ],
-      count: 1,
-    };
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: async () => mockApiResponse,
-    } as Response);
-
-    const localStorageData = [
-      {
-        id: duplicateId,
-        title: 'ローカルストレージのメニュー',
-        description: 'ローカルストレージから取得',
-        fileType: 'text/csv',
-        createdAt: '2024-08-15T10:00:00.000Z',
-      },
-    ];
-    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(localStorageData));
-
-    render(React.createElement(HistoryPage));
-
-    await waitFor(() => {
-      // データベースのメニューが表示される（優先される）
-      expect(screen.getByText('データベースのメニュー')).toBeInTheDocument();
-      // ローカルストレージのメニューは表示されない
-      expect(screen.queryByText('ローカルストレージのメニュー')).not.toBeInTheDocument();
-    });
-  });
-
-  test('データベースエラー時のフォールバック処理', async () => {
+  test('取得エラー時にエラー表示と再試行ボタンが表示される', async () => {
     // APIエラーをモック
     mockFetch.mockRejectedValueOnce(new Error('Database connection failed'));
-
-    // ローカルストレージにデータがある
-    const localStorageData = [
-      {
-        id: 'local_menu_123',
-        title: 'ローカルメニュー',
-        description: 'ローカルストレージのみ',
-        fileType: 'text/csv',
-        createdAt: '2024-08-15T10:00:00.000Z',
-      },
-    ];
-    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(localStorageData));
 
     render(React.createElement(HistoryPage));
 
     await waitFor(() => {
       // エラーメッセージが表示される
       expect(screen.getByText(/エラー:/)).toBeInTheDocument();
-      expect(screen.getByText('ローカルストレージのデータのみ表示しています')).toBeInTheDocument();
-      
-      // ローカルストレージのデータは表示される
-      expect(screen.getByText('ローカルメニュー')).toBeInTheDocument();
     });
+    expect(screen.getByText('Database connection failed')).toBeInTheDocument();
+
+    // 再試行すると履歴が再取得される
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        menuHistory: [
+          {
+            id: 'menu_recovered',
+            title: '復旧後のメニュー',
+            description: '再試行で取得',
+            createdAt: '2024-08-16T05:00:00.000Z',
+          },
+        ],
+        count: 1,
+      }),
+    } as Response);
+
+    fireEvent.click(screen.getByRole('button', { name: '再試行' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('復旧後のメニュー')).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/エラー:/)).not.toBeInTheDocument();
   });
 
   test('履歴が空の場合の表示', async () => {
@@ -210,14 +157,14 @@ describe('History Display Integration (IT-005)', () => {
       json: async () => mockApiResponse,
     } as Response);
 
-    // ローカルストレージも空
-    mockLocalStorage.getItem.mockReturnValue('[]');
-
     render(React.createElement(HistoryPage));
 
     await waitFor(() => {
       expect(screen.getByText('過去のメニューはありません')).toBeInTheDocument();
     });
+
+    // メニュー作成への導線が表示される
+    expect(screen.getByRole('link', { name: 'メニューを作成する' })).toHaveAttribute('href', '/create');
   });
 
   test('日付順ソート（新しい順）', async () => {
@@ -245,8 +192,6 @@ describe('History Display Integration (IT-005)', () => {
       json: async () => mockApiResponse,
     } as Response);
 
-    mockLocalStorage.getItem.mockReturnValue('[]');
-
     render(React.createElement(HistoryPage));
 
     await waitFor(() => {
@@ -265,12 +210,64 @@ describe('History Display Integration (IT-005)', () => {
       json: async () => ({ error: 'Internal Server Error' }),
     } as Response);
 
-    mockLocalStorage.getItem.mockReturnValue('[]');
-
     render(React.createElement(HistoryPage));
 
     await waitFor(() => {
       expect(screen.getByText(/エラー:/)).toBeInTheDocument();
     });
+  });
+
+  test('削除ダイアログの確認フロー（キャンセル→確認削除）', async () => {
+    const mockApiResponse = {
+      menuHistory: [
+        {
+          id: 'menu_del_1',
+          title: '削除対象メニュー',
+          description: '削除テスト用',
+          createdAt: '2024-08-16T05:00:00.000Z',
+        },
+      ],
+      count: 1,
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => mockApiResponse,
+    } as Response);
+
+    render(React.createElement(HistoryPage));
+
+    await waitFor(() => {
+      expect(screen.getByText('削除対象メニュー')).toBeInTheDocument();
+    });
+
+    // 削除ボタンで確認ダイアログが開く
+    fireEvent.click(screen.getByRole('button', { name: '「削除対象メニュー」を削除' }));
+    expect(await screen.findByText('メニューを削除しますか？')).toBeInTheDocument();
+    expect(screen.getByText('「削除対象メニュー」を削除します。この操作は取り消せません。')).toBeInTheDocument();
+
+    // キャンセルするとダイアログが閉じ、削除APIは呼ばれない
+    fireEvent.click(screen.getByRole('button', { name: 'キャンセル' }));
+    await waitFor(() => {
+      expect(screen.queryByText('メニューを削除しますか？')).not.toBeInTheDocument();
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1); // 初回の履歴取得のみ
+    expect(screen.getByText('削除対象メニュー')).toBeInTheDocument();
+
+    // 再度開いて「削除する」を押すと DELETE が呼ばれ、カードが消える
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    } as Response);
+
+    fireEvent.click(screen.getByRole('button', { name: '「削除対象メニュー」を削除' }));
+    fireEvent.click(await screen.findByRole('button', { name: '削除する' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('削除対象メニュー')).not.toBeInTheDocument();
+    });
+    expect(mockFetch).toHaveBeenCalledWith('/api/delete-menu?id=menu_del_1', { method: 'DELETE' });
   });
 });
