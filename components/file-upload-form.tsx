@@ -117,7 +117,8 @@ export default function FileUploadForm() {
               name="file"
               render={({ field: { onChange, value, ...rest } }) => (
                 <FormItem>
-                  <FormLabel className="text-base">ファイル選択</FormLabel>
+                  {/* FormControl 直下が div のため、ラベルは実際の file input に明示的に紐付ける */}
+                  <FormLabel className="text-base" htmlFor="file-upload">ファイル選択</FormLabel>
                   <FormControl>
                     <div
                       className={`grid w-full items-center gap-1.5 ${dragActive ? "ring-2 ring-primary" : ""}`}
@@ -128,7 +129,7 @@ export default function FileUploadForm() {
                     >
                       <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <FileUp className="w-8 h-8 mb-3 text-primary" />
+                          <FileUp className="w-8 h-8 mb-3 text-primary" aria-hidden="true" />
                           <p className="mb-2 text-sm text-center">
                             <span className="font-semibold">クリックしてファイルを選択</span> または ドラッグ＆ドロップ
                           </p>
@@ -176,23 +177,26 @@ export default function FileUploadForm() {
               )}
             />
 
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:shadow-lg hover:shadow-primary/20 transition-all duration-300"
-              disabled={isUploading}
-            >
+            <Button type="submit" className="w-full" disabled={isUploading}>
               {isUploading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                   アップロード中...
                 </>
               ) : (
                 <>
-                  <Upload className="mr-2 h-4 w-4" />
+                  <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
                   ファイルをアップロード
                 </>
               )}
             </Button>
+
+            {/* ボタン文言の変化は読み上げられないため、状態変化を live region で告知する */}
+            {isUploading && (
+              <p role="status" className="sr-only">
+                ファイルをアップロードしています
+              </p>
+            )}
           </form>
         </Form>
       </CardContent>

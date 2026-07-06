@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface UploadedMenu {
@@ -127,7 +129,7 @@ export default function UploadResultContent() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col items-center justify-center text-center mb-8">
+        <div role="status" className="flex flex-col items-center justify-center text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-4">読み込み中...</h1>
         </div>
       </div>
@@ -138,19 +140,20 @@ export default function UploadResultContent() {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="mb-6">
-          <Link href="/history">
-            <Button variant="ghost" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" asChild>
+            <Link href="/history" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               履歴に戻る
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
-        
-        <div className="flex flex-col items-center justify-center text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-4">エラー</h1>
-          <p className="text-lg text-muted-foreground max-w-3xl mb-4">
-            {error?.message || "メニューが見つかりません"}
-          </p>
+
+        <div className="max-w-2xl mx-auto">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>メニューを表示できません</AlertTitle>
+            <AlertDescription>{error?.message || "メニューが見つかりません"}</AlertDescription>
+          </Alert>
         </div>
       </div>
     );
@@ -172,10 +175,11 @@ export default function UploadResultContent() {
           </div>
           <div className="w-full overflow-x-auto bg-card rounded-lg border shadow-sm">
             <table className="w-full border-collapse">
+              <caption className="sr-only">アップロードされたCSVファイルの内容</caption>
               <thead>
                 <tr className="bg-muted/50 border-b">
                   {headers.map((header, index) => (
-                    <th key={index} className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r last:border-r-0">
+                    <th key={index} scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r last:border-r-0">
                       {header}
                     </th>
                   ))}
@@ -216,7 +220,7 @@ export default function UploadResultContent() {
         );
       } else {
         return (
-          <div className="text-center py-8">
+          <div role="status" className="text-center py-8">
             <p className="text-lg mb-4">PDFファイルの読み込み中...</p>
           </div>
         );
@@ -234,14 +238,14 @@ export default function UploadResultContent() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-6">
-        <Link href="/history">
-          <Button variant="ghost" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
+        <Button variant="ghost" asChild>
+          <Link href="/history" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             履歴に戻る
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
-      
+
       <div className="max-w-4xl mx-auto">
         <Card>
           <CardContent className="p-6">
@@ -256,7 +260,7 @@ export default function UploadResultContent() {
                 </div>
               </div>
               <Button onClick={handleDownload} variant="outline" className="flex items-center gap-2">
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
                 ダウンロード
               </Button>
             </div>
