@@ -26,7 +26,7 @@ export default function Header() {
             <div className="h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"></div>
           </div>
         </Link>
-        <nav className="hidden md:flex items-center gap-8">
+        <nav aria-label="メインナビゲーション" className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm font-medium relative group">
               <span>{link.label}</span>

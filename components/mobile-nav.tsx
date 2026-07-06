@@ -38,7 +38,7 @@ export default function MobileNav() {
         <SheetHeader>
           <SheetTitle>メニュー</SheetTitle>
         </SheetHeader>
-        <nav className="mt-6 flex flex-col gap-1">
+        <nav aria-label="モバイルナビゲーション" className="mt-6 flex flex-col gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
