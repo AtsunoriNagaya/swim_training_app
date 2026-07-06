@@ -19,7 +19,7 @@ export default function TermsPage() {
       {/* はじめに */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Info className="h-6 w-6 text-primary" />
+          <Info className="h-6 w-6 text-primary" aria-hidden="true" />
           はじめに
         </h2>
         <Card className="card-hover border-primary/20">
@@ -36,7 +36,7 @@ export default function TermsPage() {
       {/* 適用範囲と同意 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Gavel className="h-6 w-6 text-primary" />
+          <Gavel className="h-6 w-6 text-primary" aria-hidden="true" />
           適用範囲と同意
         </h2>
         <Card className="card-hover border-primary/20">
@@ -55,7 +55,7 @@ export default function TermsPage() {
       {/* サービスの内容 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+          <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
           サービスの内容
         </h2>
         <Card className="card-hover border-primary/20">
@@ -74,7 +74,7 @@ export default function TermsPage() {
       {/* アカウント・API キー */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Key className="h-6 w-6 text-primary" />
+          <Key className="h-6 w-6 text-primary" aria-hidden="true" />
           アカウント・API キー
         </h2>
         <Card className="card-hover border-primary/20">
@@ -93,7 +93,7 @@ export default function TermsPage() {
       {/* 禁止事項 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
+          <Shield className="h-6 w-6 text-primary" aria-hidden="true" />
           禁止事項
         </h2>
         <Card className="card-hover border-primary/20">
@@ -114,7 +114,7 @@ export default function TermsPage() {
       {/* 生成コンテンツと責任 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <AlertTriangle className="h-6 w-6 text-primary" />
+          <AlertTriangle className="h-6 w-6 text-primary" aria-hidden="true" />
           生成コンテンツと免責
         </h2>
         <Card className="card-hover border-primary/20">
@@ -133,7 +133,7 @@ export default function TermsPage() {
       {/* 個人情報の取扱い */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <FileText className="h-6 w-6 text-primary" />
+          <FileText className="h-6 w-6 text-primary" aria-hidden="true" />
           個人情報の取扱い
         </h2>
         <Card className="card-hover border-primary/20">
@@ -150,7 +150,7 @@ export default function TermsPage() {
       {/* 規約の変更・連絡方法・準拠法 */}
       <section className="mb-10">
         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-          <Gavel className="h-6 w-6 text-primary" />
+          <Gavel className="h-6 w-6 text-primary" aria-hidden="true" />
           規約の変更・連絡方法・準拠法
         </h2>
         <Card className="card-hover border-primary/20">

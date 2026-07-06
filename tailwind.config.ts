@@ -19,6 +19,9 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-noto-sans-jp)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -26,20 +29,20 @@ const config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(196, 80%, 45%)", // 水色
-          foreground: "hsl(0, 0%, 100%)",
+          DEFAULT: "hsl(var(--primary))", // 水色
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(215, 70%, 55%)", // 青色
-          foreground: "hsl(0, 0%, 100%)",
+          DEFAULT: "hsl(var(--secondary))", // 青色
+          foreground: "hsl(var(--secondary-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(170, 75%, 41%)", // ターコイズ
-          foreground: "hsl(0, 0%, 100%)",
+          DEFAULT: "hsl(var(--accent))", // ターコイズ
+          foreground: "hsl(var(--accent-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(350, 89%, 60%)",
-          foreground: "hsl(0, 0%, 100%)",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",

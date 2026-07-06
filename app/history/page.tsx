@@ -1,264 +1,257 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { AlertCircle, Trash2, Waves } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import MenuHistoryCard, { type Menu } from "@/components/menu-history-card";
 
-interface Menu {
-  id: string;
-  title: string;
-  description: string;
-  fileType?: string;
-  fileSize?: string;
-  createdAt: string;
-  content?: string;
-}
+type DeleteTarget =
+  | { kind: "menu"; id: string; title: string }
+  | { kind: "test-menus"; count: number };
 
 export default function HistoryPage() {
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const { toast } = useToast();
 
-  // テストデータ一括削除
-  const handleDeleteTestMenus = async () => {
-    if (!confirm('テストデータ（mock-で始まるID）をすべて削除しますか？この操作は取り消せません。')) {
-      return;
-    }
-
+  const fetchMenuHistory = useCallback(async () => {
     try {
-      setDeleting('test-menus');
-      const response = await fetch('/api/delete-test-menus', {
-        method: 'DELETE',
-      });
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/get-menu-history");
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
-      if (data.success) {
-        alert(`${data.deletedCount} 件のテストデータを削除しました`);
-        // メニューリストを再取得
-        window.location.reload();
-      } else {
-        alert(`削除に失敗しました: ${data.error}`);
+      if (data.error) {
+        throw new Error(data.error);
       }
+
+      const dbMenus: Menu[] = data.menuHistory || [];
+
+      // 作成日時でソート（新しい順）
+      dbMenus.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      setMenus(dbMenus);
     } catch (error) {
-      console.error('テストデータ削除エラー:', error);
-      alert('削除に失敗しました');
+      console.error("メニュー履歴の取得に失敗しました:", error);
+      setError(error instanceof Error ? error.message : "メニュー履歴の取得に失敗しました");
+      setMenus([]);
     } finally {
-      setDeleting(null);
+      setLoading(false);
     }
-  };
-
-  // 個別メニュー削除
-  const handleDeleteMenu = async (menuId: string, menuTitle: string) => {
-    if (!confirm(`「${menuTitle}」を削除しますか？この操作は取り消せません。`)) {
-      return;
-    }
-
-    try {
-      setDeleting(menuId);
-      const response = await fetch(`/api/delete-menu?id=${menuId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // メニューリストから削除
-        setMenus(prevMenus => prevMenus.filter(menu => menu.id !== menuId));
-        alert('メニューを削除しました');
-      } else {
-        alert(`削除に失敗しました: ${data.error}`);
-      }
-    } catch (error) {
-      console.error('メニュー削除エラー:', error);
-      alert('削除に失敗しました');
-    } finally {
-      setDeleting(null);
-    }
-  };
-
-  // メニューカードクリック処理
-  const handleMenuClick = (menu: Menu) => {
-    const isGeneratedMenu = !menu.fileType;
-    if (isGeneratedMenu) {
-      // AI生成メニューは結果ページへ
-      window.location.href = `/result?id=${menu.id}`;
-    } else {
-      // アップロードメニューは専用ページへ
-      window.location.href = `/upload-result?id=${menu.id}`;
-    }
-  };
-
-  useEffect(() => {
-    const fetchMenuHistory = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // データベースからメニュー履歴を取得
-        const response = await fetch('/api/get-menu-history');
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        
-        // データベースから取得したメニューを設定
-        const dbMenus = data.menuHistory || [];
-        
-        // 作成日時でソート（新しい順）
-        dbMenus.sort((a: Menu, b: Menu) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        
-        setMenus(dbMenus);
-      } catch (error) {
-        console.error('メニュー履歴の取得に失敗しました:', error);
-        setError(error instanceof Error ? error.message : 'メニュー履歴の取得に失敗しました');
-        setMenus([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMenuHistory();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="container px-4 py-8 mx-auto">
-        <h1 className="mb-6 text-2xl font-bold">過去のメニュー</h1>
-        <p>読み込み中...</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchMenuHistory();
+  }, [fetchMenuHistory]);
 
-  if (error) {
-    return (
-      <div className="container px-4 py-8 mx-auto">
-        <h1 className="mb-6 text-2xl font-bold">過去のメニュー</h1>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-center text-red-500">エラー: {error}</p>
-            <p className="text-center text-gray-500 mt-2">ローカルストレージのデータのみ表示しています</p>
-          </CardContent>
-        </Card>
-        {menus.length > 0 && (
-          <div className="space-y-4 mt-6">
-            {menus.map((menu) => (
-              <Card key={menu.id} className="overflow-hidden">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-medium">{menu.title}</h3>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <p>作成日: {new Date(menu.createdAt).toLocaleString('ja-JP')}</p>
-                    {menu.fileType && <p>ファイル形式: {menu.fileType === 'application/pdf' ? 'PDF' : 'CSV'}</p>}
-                    {menu.fileSize && <p>ファイルサイズ: {menu.fileSize}</p>}
-                    {menu.description && <p>説明: {menu.description}</p>}
-                  </div>
-                  {menu.content && menu.fileType === 'text/csv' && (
-                    <div className="p-4 mt-4 overflow-auto text-sm bg-gray-50 rounded-lg max-h-40">
-                      <pre className="whitespace-pre-wrap">{menu.content}</pre>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  // 個別メニュー削除（確認ダイアログの「削除する」から呼ばれる）
+  const deleteMenu = async (id: string, title: string) => {
+    try {
+      setDeleting(id);
+      const response = await fetch(`/api/delete-menu?id=${id}`, {
+        method: "DELETE",
+      });
 
-  if (menus.length === 0) {
-    return (
-      <div className="container px-4 py-8 mx-auto">
-        <h1 className="mb-6 text-2xl font-bold">過去のメニュー</h1>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-center text-gray-500">過去のメニューはありません</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+      const data = await response.json();
+
+      if (data.success) {
+        setMenus((prevMenus) => prevMenus.filter((menu) => menu.id !== id));
+        toast({
+          title: "メニューを削除しました",
+          description: `「${title}」を削除しました。`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "削除に失敗しました",
+          description: data.error,
+        });
+      }
+    } catch (error) {
+      console.error("メニュー削除エラー:", error);
+      toast({
+        variant: "destructive",
+        title: "削除に失敗しました",
+        description: "時間をおいて再度お試しください。",
+      });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // テストデータ一括削除
+  const deleteTestMenus = async () => {
+    try {
+      setDeleting("test-menus");
+      const response = await fetch("/api/delete-test-menus", {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast({
+          title: "テストデータを削除しました",
+          description: `${data.deletedCount} 件のテストデータを削除しました。`,
+        });
+        await fetchMenuHistory();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "削除に失敗しました",
+          description: data.error,
+        });
+      }
+    } catch (error) {
+      console.error("テストデータ削除エラー:", error);
+      toast({
+        variant: "destructive",
+        title: "削除に失敗しました",
+        description: "時間をおいて再度お試しください。",
+      });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    if (target.kind === "menu") {
+      void deleteMenu(target.id, target.title);
+    } else {
+      void deleteTestMenus();
+    }
+  };
 
   // テストデータの数をカウント
-  const testMenuCount = menus.filter(menu => menu.id.startsWith('mock-')).length;
+  const testMenuCount = menus.filter((menu) => menu.id.startsWith("mock-")).length;
 
   return (
-    <div className="container px-4 py-8 mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">過去のメニュー</h1>
-        {testMenuCount > 0 && (
+    <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-tight">過去のメニュー</h1>
+        {!loading && !error && testMenuCount > 0 && (
           <Button
             variant="destructive"
             size="sm"
-            onClick={handleDeleteTestMenus}
-            disabled={deleting === 'test-menus'}
+            onClick={() => setDeleteTarget({ kind: "test-menus", count: testMenuCount })}
+            disabled={deleting === "test-menus"}
             className="flex items-center gap-2"
           >
-            <Trash2 className="h-4 w-4" />
-            {deleting === 'test-menus' ? '削除中...' : `テストデータを削除 (${testMenuCount}件)`}
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            {deleting === "test-menus" ? "削除中..." : `テストデータを削除 (${testMenuCount}件)`}
           </Button>
         )}
       </div>
-      <div className="space-y-4">
-        {menus.map((menu) => {
-          // AI生成メニューかアップロードファイルかを判定
-          const isGeneratedMenu = !menu.fileType;
-          
-          return (
-            <Card 
-              key={menu.id} 
-              className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => handleMenuClick(menu)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <h3 className="text-lg font-medium">{menu.title}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      isGeneratedMenu 
-                        ? 'bg-blue-100 text-blue-800' 
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {isGeneratedMenu ? 'AI生成' : 'アップロード'}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteMenu(menu.id, menu.title);
-                      }}
-                      disabled={deleting === menu.id}
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+
+      {loading ? (
+        <div role="status" aria-busy="true" className="space-y-4">
+          <span className="sr-only">読み込み中...</span>
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <CardContent className="space-y-3 p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <Skeleton className="h-6 w-2/3" />
+                  <Skeleton className="h-6 w-20" />
                 </div>
-                <div className="mt-2 text-sm text-gray-500">
-                  <p>作成日: {new Date(menu.createdAt).toLocaleString('ja-JP')}</p>
-                  {menu.fileType && <p>ファイル形式: {menu.fileType === 'application/pdf' ? 'PDF' : 'CSV'}</p>}
-                  {menu.fileSize && <p>ファイルサイズ: {menu.fileSize}</p>}
-                  {menu.description && <p>説明: {menu.description}</p>}
-                </div>
-                {menu.content && menu.fileType === 'text/csv' && (
-                  <div className="p-4 mt-4 overflow-auto text-sm bg-gray-50 rounded-lg max-h-40">
-                    <pre className="whitespace-pre-wrap">{menu.content}</pre>
-                  </div>
-                )}
+                <Skeleton className="h-4 w-48" />
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" aria-hidden="true" />
+            <AlertTitle>エラー: メニュー履歴を取得できませんでした</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+          <Button variant="outline" onClick={() => void fetchMenuHistory()}>
+            再試行
+          </Button>
+        </div>
+      ) : menus.length === 0 ? (
+        <div role="status" className="rounded-lg border border-dashed px-6 py-12 text-center">
+          <Waves className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
+          <p className="mt-4 text-lg font-medium">過去のメニューはありません</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            メニューを作成すると、ここに履歴が表示されます。
+          </p>
+          <Button asChild className="mt-6">
+            <Link href="/create">メニューを作成する</Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {menus.map((menu) => (
+            <MenuHistoryCard
+              key={menu.id}
+              menu={menu}
+              deleting={deleting === menu.id}
+              onDeleteClick={(m) => setDeleteTarget({ kind: "menu", id: m.id, title: m.title })}
+            />
+          ))}
+        </div>
+      )}
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget?.kind === "test-menus"
+                ? "テストデータをすべて削除しますか？"
+                : "メニューを削除しますか？"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.kind === "test-menus"
+                ? `mock- で始まる ${deleteTarget.count} 件のテストデータを削除します。この操作は取り消せません。`
+                : deleteTarget
+                  ? `「${deleteTarget.title}」を削除します。この操作は取り消せません。`
+                  : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={handleConfirmDelete}
+            >
+              削除する
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

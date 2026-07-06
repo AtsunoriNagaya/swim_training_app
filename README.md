@@ -47,7 +47,7 @@ npm run dev
 
 ## 技術スタック（概要）
 
-- Next.js 15 / React 19 / TypeScript 5
+- Next.js 16 / React 19 / TypeScript 5
 - Tailwind CSS / Radix UI
 - DB: Neon Database（PostgreSQL + pgvector）
 - Embeddings: OpenAI（text-embedding-3-small）
