@@ -14,7 +14,7 @@ export default function HelpPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4 gradient-text">AIヘルプセンター</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-4">AIヘルプセンター</h1>
         <p className="text-muted-foreground text-lg">
           AIの種類と使い分け、APIキーの設定方法について詳しく説明します
         </p>
@@ -172,7 +172,7 @@ export default function HelpPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="p-4 border border-primary/20 rounded-lg bg-primary/5">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">AI生成</Badge>
+                    <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">AI生成</Badge>
                     <span className="text-sm text-muted-foreground">青いバッジ</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -181,7 +181,7 @@ export default function HelpPage() {
                 </div>
                 <div className="p-4 border border-secondary/20 rounded-lg bg-secondary/5">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">アップロード</Badge>
+                    <Badge variant="outline" className="border-accent/30 bg-accent/10 text-accent">アップロード</Badge>
                     <span className="text-sm text-muted-foreground">緑のバッジ</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -250,9 +250,9 @@ export default function HelpPage() {
                     <p><strong>アップロードファイル:</strong> ファイル内容をプレビュー表示</p>
                   </div>
                 </div>
-                <div className="p-4 border border-red-100 rounded-lg bg-red-50">
+                <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                   <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Trash2 className="h-4 w-4 text-destructive" />
                     削除ボタン（ゴミ箱アイコン）
                   </h4>
                   <p className="text-sm text-muted-foreground">
@@ -270,16 +270,16 @@ export default function HelpPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-                  <h4 className="font-semibold mb-2 text-red-700">PDFファイル</h4>
+                <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:border-red-800/30 dark:bg-red-900/20">
+                  <h4 className="font-semibold mb-2 text-red-700 dark:text-red-300">PDFファイル</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• ブラウザ内でプレビュー表示</li>
                     <li>• iframe内でPDFを直接表示</li>
                     <li>• ダウンロードボタンでPDF形式で保存</li>
                   </ul>
                 </div>
-                <div className="p-4 border border-green-200 rounded-lg bg-green-50">
-                  <h4 className="font-semibold mb-2 text-green-700">CSVファイル</h4>
+                <div className="p-4 border border-green-200 rounded-lg bg-green-50 dark:border-green-800/30 dark:bg-green-900/20">
+                  <h4 className="font-semibold mb-2 text-green-700 dark:text-green-300">CSVファイル</h4>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• テーブル形式で内容を表示</li>
                     <li>• 行と列が見やすく整理</li>

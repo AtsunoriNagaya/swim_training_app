@@ -122,7 +122,7 @@ export default function UploadedFilesList() {
                         {file.size} • {formatDate(file.uploadedAt)}
                       </p>
                       {file.description && (
-                        <p className="text-sm mt-1 bg-white/50 dark:bg-gray-800/50 p-1.5 rounded-md">
+                        <p className="text-sm mt-1 bg-background/50 p-1.5 rounded-md">
                           {file.description}
                         </p>
                       )}

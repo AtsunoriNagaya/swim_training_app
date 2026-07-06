@@ -168,24 +168,24 @@ export default function UploadResultContent() {
       return (
         <div className="w-full">
           <div className="mb-4 text-center">
-            <p className="text-sm text-gray-600">CSVファイルの内容をテーブル形式で表示しています</p>
+            <p className="text-sm text-muted-foreground">CSVファイルの内容をテーブル形式で表示しています</p>
           </div>
-          <div className="w-full overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
+          <div className="w-full overflow-x-auto bg-card rounded-lg border shadow-sm">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
+                <tr className="bg-muted/50 border-b">
                   {headers.map((header, index) => (
-                    <th key={index} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 last:border-r-0">
+                    <th key={index} className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-r last:border-r-0">
                       {header}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-border">
                 {rows.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-gray-50">
+                  <tr key={rowIndex} className="hover:bg-muted/50">
                     {row.map((cell, cellIndex) => (
-                      <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200 last:border-r-0">
+                      <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-foreground border-r last:border-r-0">
                         {cell}
                       </td>
                     ))}
@@ -202,7 +202,7 @@ export default function UploadResultContent() {
         return (
           <div className="w-full">
             <div className="mb-4 text-center">
-              <p className="text-sm text-gray-600">PDFファイルをブラウザ内で表示しています</p>
+              <p className="text-sm text-muted-foreground">PDFファイルをブラウザ内で表示しています</p>
             </div>
             <div className="w-full h-[600px] border rounded-lg overflow-hidden">
               <iframe
@@ -224,7 +224,7 @@ export default function UploadResultContent() {
     } else {
       // その他のファイル形式
       return (
-        <div className="p-4 bg-gray-50 rounded-lg">
+        <div className="p-4 bg-muted rounded-lg">
           <pre className="whitespace-pre-wrap text-sm">{menuData.content}</pre>
         </div>
       );
@@ -248,7 +248,7 @@ export default function UploadResultContent() {
             <div className="flex items-start justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold mb-2">{menuData.title}</h1>
-                <div className="text-sm text-gray-500 space-y-1">
+                <div className="text-sm text-muted-foreground space-y-1">
                   <p>アップロード日: {new Date(menuData.createdAt).toLocaleString('ja-JP')}</p>
                   <p>ファイル形式: {menuData.fileType === 'application/pdf' ? 'PDF' : 'CSV'}</p>
                   <p>ファイルサイズ: {menuData.fileSize}</p>

@@ -21,7 +21,11 @@ const ACCEPTED_FILE_TYPES = ["application/pdf", "text/csv"]
 
 const formSchema = z.object({
   file: z
-    .instanceof(FileList)
+    // SSR ではモジュール評価時に FileList が存在しないため、z.instanceof は使えない
+    .custom<FileList>(
+      (files) => typeof FileList !== "undefined" && files instanceof FileList,
+      "ファイルを選択してください",
+    )
     .refine((files) => files.length > 0, "ファイルを選択してください")
     .refine((files) => files[0]?.size <= MAX_FILE_SIZE, "ファイルサイズは5MB以下にしてください")
     .refine(
