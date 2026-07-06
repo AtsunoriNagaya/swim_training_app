@@ -14,7 +14,7 @@ export default function UploadPage() {
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-4">過去メニュー管理</h1>
-        <p className="text-lg text-muted-foreground max-w-3xl">
+        <p className="text-lg text-muted-foreground max-w-3xl break-phrase">
           過去の練習メニューをCSVやPDFでアップロードし、メニュー生成時の参考データとして活用できます。
           アップロードされたデータはRAG（Retrieval-Augmented Generation）技術により、
           新しいメニュー生成時に関連性の高い情報として参照されます。

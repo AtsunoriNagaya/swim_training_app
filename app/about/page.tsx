@@ -14,7 +14,7 @@ export default function AboutPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-3 gradient-text">水泳部練習メニュー作成アプリ</h1>
-        <p className="text-muted-foreground">AIを活用して効率的に練習メニューを作成・保存・再利用</p>
+        <p className="text-muted-foreground break-phrase">AIを活用して効率的に練習メニューを作成・保存・再利用</p>
       </div>
 
       {/* 概要（利用者向け） */}
