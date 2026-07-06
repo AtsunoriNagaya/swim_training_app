@@ -14,6 +14,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_FILE_TYPES = ["application/pdf", "text/csv"]
@@ -34,6 +35,7 @@ export default function FileUploadForm() {
   const [isUploading, setIsUploading] = useState(false)
   const [dragActive, setDragActive] = useState(false)
   const router = useRouter()
+  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -71,7 +73,11 @@ export default function FileUploadForm() {
       router.push('/history')
     } catch (error) {
       console.error("エラー:", error)
-      alert(`エラー: ${error instanceof Error ? error.message : 'アップロードに失敗しました'}`)
+      toast({
+        variant: "destructive",
+        title: "アップロードに失敗しました",
+        description: error instanceof Error ? error.message : "時間をおいて再度お試しください。",
+      })
     } finally {
       setIsUploading(false)
     }

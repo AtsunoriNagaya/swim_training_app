@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 interface UploadedMenu {
   id: string;
@@ -23,6 +24,7 @@ export default function UploadResultContent() {
   const [error, setError] = React.useState<Error | null>(null);
   const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   React.useEffect(() => {
     const menuId = searchParams.get('id');
@@ -114,7 +116,11 @@ export default function UploadResultContent() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } else {
-      alert('ダウンロードできるファイルがありません');
+      toast({
+        variant: "destructive",
+        title: "ダウンロードできません",
+        description: "ダウンロードできるファイルがありません。",
+      });
     }
   };
 
