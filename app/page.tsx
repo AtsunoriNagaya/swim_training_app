@@ -47,7 +47,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">主要機能</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto break-phrase">
               AIと過去のデータを活用して、質の高い練習メニューを短時間で作成
             </p>
           </div>
@@ -124,7 +124,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">アプリの特徴</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto break-phrase">
               最新のAI技術と使いやすいインターフェースで練習メニュー作成をサポート
             </p>
           </div>
@@ -174,7 +174,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">初めての方へ</h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed break-words">
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed break-phrase">
               AIの使い方やAPIキーの設定方法について詳しく説明しています
             </p>
           </div>
@@ -185,8 +185,8 @@ export default function Home() {
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
                   <HelpCircle className="w-8 h-8 text-primary" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl md:text-2xl font-semibold mb-3 leading-tight break-words">AIの使い方とAPIキー設定</h3>
-                <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed break-words">
+                <h3 className="text-xl md:text-2xl font-semibold mb-3 leading-tight">AIの使い方とAPIキー設定</h3>
+                <p className="text-sm md:text-base text-muted-foreground mb-6 leading-relaxed break-phrase">
                   各種AIの特徴や使い分け、APIキーの取得方法について解説。
                   初めての方にも分かりやすくまとめています。
                 </p>
@@ -209,7 +209,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-wave-pattern opacity-10 animate-wave motion-reduce:animate-none"></div>
             <div className="relative z-10 p-8 md:p-12 text-primary-foreground text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">効率的な練習メニュー作成を始めましょう</h2>
-              <p className="text-xl mb-8 text-primary-foreground/90 max-w-2xl mx-auto">
+              <p className="text-xl mb-8 text-primary-foreground/90 max-w-2xl mx-auto break-phrase">
                 AIと過去のデータを活用して、質の高い練習メニューを短時間で作成できます。 今すぐ試してみましょう。
               </p>
               <Button size="lg" variant="secondary" className="bg-background text-primary hover:bg-background/90" asChild>

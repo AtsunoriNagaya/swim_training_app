@@ -168,7 +168,7 @@ export default function UploadedFilesList() {
               <AlertCircle className="h-8 w-8 text-primary" aria-hidden="true" />
             </div>
             <h3 className="text-lg font-medium">ファイルがありません</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-xs">
+            <p className="text-sm text-muted-foreground mt-2 max-w-xs break-phrase">
               過去の練習メニューをアップロードして、AIによるメニュー生成の精度を向上させましょう
             </p>
           </div>

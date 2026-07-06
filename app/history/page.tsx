@@ -199,8 +199,8 @@ export default function HistoryPage() {
       ) : menus.length === 0 ? (
         <div role="status" className="rounded-lg border border-dashed px-6 py-12 text-center">
           <Waves className="mx-auto h-12 w-12 text-muted-foreground" aria-hidden="true" />
-          <p className="mt-4 text-lg font-medium">過去のメニューはありません</p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-4 text-lg font-medium break-phrase">過去のメニューはありません</p>
+          <p className="mt-1 text-sm text-muted-foreground break-phrase">
             メニューを作成すると、ここに履歴が表示されます。
           </p>
           <Button asChild className="mt-6">
