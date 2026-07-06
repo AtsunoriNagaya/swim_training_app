@@ -475,7 +475,7 @@ export default function HelpPage() {
                   <div>
                     <h3 className="font-semibold mb-2">手順</h3>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                      <li>OpenAIの公式サイト（<a href="https://platform.openai.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">platform.openai.com</a>）にアクセス</li>
+                      <li>OpenAIの公式サイト（<a href="https://platform.openai.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 underline">platform.openai.com<span className="sr-only">（新しいタブで開きます）</span></a>）にアクセス</li>
                       <li>アカウントを作成またはログイン</li>
                       <li>左メニューから「API Keys」を選択</li>
                       <li>「Create new secret key」をクリック</li>
@@ -514,7 +514,7 @@ export default function HelpPage() {
                   <div>
                     <h3 className="font-semibold mb-2">手順</h3>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                      <li>Anthropicの公式サイト（<a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary/80 underline">console.anthropic.com</a>）にアクセス</li>
+                      <li>Anthropicの公式サイト（<a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary/80 underline">console.anthropic.com<span className="sr-only">（新しいタブで開きます）</span></a>）にアクセス</li>
                       <li>アカウントを作成またはログイン</li>
                       <li>「Get API Key」をクリック</li>
                       <li>APIキーをコピーして安全に保管</li>
@@ -546,7 +546,7 @@ export default function HelpPage() {
                   <div>
                     <h3 className="font-semibold mb-2">手順</h3>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                      <li>Google AI Studio（<a href="https://makersuite.google.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent/80 underline">makersuite.google.com</a>）にアクセス</li>
+                      <li>Google AI Studio（<a href="https://makersuite.google.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent/80 underline">makersuite.google.com<span className="sr-only">（新しいタブで開きます）</span></a>）にアクセス</li>
                       <li>Googleアカウントでログイン</li>
                       <li>「Get API key」をクリック</li>
                       <li>APIキーをコピーして安全に保管</li>

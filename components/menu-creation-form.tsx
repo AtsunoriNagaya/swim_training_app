@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useWatch } from "react-hook-form"
 import * as z from "zod"
-import { Loader2, Sparkles } from "lucide-react"
+import { ExternalLink, Loader2, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -173,6 +173,8 @@ export default function MenuCreationForm() {
                         className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
                       >
                         AIの使い方を見る
+                        <ExternalLink className="ml-0.5 inline h-3 w-3" aria-hidden="true" />
+                        <span className="sr-only">（新しいタブで開きます）</span>
                       </a>
                     </FormDescription>
 
@@ -220,6 +222,8 @@ export default function MenuCreationForm() {
                         className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
                       >
                         APIキーの取得方法
+                        <ExternalLink className="ml-0.5 inline h-3 w-3" aria-hidden="true" />
+                        <span className="sr-only">（新しいタブで開きます）</span>
                       </a>
                     </FormDescription>
                     <FormMessage />
