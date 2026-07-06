@@ -131,7 +131,7 @@ export default function ResultContent() {
 
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-4">生成されたメニュー</h1>
-        <p className="text-lg text-muted-foreground max-w-3xl">
+        <p className="text-lg text-muted-foreground max-w-3xl break-phrase">
           AIによって生成された練習メニューです。 PDFやCSVでダウンロードすることができます。
         </p>
       </div>

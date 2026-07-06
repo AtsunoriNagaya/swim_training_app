@@ -83,6 +83,17 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* 日本語見出しを単語(文節)の途中で折り返さない。
+     word-break: auto-phrase は Chrome/Edge のみ対応で、非対応ブラウザでは無視され従来表示のまま */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    word-break: auto-phrase;
+    text-wrap: balance;
+  }
 }
 
 .wave-bg {
@@ -123,5 +134,9 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  /* 見出し以外(リード文・説明文など)を文節単位で折り返したい箇所に付与する */
+  .break-phrase {
+    word-break: auto-phrase;
   }
 }
