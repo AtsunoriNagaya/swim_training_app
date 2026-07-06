@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import type { Metadata } from "next"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "水泳部練習メニュー作成アプリ",
@@ -26,6 +27,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
