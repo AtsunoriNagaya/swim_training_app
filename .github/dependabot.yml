@@ -14,3 +14,7 @@ updates:
       # minor / patch はまとめて 1 本の PR にする（major は個別）
       minor-and-patch:
         update-types: ["minor", "patch"]
+    ignore:
+      # Tailwind 4 は PostCSS 設定と CSS の書き換えが必要なため、メジャー更新は手動で行う
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
