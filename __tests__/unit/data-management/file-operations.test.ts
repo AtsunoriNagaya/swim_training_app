@@ -1,5 +1,4 @@
 // モックのインポート
-jest.mock('@/lib/pdf-parser');
 jest.mock('@/lib/blob-storage');
 
 // fetchをモック化
