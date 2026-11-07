@@ -1,0 +1,16 @@
+# 依存パッケージの更新 PR を Dependabot が自動で作る設定。
+# セキュリティ更新は GitHub 側の Dependabot alerts / security updates を有効にすると別途自動で作られる。
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 5
+    groups:
+      # minor / patch はまとめて 1 本の PR にする（major は個別）
+      minor-and-patch:
+        update-types: ["minor", "patch"]
