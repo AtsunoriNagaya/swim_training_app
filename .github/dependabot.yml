@@ -18,3 +18,6 @@ updates:
       # Tailwind 4 は PostCSS 設定と CSS の書き換えが必要なため、メジャー更新は手動で行う
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
+      # tailwind-merge 3 は Tailwind 4 専用（公式が Tailwind 3 のままなら上げないよう案内）。Tailwind 4 移行時に一緒に上げる
+      - dependency-name: "tailwind-merge"
+        update-types: ["version-update:semver-major"]
