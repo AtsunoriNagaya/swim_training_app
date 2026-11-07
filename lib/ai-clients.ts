@@ -1,8 +1,13 @@
 import OpenAI from "openai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI, ApiError as GoogleApiError } from "@google/genai";
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_MODEL_CONFIGS, type AIModelKey } from "./ai-config";
 import { extractAndValidateJSON } from "./json-sanitizer";
+
+// Gemini / Claude はプロンプト側でも JSON のみの応答を念押しする
+const JSON_ONLY_NOTE = `
+
+重要: 必ず有効なJSON形式のみで応答してください。説明文やコードブロックは含めないでください。`;
 
 // AIクライアントの初期化関数
 export function initializeAIClient(aiModel: string, apiKey: string) {
@@ -10,7 +15,7 @@ export function initializeAIClient(aiModel: string, apiKey: string) {
     case "openai":
       return new OpenAI({ apiKey });
     case "google":
-      return new GoogleGenerativeAI(apiKey);
+      return new GoogleGenAI({ apiKey });
     case "anthropic":
       return new Anthropic({ apiKey });
     default:
@@ -21,6 +26,7 @@ export function initializeAIClient(aiModel: string, apiKey: string) {
 // JSONレスポンスの抽出・検証は json-sanitizer に集約
 
 // AIモデルの生成ロジック
+// エラー判定は SDK の型付きエラー（status コード）で行い、文字列一致に頼らない
 export const AI_MODELS = {
   openai: {
     generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
@@ -32,27 +38,23 @@ export const AI_MODELS = {
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
-          temperature: AI_MODEL_CONFIGS.openai.temperature,
           response_format: AI_MODEL_CONFIGS.openai.responseFormat,
         });
-        return response.choices[0].message.content || "";
+        return response.choices[0]?.message.content || "";
       } catch (error) {
         console.error("OpenAI API エラー:", error);
-        if (error instanceof Error) {
-          // APIキー関連のエラーをより詳細に
-          if (error.message.includes('Incorrect API key') || error.message.includes('Invalid API key')) {
-            throw new Error("OpenAI APIキーが無効です。正しいAPIキー（sk-で始まる）を入力してください。");
-          }
-          if (error.message.includes('rate_limit_exceeded')) {
-            throw new Error("OpenAI APIのレート制限に達しました。しばらく待ってから再試行してください。");
-          }
-          if (error.message.includes('insufficient_quota')) {
+        if (error instanceof OpenAI.AuthenticationError) {
+          throw new Error("OpenAI APIキーが無効です。正しいAPIキー（sk-で始まる）を入力してください。");
+        }
+        if (error instanceof OpenAI.RateLimitError) {
+          if (error.code === "insufficient_quota") {
             throw new Error("OpenAI APIの使用量制限に達しました。アカウントの使用量を確認してください。");
           }
-          // モデル廃止・名称誤りを総称エラーに丸めない（原因特定を容易にする）
-          if (error.message.includes('model_not_found') || error.message.includes('does not exist')) {
-            throw new Error(`指定された OpenAI モデル（${AI_MODEL_CONFIGS.openai.model}）が見つかりません。モデルが廃止された可能性があります。`);
-          }
+          throw new Error("OpenAI APIのレート制限に達しました。しばらく待ってから再試行してください。");
+        }
+        // モデル廃止・名称誤りを総称エラーに丸めない（原因特定を容易にする）
+        if (error instanceof OpenAI.NotFoundError) {
+          throw new Error(`指定された OpenAI モデル（${AI_MODEL_CONFIGS.openai.model}）が見つかりません。モデルが廃止された可能性があります。`);
         }
         throw new Error("OpenAIからの応答の取得に失敗しました");
       }
@@ -62,41 +64,17 @@ export const AI_MODELS = {
   google: {
     generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
       try {
-        const client = initializeAIClient("google", apiKey) as GoogleGenerativeAI;
-        const model = client.getGenerativeModel({ 
+        const client = initializeAIClient("google", apiKey) as GoogleGenAI;
+        const response = await client.models.generateContent({
           model: AI_MODEL_CONFIGS.google.model,
-          generationConfig: {
-            temperature: AI_MODEL_CONFIGS.google.temperature,
-          }
+          contents: prompt + JSON_ONLY_NOTE,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: "application/json",
+          },
         });
-        
-        // Gemini用にプロンプトを最適化
-        const geminiPrompt = `${systemPrompt}
 
-${prompt}
-
-重要: 必ず有効なJSON形式のみで応答してください。説明文やコードブロックは含めないでください。`;
-        
-        const response = await model.generateContent(geminiPrompt);
-        
-        let content = "";
-        try {
-          const genResponse = response.response;
-          if (typeof genResponse.text === 'function') {
-            content = genResponse.text() || "";
-          } 
-          else if (genResponse.candidates && genResponse.candidates.length > 0) {
-            const candidate = genResponse.candidates[0];
-            if (candidate.content && candidate.content.parts && Array.isArray(candidate.content.parts)) {
-              content = candidate.content.parts
-                .map((part: any) => part.text || "")
-                .join("");
-            }
-          }
-        } catch (e) {
-          console.error("Gemini応答解析エラー:", e);
-        }
-        
+        const content = response.text ?? "";
         if (!content) {
           throw new Error("AIモデルからの応答が空でした");
         }
@@ -105,23 +83,22 @@ ${prompt}
         return extractAndValidateJSON(content);
       } catch (error) {
         console.error("Gemini API エラー:", error);
-        if (error instanceof Error) {
-          // APIキー関連のエラーをより詳細に
-          if (error.message.includes('API_KEY_INVALID') || error.message.includes('Invalid API key')) {
+        if (error instanceof GoogleApiError) {
+          // Gemini は無効キーを 400（API key not valid）または 401/403 で返す
+          if (error.status === 401 || error.status === 403 || (error.status === 400 && /api key/i.test(error.message))) {
             throw new Error("Google Gemini APIキーが無効です。正しいAPIキーを入力してください。");
           }
           // モデル廃止・名称誤りを総称エラーに丸めない（原因特定を容易にする）
-          if (error.message.includes('not found') || error.message.includes('NOT_FOUND') || error.message.includes('404')) {
+          if (error.status === 404) {
             throw new Error(`指定された Gemini モデル（${AI_MODEL_CONFIGS.google.model}）が見つかりません。モデルが廃止された可能性があります。`);
           }
-          if (error.message.includes('QUOTA_EXCEEDED') || error.message.includes('quota exceeded')) {
-            throw new Error("Google Gemini APIの使用量制限に達しました。しばらく待ってから再試行してください。");
+          if (error.status === 429) {
+            throw new Error("Google Gemini APIの使用量制限またはレート制限に達しました。しばらく待ってから再試行してください。");
           }
-          if (error.message.includes('RATE_LIMIT_EXCEEDED')) {
-            throw new Error("Google Gemini APIのレート制限に達しました。しばらく待ってから再試行してください。");
-          }
+          throw new Error("Geminiからの応答の取得に失敗しました");
         }
-        throw new Error("Geminiからの応答の取得に失敗しました");
+        // 自前で投げたエラー（応答が空・JSON不正）はそのまま返す
+        throw error;
       }
     }
   },
@@ -130,43 +107,48 @@ ${prompt}
     generate: async (prompt: string, systemPrompt: string, apiKey: string) => {
       try {
         const client = initializeAIClient("anthropic", apiKey) as Anthropic;
-        
-        // Claude用にプロンプトを最適化
-        const fullPrompt = `${prompt}
-
-重要: 必ず有効なJSON形式のみで応答してください。説明文やコードブロックは含めないでください。`;
-        
         const response = await client.messages.create({
           model: AI_MODEL_CONFIGS.anthropic.model,
           max_tokens: AI_MODEL_CONFIGS.anthropic.maxTokens,
           system: systemPrompt,
-          messages: [{ role: "user", content: fullPrompt }],
+          messages: [{ role: "user", content: prompt + JSON_ONLY_NOTE }],
         });
-        
-        if (response.content[0] && response.content[0].type === 'text') {
-          const content = response.content[0].text;
-          // JSON形式を抽出・検証
-          return extractAndValidateJSON(content);
+
+        if (response.stop_reason === "refusal") {
+          throw new Error("Anthropic APIが安全上の理由で応答を拒否しました。入力内容を見直してください。");
         }
-        throw new Error("Anthropic APIからテキスト応答を受け取れませんでした");
+        if (response.stop_reason === "max_tokens") {
+          throw new Error("Anthropic APIの応答が長すぎて途中で切れました。もう一度お試しください。");
+        }
+
+        // 先頭に thinking ブロックが来ることがあるため、位置ではなく type で探す
+        const textBlock = response.content.find(
+          (block): block is Anthropic.TextBlock => block.type === "text",
+        );
+        if (!textBlock) {
+          throw new Error("Anthropic APIからテキスト応答を受け取れませんでした");
+        }
+        // JSON形式を抽出・検証
+        return extractAndValidateJSON(textBlock.text);
       } catch (error) {
         console.error("Anthropic API エラー:", error);
-        if (error instanceof Error) {
-          // APIキー関連のエラーをより詳細に
-          if (error.message.includes('authentication_error') || error.message.includes('invalid x-api-key')) {
-            throw new Error("Anthropic APIキーが無効です。正しいAPIキー（sk-ant-で始まる）を入力してください。");
-          }
-          if (error.message.includes('rate_limit')) {
-            throw new Error("Anthropic APIのレート制限に達しました。しばらく待ってから再試行してください。");
-          }
-          if (error.message.includes('not_found_error') && error.message.includes('model:')) {
-            throw new Error("指定されたAnthropic AIモデルが見つかりません。モデル名を確認してください。");
-          }
-          if (error.message.includes('overloaded_error')) {
+        if (error instanceof Anthropic.AuthenticationError) {
+          throw new Error("Anthropic APIキーが無効です。正しいAPIキー（sk-ant-で始まる）を入力してください。");
+        }
+        if (error instanceof Anthropic.RateLimitError) {
+          throw new Error("Anthropic APIのレート制限に達しました。しばらく待ってから再試行してください。");
+        }
+        if (error instanceof Anthropic.NotFoundError) {
+          throw new Error(`指定された Anthropic モデル（${AI_MODEL_CONFIGS.anthropic.model}）が見つかりません。モデルが廃止された可能性があります。`);
+        }
+        if (error instanceof Anthropic.APIError) {
+          if (error.status === 529) {
             throw new Error("Anthropic APIが過負荷状態です。しばらく待ってから再試行してください。");
           }
+          throw new Error("Anthropicからの応答の取得に失敗しました");
         }
-        throw new Error("Anthropicからの応答の取得に失敗しました");
+        // 自前で投げたエラー（拒否・途中切れ・JSON不正）はそのまま返す
+        throw error;
       }
     }
   }

@@ -29,14 +29,14 @@ export default function AboutPage() {
         <Card className="card-hover border-primary/20">
           <CardHeader>
             <CardDescription>
-              本アプリは、水泳部員向けの練習メニューを AI で自動生成する Web アプリです。OpenAI（GPT-4o）、Google（Gemini 2.0 Flash）、Anthropic（Claude 3.5 Sonnet）に対応し、負荷レベル・時間・特記事項から最適なメニューを提案します。生成したメニューは保存・履歴参照ができ、過去の内容も参考にできます。
+              本アプリは、水泳部員向けの練習メニューを AI で自動生成する Web アプリです。OpenAI（GPT-6 Luna）、Google（Gemini Flash 最新版）、Anthropic（Claude Haiku 5.5）に対応し、負荷レベル・時間・特記事項から最適なメニューを提案します。生成したメニューは保存・履歴参照ができ、過去の内容も参考にできます。
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">GPT-4o</Badge>
-              <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">Claude 3.5 Sonnet</Badge>
-              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">Gemini 2.0 Flash</Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">GPT-6 Luna</Badge>
+              <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">Claude Haiku 5.5</Badge>
+              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">Gemini Flash（最新版）</Badge>
               <Badge variant="outline">RAG 参照</Badge>
             </div>
           </CardContent>

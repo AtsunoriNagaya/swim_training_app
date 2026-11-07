@@ -1,32 +1,37 @@
 // AIモデルの設定
+// モデルを切り替えるときは、各プロバイダの model（と表示名）を書き換えるだけでよい。
+// 料金・廃止予定は各社の公式ページで確認すること。
 export const AI_MODEL_CONFIGS = {
   openai: {
-    model: "gpt-4o",
-    temperature: 0.5,
+    // gpt-4o は 2027-01-14 に提供終了予定。公式が後継として案内する最安ティアを使用。
+    // gpt-6 系（推論モデル）は temperature を受け付けないため指定しない
+    model: "gpt-6-luna",
     responseFormat: { type: "json_object" },
-    displayName: "OpenAI GPT-4o",
-    description: "最高品質・専門的な内容に最適。複雑な指示や高品質な出力が必要な場合に推奨。",
+    displayName: "OpenAI GPT-6 Luna",
+    description: "低コスト・高速。日常的なメニュー生成に十分な品質。",
     apiKeyFormat: "sk-proj-",
     apiKeyDescription: "OpenAIのAPIキーを入力してください（sk-で始まる形式）",
     icon: "🤖",
   },
   google: {
-    // gemini-2.0-flash は 2026-06-01 に提供終了。公式推奨の後継モデルを使用
-    model: "gemini-3.5-flash",
-    temperature: 0.4,
-    displayName: "Google Gemini 3.5 Flash",
-    description: "基本無料で使用可能。高速・軽量。初回利用・学習目的やコスト効率を重視する場合に推奨。",
+    // "-latest" は Google 公式の自動追従エイリアス。Flash 系の新版が出ると自動で切り替わる
+    // （切り替えの2週間前にメール通知）。モデル廃止のたびに書き換える必要がない。
+    // Gemini 3 系は temperature 既定値(1.0)の利用が推奨のため指定しない
+    model: "gemini-flash-latest",
+    displayName: "Google Gemini Flash（最新版に自動追従）",
+    description: "無料枠あり。高速・軽量。Flash 系の最新版に自動で切り替わる。初回利用・学習目的やコスト効率を重視する場合に推奨。",
     apiKeyFormat: "AIza",
     apiKeyDescription: "Google Gemini APIキーを入力してください",
     icon: "🛡️",
   },
   anthropic: {
-    // claude-3-5-sonnet-20241022 は 2025-10-28 に提供終了。
-    // 後継の claude-sonnet-5 は temperature 指定を受け付けないため設定しない
-    model: "claude-sonnet-5",
-    maxTokens: 4000,
-    displayName: "Anthropic Claude Sonnet 5",
-    description: "安全性と倫理性を重視。日常的な利用やバランスの取れた品質に最適。",
+    // claude-sonnet-5 の後継として、現行の低コストモデル Haiku 5.5 を使用。
+    // Haiku 5.5 は adaptive thinking が既定で有効で、thinking 分も max_tokens に計上されるため余裕を持たせる。
+    // temperature は API 側で受け付けないため指定しない
+    model: "claude-haiku-5-5",
+    maxTokens: 16000,
+    displayName: "Anthropic Claude Haiku 5.5",
+    description: "低コスト・高速。安全性と一貫性を重視したバランスの良い出力。",
     apiKeyFormat: "sk-ant-",
     apiKeyDescription: "Anthropic Claude APIキーを入力してください（sk-ant-で始まる形式）",
     icon: "⚡",
