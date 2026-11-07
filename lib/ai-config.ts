@@ -72,7 +72,10 @@ export function convertLoadLevels(loadLevels: string[]): string {
 
 // APIキー形式の検証関数
 export function validateApiKey(aiModel: string, apiKey: string): { isValid: boolean; message?: string } {
-  const config = AI_MODEL_CONFIGS[aiModel as AIModelKey];
+  // constructor / __proto__ などプロトタイプ由来のキーを通さない
+  const config = Object.prototype.hasOwnProperty.call(AI_MODEL_CONFIGS, aiModel)
+    ? AI_MODEL_CONFIGS[aiModel as AIModelKey]
+    : undefined;
   if (!config) {
     return { isValid: false, message: "不正なAIモデルが指定されました" };
   }

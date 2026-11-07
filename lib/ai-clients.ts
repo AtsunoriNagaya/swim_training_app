@@ -39,7 +39,12 @@ export const AI_MODELS = {
             { role: "user", content: prompt },
           ],
           response_format: AI_MODEL_CONFIGS.openai.responseFormat,
+          // 混入した指示や長い特記事項で出力が膨らんでも、利用者のキーの消費を上限で抑える
+          max_completion_tokens: 16000,
         });
+        if (response.choices[0]?.finish_reason === "length") {
+          throw new Error("OpenAI APIの応答が長すぎて途中で切れました。もう一度お試しください。");
+        }
         return response.choices[0]?.message.content || "";
       } catch (error) {
         console.error("OpenAI API エラー:", error);
@@ -71,9 +76,13 @@ export const AI_MODELS = {
           config: {
             systemInstruction: systemPrompt,
             responseMimeType: "application/json",
+            maxOutputTokens: 16000,
           },
         });
 
+        if (response.candidates?.[0]?.finishReason === "MAX_TOKENS") {
+          throw new Error("Gemini APIの応答が長すぎて途中で切れました。もう一度お試しください。");
+        }
         const content = response.text ?? "";
         if (!content) {
           throw new Error("AIモデルからの応答が空でした");
@@ -156,7 +165,9 @@ export const AI_MODELS = {
 
 // 選択されたAIモデルの生成関数を取得
 export function getSelectedAIModel(aiModel: string) {
-  const selectedModel = AI_MODELS[aiModel as AIModelKey];
+  const selectedModel = Object.prototype.hasOwnProperty.call(AI_MODELS, aiModel)
+    ? AI_MODELS[aiModel as AIModelKey]
+    : undefined;
   if (!selectedModel) {
     throw new Error("不正なAIモデルが指定されました");
   }

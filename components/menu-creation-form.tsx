@@ -25,10 +25,11 @@ const formSchema = z.object({
   openaiApiKey: z.string().optional(),
   loadLevels: z.array(z.string()).min(1, "少なくとも1つの負荷レベルを選択してください"),
   duration: z.coerce
-    .number({ error: "数値で入力してください" })
+    .number<number>({ error: "数値で入力してください" })
+    .int("整数で入力してください")
     .min(15, "15分以上で入力してください")
     .max(240, "240分以内で入力してください"),
-  notes: z.string().optional(),
+  notes: z.string().max(2000, "2000文字以内で入力してください").optional(),
 }).required();
 
 type FormData = z.infer<typeof formSchema>;
