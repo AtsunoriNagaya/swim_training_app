@@ -1,7 +1,7 @@
 // Open a new window, render Markdown → HTML, and trigger Chrome print dialog
 "use client";
 
-import mdToHtml from "@/lib/markdown/miniMarkdown";
+import mdToHtml, { escapeHtml } from "@/lib/markdown/miniMarkdown";
 
 export function openPrintPopup(markdown: string, { title = "印刷プレビュー" } = {}) {
   if (typeof window === 'undefined') return;
@@ -14,7 +14,7 @@ export function openPrintPopup(markdown: string, { title = "印刷プレビュ�
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
   <style>
     @page { size: A4; margin: 16mm; }
     html, body { height: 100%; }

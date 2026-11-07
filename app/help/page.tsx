@@ -315,17 +315,17 @@ export default function HelpPage() {
                 OpenAI GPT
               </CardTitle>
               <CardDescription>
-                最も汎用的で高品質なAIモデル
+                汎用性の高い低コストモデル
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">GPT-4o</Badge>
-                  <span className="text-sm text-muted-foreground">最新・最高品質</span>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">GPT-6 Luna</Badge>
+                  <span className="text-sm text-muted-foreground">低コスト・高速</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  複雑な指示や高品質な出力が必要な場合に最適です。
+                  低コストで応答が速く、日常的なメニュー生成に十分な品質です。
                   トレーニングメニューの生成や詳細な説明に適しています。
                 </p>
                 <div className="text-sm text-muted-foreground">
@@ -352,8 +352,8 @@ export default function HelpPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">Claude 3.5 Sonnet</Badge>
-                  <span className="text-sm text-muted-foreground">バランス型・高品質</span>
+                  <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">Claude Haiku 5.5</Badge>
+                  <span className="text-sm text-muted-foreground">低コスト・高速</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   安全性を重視した内容生成や、倫理的な判断が必要な場合に適しています。
@@ -383,13 +383,13 @@ export default function HelpPage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">Gemini 2.0 Flash</Badge>
+                  <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">Gemini Flash（最新版）</Badge>
                   <span className="text-sm text-muted-foreground">高速・軽量版</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   画像やテキストの両方を理解できるAIです。
                   高速で効率的なトレーニングメニューの生成に適しています。
-                  基本無料で使用可能です。
+                  基本無料で使用可能です。最新の Flash モデルに自動で切り替わります。
                 </p>
                 <div className="text-sm text-muted-foreground">
                   <strong>RAGなしでの生成：</strong> 高速で基本的なトレーニングメニューを生成
@@ -414,7 +414,7 @@ export default function HelpPage() {
                 <div className="text-center p-4 border border-accent/20 rounded-lg bg-accent/5">
                   <h3 className="font-semibold mb-2 text-accent">初回利用・学習目的</h3>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Gemini 2.0 Flash
+                    Gemini Flash（最新版）
                   </p>
                   <p className="text-xs text-muted-foreground">
                     RAGなしで基本メニューを生成
@@ -423,19 +423,19 @@ export default function HelpPage() {
                 <div className="text-center p-4 border border-secondary/20 rounded-lg bg-secondary/5">
                   <h3 className="font-semibold mb-2 text-secondary">日常的な利用</h3>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Claude 3.5 Sonnet
+                    Claude Haiku 5.5
                   </p>
                   <p className="text-xs text-muted-foreground">
                     RAGありなし両方に対応
                   </p>
                 </div>
                 <div className="text-center p-4 border border-primary/20 rounded-lg bg-primary/5">
-                  <h3 className="font-semibold mb-2 text-primary">高品質・専門的な内容</h3>
+                  <h3 className="font-semibold mb-2 text-primary">OpenAI を使う場合</h3>
                   <p className="text-sm text-muted-foreground mb-2">
-                    GPT-4o
+                    GPT-6 Luna
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    最高品質のメニュー生成
+                    低コスト・高速な生成
                   </p>
                 </div>
               </div>
@@ -485,7 +485,7 @@ export default function HelpPage() {
                   <div>
                     <h3 className="font-semibold mb-2">料金</h3>
                     <p className="text-sm text-muted-foreground">
-                      GPT-4o: $0.005/1K tokens<br/>
+                      GPT-6 Luna: 入力 $0.10 / 出力 $0.50（100万トークンあたり）<br/>
                       <span className="text-xs">※料金は変更される場合があります</span>
                     </p>
                   </div>
@@ -523,7 +523,7 @@ export default function HelpPage() {
                   <div>
                     <h3 className="font-semibold mb-2">料金</h3>
                     <p className="text-sm text-muted-foreground">
-                      Claude 3.5 Sonnet: $3/1M tokens<br/>
+                      Claude Haiku 5.5: 入力 $0.10 / 出力 $0.50（100万トークンあたり、プロンプト10万トークン以下）<br/>
                       <span className="text-xs">※料金は変更される場合があります</span>
                     </p>
                   </div>
@@ -555,7 +555,7 @@ export default function HelpPage() {
                   <div>
                     <h3 className="font-semibold mb-2">料金</h3>
                     <p className="text-sm text-muted-foreground">
-                      Gemini 2.0 Flash: $0.075/1M tokens<br/>
+                      Gemini Flash（最新版）: 無料枠あり。有料枠の料金は参照先モデルにより異なります（公式料金ページ参照）<br/>
                       <span className="text-xs">※料金は変更される場合があります</span>
                     </p>
                   </div>

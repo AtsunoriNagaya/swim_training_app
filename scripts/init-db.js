@@ -32,10 +32,10 @@ async function initDatabase() {
   const connectionString = process.env.DATABASE_URL;
   assertValidDatabaseUrl(connectionString);
 
-  // Neon は常に SSL 必須
+  // Neon は常に SSL 必須。証明書検証を有効にする
   const pool = new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: true },
   });
 
   try {

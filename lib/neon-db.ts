@@ -8,10 +8,10 @@ export function getPool(): Pool {
     if (!connectionString) {
       throw new Error('環境変数 DATABASE_URL が未設定です。Neon の接続文字列を設定してください。');
     }
-    // Neon は常に SSL 必須
+    // Neon は常に SSL 必須。証明書検証を有効にし、経路上の第三者による TLS 終端を防ぐ
     pool = new Pool({
       connectionString,
-      ssl: { rejectUnauthorized: false },
+      ssl: { rejectUnauthorized: true },
     });
   }
   return pool;

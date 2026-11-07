@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { validateApiKey } from "@/lib/ai-config";
+import { validateApiKey, LOAD_LEVEL_MAPPING } from "@/lib/ai-config";
 import { type TrainingMenu, type GeneratedMenuData } from "@/types/menu";
 import { generateMenu } from "@/services/menuService";
 
@@ -74,12 +74,26 @@ export async function POST(req: NextRequest) {
       throw new Error("少なくとも1つの負荷レベルを選択してください");
     }
 
+    // サーバー側でも入力を検証する（クライアントの zod だけに頼らない）。
+    // 未検証の負荷レベル文字列は RAG の参照データとして他の利用者のプロンプトに混入するため、A/B/C に限定する
+    const validLoadLevels = Object.keys(LOAD_LEVEL_MAPPING);
+    if (!loadLevelsArray.every((level: unknown) => typeof level === "string" && validLoadLevels.includes(level))) {
+      throw new Error("負荷レベルの指定が正しくありません（A/B/C のいずれか）");
+    }
+    const durationNum = Number(duration);
+    if (!Number.isInteger(durationNum) || durationNum < 15 || durationNum > 240) {
+      throw new Error("練習時間は15〜240分の整数で指定してください");
+    }
+    if (notes !== undefined && notes !== null && (typeof notes !== "string" || notes.length > 2000)) {
+      throw new Error("特記事項は2000文字以内で入力してください");
+    }
+
     const { useRAG, openaiApiKey } = requestBody;
     const { menuId, menu } = await generateMenu({
       aiModel,
       apiKey,
       loadLevelsArray,
-      duration,
+      duration: durationNum,
       notes,
       useRAG,
       openaiApiKey,
@@ -104,7 +118,13 @@ export async function POST(req: NextRequest) {
       errorMessage = error.message;
       
       // 特定のエラーに対するステータスコードの設定
-      if (error.message.includes("APIキー") || error.message.includes("不正なAIモデル")) {
+      if (
+        error.message.includes("APIキー") ||
+        error.message.includes("不正なAIモデル") ||
+        error.message.includes("負荷レベル") ||
+        error.message.includes("練習時間") ||
+        error.message.includes("特記事項")
+      ) {
         statusCode = 400;
       } else if (error.message.includes("AIモデルからの応答が空")) {
         statusCode = 503;

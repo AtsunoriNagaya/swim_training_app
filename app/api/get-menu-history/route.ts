@@ -16,8 +16,6 @@ export async function GET() {
       createdAt: menu.createdAt,
     }));
 
-    console.log("[API] フォーマット済みメニュー履歴:", formattedMenuHistory);
-
     return NextResponse.json({
       menuHistory: formattedMenuHistory,
       count: formattedMenuHistory.length,

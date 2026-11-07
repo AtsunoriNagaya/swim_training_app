@@ -103,9 +103,9 @@ LIMIT 5;
 ## AI統合アーキテクチャ
 
 ### サポートAIモデル
-1. **OpenAI GPT-4o** - メニュー生成・埋め込み生成
-2. **Google Gemini** - メニュー生成
-3. **Anthropic Claude** - メニュー生成
+1. **OpenAI GPT-6 Luna**（`gpt-6-luna`） - メニュー生成。埋め込み生成は `text-embedding-3-small`
+2. **Google Gemini Flash**（`gemini-flash-latest`、最新版に自動追従） - メニュー生成
+3. **Anthropic Claude Haiku 5.5**（`claude-haiku-5-5`） - メニュー生成
 
 ### RAG（Retrieval-Augmented Generation）フロー
 ```

@@ -17,10 +17,6 @@ try {
 
 /** @type {import('next').NextConfig} */
 let nextConfig = {
-  env: {
-    // pdf-parseのデバッグモードを無効化
-    PDF_PARSE_DEBUG: 'false',
-  },
   typescript: {
     ignoreBuildErrors: true,
   },

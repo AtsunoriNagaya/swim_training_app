@@ -1,0 +1,5 @@
+# pnpm 10 以降は依存パッケージのビルドスクリプトを既定で実行しない。
+# 実行不要なものを明示して、pnpm install が ERR_PNPM_IGNORED_BUILDS で止まらないようにする。
+allowBuilds:
+  msw: false
+  protobufjs: false

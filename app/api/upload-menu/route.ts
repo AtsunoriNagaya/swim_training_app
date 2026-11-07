@@ -32,6 +32,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // 説明文とファイル名の長さを制限する（全件返す履歴一覧が無制限に肥大化するのを防ぐ）
+    if (description && description.length > 1000) {
+      return NextResponse.json({ success: false, error: "説明は1000文字以内で入力してください" }, { status: 400 });
+    }
+    if (file.name.length > 255) {
+      return NextResponse.json({ success: false, error: "ファイル名は255文字以内にしてください" }, { status: 400 });
+    }
+
     const menuId = `upload-${Date.now()}`;
     const fileSize = `${(file.size / 1024).toFixed(1)} KB`;
     

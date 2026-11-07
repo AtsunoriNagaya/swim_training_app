@@ -1,13 +1,17 @@
 // Minimal Markdown → HTML renderer focused on tables and basic inline styles
 // Supported: headings, paragraphs, bold/italic, code, hr, and GFM-style tables
 
-const escapeHtml = (s: string) =>
+export const escapeHtml = (s: string) =>
   s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+// リンク先は http(s) / mailto / 同一オリジンの相対パス / ページ内アンカーのみ許可する。
+// javascript: や data: のような実行可能スキームをアンカーにすると、保存データ経由の XSS になるため
+const isSafeHref = (href: string) => /^(https?:|mailto:|\/(?!\/)|#)/i.test(href.trim());
 
 const inlineFormat = (s: string) => {
   // code spans first
@@ -19,7 +23,8 @@ const inlineFormat = (s: string) => {
   // links [text](url)
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)/g, (_m, text, href, title) => {
     const t = title ? ` title="${escapeHtml(title)}"` : '';
-    return `<a href="${escapeHtml(href)}"${t}>${escapeHtml(text)}</a>`;
+    if (!isSafeHref(href)) return escapeHtml(text);
+    return `<a href="${escapeHtml(href)}"${t} rel="noopener noreferrer">${escapeHtml(text)}</a>`;
   });
   return s;
 };
