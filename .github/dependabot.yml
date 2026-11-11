@@ -41,6 +41,6 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Tokyo"
+    # github-actions は semver-*-days に対応していないため、default-days だけを指定する
     cooldown:
       default-days: 7
-      semver-major-days: 14
