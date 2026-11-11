@@ -42,11 +42,12 @@ describe('出力機能のテスト', () => {
 
   describe('ファイル出力', () => {
     it('メニューがPDFとして出力される (UT-013)', async () => {
-      const mockPdfBlob = new Blob(['PDF content'], { type: 'application/pdf' });
-      
+      // jest.setup.ts で Response を node-fetch v2 に置き換えているため、Blob ではなく文字列で本文を渡す（Blob だと本文が空になる）
+      const mockPdfContent = 'PDF content';
+
       server.use(
         http.post('http://localhost/api/generate-menu/pdf', () => {
-          return new HttpResponse(mockPdfBlob, { status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="training-menu.pdf"' } });
+          return new HttpResponse(mockPdfContent, { status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="training-menu.pdf"' } });
         })
       );
 

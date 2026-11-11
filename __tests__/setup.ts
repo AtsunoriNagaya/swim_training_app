@@ -391,21 +391,21 @@ export const handlers = [
   }),
 
   http.post(`${BASE_URL}/api/export-pdf`, async ({ request }) => {
-    return new HttpResponse(new Blob(['mock pdf content'], { type: 'application/pdf' }), { status: 200, headers: { 'Content-Type': 'application/pdf' } });
+    return new HttpResponse('mock pdf content', { status: 200, headers: { 'Content-Type': 'application/pdf' } });
   }),
 
   http.post(`${BASE_URL}/api/export-csv`, async ({ request }) => {
     const csvContent = 'name,description\nW-up,軽めのフリースタイル';
-    return new HttpResponse(new Blob([csvContent], { type: 'text/csv' }), { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
+    return new HttpResponse(csvContent, { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
   }),
 
   http.post(`${BASE_URL}/api/generate-menu/csv`, async ({ request }) => {
     const csvContent = 'name,description\nW-up,軽めのフリースタイル';
-    return new HttpResponse(new Blob([csvContent], { type: 'text/csv' }), { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
+    return new HttpResponse(csvContent, { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
   }),
 
   http.post(`${BASE_URL}/api/generate-menu/pdf`, async ({ request }) => {
-    return new HttpResponse(new Blob(['mock pdf content'], { type: 'application/pdf' }), { status: 200, headers: { 'Content-Type': 'application/pdf' } });
+    return new HttpResponse('mock pdf content', { status: 200, headers: { 'Content-Type': 'application/pdf' } });
   }),
 
   http.post('https://api.openai.com/v1/*', async ({ request }) => {
