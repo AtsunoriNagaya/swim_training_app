@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { handlers } from '../../setup';
 
@@ -18,15 +18,12 @@ describe('RAG機能のテスト', () => {
     it('RAG機能の切り替えが正しく動作する (UT-020)', async () => {
       // RAG機能の有効化
       server.use(
-        rest.post('http://localhost/api/settings/rag', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json({ 
+        http.post('http://localhost/api/settings/rag', () => {
+          return HttpResponse.json({ 
               success: true, 
               enabled: true,
               message: 'RAG機能が有効化されました' 
-            })
-          );
+            }, { status: 200 });
         })
       );
 
@@ -44,15 +41,12 @@ describe('RAG機能のテスト', () => {
 
       // RAG機能の無効化
       server.use(
-        rest.post('http://localhost/api/settings/rag', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json({ 
+        http.post('http://localhost/api/settings/rag', () => {
+          return HttpResponse.json({ 
               success: true, 
               enabled: false,
               message: 'RAG機能が無効化されました' 
-            })
-          );
+            }, { status: 200 });
         })
       );
 
@@ -98,16 +92,13 @@ describe('RAG機能のテスト', () => {
       };
 
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json({
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json({
               success: true,
               menuId: mockRAGMenu.menuId,
               menu: mockRAGMenu,
               message: "メニューが正常に生成されました"
-            })
-          );
+            }, { status: 200 });
         })
       );
 
@@ -132,15 +123,12 @@ describe('RAG機能のテスト', () => {
     it('RAG機能の設定が永続化される', async () => {
       // 設定の保存
       server.use(
-        rest.post('http://localhost/api/settings/rag', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json({ 
+        http.post('http://localhost/api/settings/rag', () => {
+          return HttpResponse.json({ 
               success: true, 
               enabled: true,
               message: '設定が保存されました'
-            })
-          );
+            }, { status: 200 });
         })
       );
 
@@ -156,13 +144,10 @@ describe('RAG機能のテスト', () => {
 
       // 設定の読み込み
       server.use(
-        rest.get('http://localhost/api/settings/rag', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json({ 
+        http.get('http://localhost/api/settings/rag', () => {
+          return HttpResponse.json({ 
               enabled: true 
-            })
-          );
+            }, { status: 200 });
         })
       );
 

@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { TrainingMenu } from '../../../types/menu';
 
@@ -64,9 +64,9 @@ describe('類似度検索機能のテスト', () => {
   describe('検索精度とスコア計算', () => {
     it('類似度の高い順に正確にメニューが表示される (UT-018)', async () => {
       server.use(
-        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
+        http.post('http://localhost/api/search-similar-menus', () => {
           const sortedMenus = [...mockMenus].sort((a, b) => b.similarityScore - a.similarityScore);
-          return res(ctx.json(sortedMenus));
+          return HttpResponse.json(sortedMenus);
         })
       );
 
@@ -89,8 +89,8 @@ describe('類似度検索機能のテスト', () => {
 
     it('類似度スコアが正確に計算され表示される (UT-019)', async () => {
       server.use(
-        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
-          return res(ctx.json(mockMenus));
+        http.post('http://localhost/api/search-similar-menus', () => {
+          return HttpResponse.json(mockMenus);
         })
       );
 

@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { TrainingMenu, GenerateMenuRequest } from '../../../types/menu';
 
@@ -45,8 +45,8 @@ describe('メニュー生成機能のテスト', () => {
     it('正常にメニューが生成される', async () => {
       // APIレスポンスのモック
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenuResponse));
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json(mockMenuResponse);
         })
       );
 
@@ -71,11 +71,8 @@ describe('メニュー生成機能のテスト', () => {
     it('APIキーが無効な場合はエラーが返される', async () => {
       // OpenAIエンドポイントを試す場合、エラーを返すモック
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(
-            ctx.status(401),
-            ctx.json({ success: false, error: 'Invalid API key' })
-          );
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json({ success: false, error: 'Invalid API key' }, { status: 401 });
         })
       );
 
@@ -94,8 +91,8 @@ describe('メニュー生成機能のテスト', () => {
   describe('Googleモデルでのメニュー生成', () => {
     it('正常にメニューが生成される', async () => {
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenuResponse));
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json(mockMenuResponse);
         })
       );
 
@@ -120,8 +117,8 @@ describe('メニュー生成機能のテスト', () => {
   describe('Anthropicモデルでのメニュー生成', () => {
     it('正常にメニューが生成される', async () => {
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenuResponse));
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json(mockMenuResponse);
         })
       );
 
@@ -148,14 +145,14 @@ describe('メニュー生成機能のテスト', () => {
       const times = [30, 60, 90];
       for (const time of times) {
         server.use(
-          rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
+          http.post('http://localhost/api/generate-menu', () => {
             // 要求された時間に応じて動的にレスポンスを調整
             const adjustedResponse = {
               ...mockMenuResponse,
               totalTime: Math.min(time, mockMenuResponse.totalTime),
               remainingTime: Math.max(0, time - mockMenuResponse.totalTime)
             };
-            return res(ctx.json(adjustedResponse));
+            return HttpResponse.json(adjustedResponse);
           })
         );
 
@@ -175,8 +172,8 @@ describe('メニュー生成機能のテスト', () => {
   describe('特記事項反映機能のテスト', () => {
     it('特記事項が反映されたメニューが生成される (UT-007)', async () => {
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenuResponse));
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json(mockMenuResponse);
         })
       );
       const params: GenerateMenuRequest = {
@@ -188,8 +185,8 @@ describe('メニュー生成機能のテスト', () => {
 
       // APIレスポンスのモックにspecialNotesを含める
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json({...mockMenuResponse, specialNotes: params.specialNotes}));
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json({...mockMenuResponse, specialNotes: params.specialNotes});
         })
       );
 
@@ -226,5 +223,6 @@ async function generateTrainingMenu(params: GenerateMenuRequest): Promise<Traini
 
   const result = await response.json();
   // 実際のAPIレスポンス形式 { success: true, menu: TrainingMenu } から menu を取得
-  return result.menu || result;
+  // （menu 配列を持つ TrainingMenu をそのまま返すモックもあるため、success で判定する）
+  return result.success ? result.menu : result;
 }

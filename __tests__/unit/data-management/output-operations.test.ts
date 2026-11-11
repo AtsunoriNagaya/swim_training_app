@@ -1,4 +1,4 @@
-import { rest } from 'msw'; // Import rest instead of the whole namespace
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { handlers } from '../../setup'; // Keep handlers import as it's likely used by setupServer
 import type { TrainingMenu } from '../../../types/menu';
@@ -45,13 +45,8 @@ describe('出力機能のテスト', () => {
       const mockPdfBlob = new Blob(['PDF content'], { type: 'application/pdf' });
       
       server.use(
-        rest.post('http://localhost/api/generate-menu/pdf', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.set('Content-Type', 'application/pdf'),
-            ctx.set('Content-Disposition', 'attachment; filename="training-menu.pdf"'),
-            ctx.body(mockPdfBlob)
-          );
+        http.post('http://localhost/api/generate-menu/pdf', () => {
+          return new HttpResponse(mockPdfBlob, { status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="training-menu.pdf"' } });
         })
       );
 
@@ -73,13 +68,8 @@ describe('出力機能のテスト', () => {
       const mockCsvContent = 'メニュー名,時間,強度\nテスト用メニュー,10,B';
 
       server.use(
-        rest.post('http://localhost/api/generate-menu/csv', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.set('Content-Type', 'text/csv'),
-            ctx.set('Content-Disposition', 'attachment; filename="training-menu.csv"'),
-            ctx.text(mockCsvContent)
-          );
+        http.post('http://localhost/api/generate-menu/csv', () => {
+          return HttpResponse.text(mockCsvContent, { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
         })
       );
 
@@ -101,11 +91,8 @@ describe('出力機能のテスト', () => {
   describe('文字エンコーディング', () => {
     it('日本語が正しく表示される (UT-015)', async () => {
       server.use(
-        rest.get('http://localhost/api/get-menu', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json(mockMenu)
-          );
+        http.get('http://localhost/api/get-menu', () => {
+          return HttpResponse.json(mockMenu, { status: 200 });
         })
       );
 

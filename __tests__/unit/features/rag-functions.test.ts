@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { TrainingMenu } from '../../../types/menu';
 
@@ -16,8 +16,8 @@ describe('RAG機能のテスト', () => {
     it('RAG機能の切替が正常に動作する (UT-020)', async () => {
       // RAG機能ONの設定
       server.use(
-        rest.post('/api/settings/rag', (req, res, ctx) => {
-          return res(ctx.json({ enabled: true }));
+        http.post('/api/settings/rag', () => {
+          return HttpResponse.json({ enabled: true });
         })
       );
 
@@ -57,8 +57,8 @@ describe('RAG機能のテスト', () => {
       };
 
       server.use(
-        rest.post('/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenu));
+        http.post('/api/generate-menu', () => {
+          return HttpResponse.json(mockMenu);
         })
       );
 
@@ -80,8 +80,8 @@ describe('RAG機能のテスト', () => {
 
       // RAG機能OFFの設定
       server.use(
-        rest.post('/api/settings/rag', (req, res, ctx) => {
-          return res(ctx.json({ enabled: false }));
+        http.post('/api/settings/rag', () => {
+          return HttpResponse.json({ enabled: false });
         })
       );
 

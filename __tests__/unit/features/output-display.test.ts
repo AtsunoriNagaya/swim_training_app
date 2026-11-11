@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import fs from 'fs';
 import path from 'path';
@@ -42,11 +42,8 @@ describe('出力と表示機能のテスト', () => {
   describe('PDF出力機能', () => {
     it('メニューがPDF形式で出力される (UT-013)', async () => {
       server.use(
-        rest.post('http://localhost/api/export-pdf', (req, res, ctx) => {
-          return res(
-            ctx.set('Content-Type', 'application/pdf'),
-            ctx.body('mock pdf content')
-          );
+        http.post('http://localhost/api/export-pdf', () => {
+          return new HttpResponse('mock pdf content', { headers: { 'Content-Type': 'application/pdf' } });
         })
       );
 
@@ -66,11 +63,8 @@ describe('出力と表示機能のテスト', () => {
   describe('CSVエクスポート機能', () => {
     it('メニューがCSV形式で出力される (UT-014)', async () => {
       server.use(
-        rest.post('http://localhost/api/export-csv', (req, res, ctx) => {
-          return res(
-            ctx.set('Content-Type', 'text/csv'),
-            ctx.text('name,description,distance,sets,time\nW-up,軽めのフリースタイル,400,1,10')
-          );
+        http.post('http://localhost/api/export-csv', () => {
+          return HttpResponse.text('name,description,distance,sets,time\nW-up,軽めのフリースタイル,400,1,10', { headers: { 'Content-Type': 'text/csv' } });
         })
       );
 
@@ -91,8 +85,8 @@ describe('出力と表示機能のテスト', () => {
   describe('日本語文字表示', () => {
     it('日本語が正常に表示される (UT-015)', async () => {
       server.use(
-        rest.get('http://localhost/api/get-menu', (req, res, ctx) => {
-          return res(ctx.json(mockMenu));
+        http.get('http://localhost/api/get-menu', () => {
+          return HttpResponse.json(mockMenu);
         })
       );
 

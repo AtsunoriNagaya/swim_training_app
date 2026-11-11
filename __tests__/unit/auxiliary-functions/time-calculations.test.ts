@@ -1,4 +1,4 @@
-import { rest } from 'msw'; // HttpResponse を削除し、rest のみインポート
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { handlers } from '../../setup';
 import type { TrainingMenu, MenuItem } from '../../../types/menu';
@@ -39,7 +39,7 @@ describe('時間計算機能のテスト', () => {
       };
 
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
+        http.post('http://localhost/api/generate-menu', () => {
           const adjustedMenu = {
             ...longMenu,
             menu: [
@@ -55,12 +55,12 @@ describe('時間計算機能のテスト', () => {
             totalTime: 25
           };
           // 実際のAPIレスポンス形式に合わせる
-          return res(ctx.json({
+          return HttpResponse.json({
             success: true,
             menuId: adjustedMenu.menuId,
             menu: adjustedMenu,
             message: "メニューが正常に生成されました"
-          }));
+          });
         })
       );
 
