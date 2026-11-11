@@ -10,6 +10,11 @@ updates:
       time: "09:00"
       timezone: "Asia/Tokyo"
     open-pull-requests-limit: 5
+    # 公開直後のバージョンは乗っ取り等で悪意あるコードが混入している恐れがあるため、一定日数待ってから提案させる。
+    # cooldown はバージョン更新だけに効き、セキュリティ更新は待たずに作られる。
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     groups:
       # minor / patch はまとめて 1 本の PR にする（major は個別）
       minor-and-patch:
@@ -20,4 +25,10 @@ updates:
         update-types: ["version-update:semver-major"]
       # tailwind-merge 3 は Tailwind 4 専用（公式が Tailwind 3 のままなら上げないよう案内）。Tailwind 4 移行時に一緒に上げる
       - dependency-name: "tailwind-merge"
+        update-types: ["version-update:semver-major"]
+      # node-fetch 3 は ESM 専用で、__tests__ のセットアップを ts/tsx だけ変換する現在の Jest 設定では読み込めない
+      - dependency-name: "node-fetch"
+        update-types: ["version-update:semver-major"]
+      # components/ui/calendar.tsx が v8 専用の API を使っているため、calendar.tsx を新しい版に対応させるまでメジャー更新（v9 以降）は手動で行う
+      - dependency-name: "react-day-picker"
         update-types: ["version-update:semver-major"]
