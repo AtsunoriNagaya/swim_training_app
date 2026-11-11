@@ -1,0 +1,30 @@
+# Dependabot の patch / minor 更新（セキュリティ更新を含む）に自動マージを予約する。
+# 実際にマージされるのは、main の必須チェック（typecheck と Vercel）がすべて成功したあと。
+# メジャー更新は対象外で、これまでどおり手動で確認する。
+#
+# pull_request_target を使う理由: Dependabot が起動した pull_request では GITHUB_TOKEN が読み取り専用になり、
+# 自動マージを予約できないため（dependabot/fetch-metadata の README の推奨構成）。
+# このジョブは PR のコードを checkout も実行もしないので、pull_request_target でも PR 側のコードは動かない。
+name: Dependabot auto-merge
+
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'AtsunoriNagaya/swim_training_app'
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        # サプライチェーン対策として、タグではなくコミット SHA で固定する
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+      - name: Enable auto-merge for patch and minor updates
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

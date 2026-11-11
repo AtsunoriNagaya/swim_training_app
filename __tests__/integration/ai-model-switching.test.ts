@@ -58,7 +58,8 @@ describe('AI Model Switching Integration (IT-003)', () => {
               distance: '100m',
               sets: 4,
               circle: '2:00',
-              rest: 1
+              rest: 1,
+              time: 8
             }
           ],
           totalTime: 10
@@ -150,7 +151,8 @@ describe('AI Model Switching Integration (IT-003)', () => {
               distance: '100m',
               sets: 4,
               circle: '2:00',
-              rest: 1
+              rest: 1,
+              time: 8
             }
           ],
           totalTime: customParams.trainingTime
