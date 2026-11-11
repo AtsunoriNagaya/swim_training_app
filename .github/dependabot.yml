@@ -32,3 +32,15 @@ updates:
       # components/ui/calendar.tsx が v8 専用の API を使っているため、calendar.tsx を新しい版に対応させるまでメジャー更新（v9 以降）は手動で行う
       - dependency-name: "react-day-picker"
         update-types: ["version-update:semver-major"]
+
+  # GitHub Actions もコミット SHA で固定しているため、Dependabot に更新させる（npm と同じ待機期間を置く）
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14

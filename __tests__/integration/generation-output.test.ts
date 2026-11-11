@@ -88,6 +88,7 @@ describe('Generation and Output Integration (IT-005)', () => {
               sets: 1,
               circle: '',
               rest: '',
+              time: 25,
             },
             {
               description: 'メインセット',
@@ -95,6 +96,7 @@ describe('Generation and Output Integration (IT-005)', () => {
               sets: 1,
               circle: '',
               rest: '',
+              time: 25,
             }
           ]
         }]
