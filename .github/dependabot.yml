@@ -32,6 +32,15 @@ updates:
       # components/ui/calendar.tsx が v8 専用の API を使っているため、calendar.tsx を新しい版に対応させるまでメジャー更新（v9 以降）は手動で行う
       - dependency-name: "react-day-picker"
         update-types: ["version-update:semver-major"]
+      # msw 3 は ESM 専用で、Jest（--experimental-vm-modules 付き）でもリクエストの差し替えが動かないため、2 系に留める
+      - dependency-name: "msw"
+        update-types: ["version-update:semver-major"]
+      # TypeScript 7 はネイティブ実装への移行版のため、Next.js などの周辺ツールの対応を確認してから手動で上げる
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # recharts 3 は components/ui/chart.tsx の型が非対応。chart.tsx を対応させるまでメジャー更新は手動で行う
+      - dependency-name: "recharts"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions もコミット SHA で固定しているため、Dependabot に更新させる（npm と同じ待機期間を置く）
   - package-ecosystem: "github-actions"
