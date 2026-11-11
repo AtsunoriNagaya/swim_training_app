@@ -6,7 +6,7 @@ import mdToHtml from "@/lib/markdown/miniMarkdown";
 const base64DecodeUnicode = (b64: string) => {
   try {
     if (typeof window === 'undefined' || typeof (window as any).atob !== 'function') return '';
-    const binary = (window as any).atob(b64);
+    const binary: string = (window as any).atob(b64);
     const percent = Array.from(binary)
       .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
       .join('');

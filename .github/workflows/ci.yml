@@ -1,0 +1,28 @@
+# PR ごとに型チェックを行う。Dependabot の PR を自動マージする前提条件として使う。
+# next.config.mjs で typescript.ignoreBuildErrors: true のため、Vercel のビルドだけでは型エラーを検出できない。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      # サプライチェーン対策として、Actions はタグではなくコミット SHA で固定する
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          # Vercel のビルドと同じ pnpm に合わせる
+          version: 10.28.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit

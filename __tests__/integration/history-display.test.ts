@@ -1,5 +1,4 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { jest } from '@jest/globals';
 import React from 'react';
 import HistoryPage from '../../app/history/page';
 
