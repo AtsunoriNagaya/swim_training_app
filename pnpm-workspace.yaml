@@ -3,3 +3,10 @@
 allowBuilds:
   msw: false
   protobufjs: false
+
+# 公開から 3 日未満のバージョンはインストールしない（単位は分、pnpm 10.16 以降で有効）。
+# Dependabot の cooldown（7 日）より短くして、Dependabot の PR がここで失敗しないようにしている。
+minimumReleaseAge: 4320
+# 緊急のセキュリティ修正が公開 3 日未満のときだけ、バージョンを指定して一時的に除外する（日数が経ったら削除する）
+# minimumReleaseAgeExclude:
+#   - "example-package@1.2.3"
