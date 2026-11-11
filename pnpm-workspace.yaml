@@ -11,3 +11,10 @@ minimumReleaseAge: 4320
 # 緊急のセキュリティ修正が公開 3 日未満のときだけ、バージョンを指定して一時的に除外する（日数が経ったら削除する）
 # minimumReleaseAgeExclude:
 #   - "example-package@1.2.3"
+
+# 推移的依存の脆弱性を、上流が直すまでの間だけ上書きする（上流が修正版に上がったら削除する）。
+overrides:
+  # @vercel/oidc 3.8.10 が固定している @vercel/cli-config 0.3.1 は zod 4.1.11 を固定で使っている。
+  # zod 4.6.5 以前にはメモリを使い果たす脆弱性（GHSA-mrhx-c7xc-m3w5）があるため、修正版に置き換える。
+  # cli-config 0.3.8 自身も zod ^4.6.6 を使っているので、互換性の問題はない。
+  '@vercel/cli-config>zod': ^4.6.6
