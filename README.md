@@ -44,6 +44,7 @@ npm run dev
 - データベースとデプロイ設定（Neon/Vercel など）: `memory_bank/DEPLOYMENT.md`
 - Markdown印刷（PDF保存）の詳細: `memory_bank/PRINTING.md`
 - テスト計画: `memory_bank/test-plan.md`
+- 依存パッケージのセキュリティ対策（更新の待機期間・自動マージ・脆弱性アラートへの対応）: `memory_bank/SECURITY.md`
 
 ## 技術スタック（概要）
 
