@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { GenerateMenuRequest } from '../../../types/menu';
 
@@ -17,9 +17,11 @@ describe('メニュー生成バリデーションのテスト', () => {
     it('負荷レベルが正しく反映される (UT-005)', async () => {
       // 負荷レベルごとにモックAPIレスポンスを返す
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(
-            ctx.json({
+        http.post('http://localhost/api/generate-menu', async ({ request }) => {
+          // 送られた負荷レベルに応じた強度を返す（低→A、中→B、高→C）
+          const { loadLevels } = (await request.json()) as { loadLevels?: string };
+          const intensity = ({ '低': 'A', '中': 'B', '高': 'C' } as Record<string, string>)[loadLevels ?? ''] ?? 'B';
+          return HttpResponse.json({
               success: true,
               menuId: 'test-menu',
               menu: {
@@ -28,11 +30,10 @@ describe('メニュー生成バリデーションのテスト', () => {
                 createdAt: new Date().toISOString(),
                 menu: [],
                 totalTime: 60,
-                intensity: 'A' // 常にAを返すように修正（テストの期待値に合わせる）
+                intensity
               },
               message: "メニューが正常に生成されました"
-            })
-          );
+            });
         })
       );
 
@@ -65,8 +66,8 @@ describe('メニュー生成バリデーションのテスト', () => {
 
     it('APIキーが無効な場合エラーが返される (UT-004)', async () => {
       server.use(
-        rest.post('http://localhost/api/generate-menu', (req, res, ctx) => {
-          return res(ctx.status(401), ctx.json({ error: 'Invalid API key' }));
+        http.post('http://localhost/api/generate-menu', () => {
+          return HttpResponse.json({ error: 'Invalid API key' }, { status: 401 });
         })
       );
 

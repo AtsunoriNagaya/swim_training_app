@@ -1,6 +1,7 @@
 /** @type {import('jest').Config} */
 const config = {
-  testEnvironment: 'jsdom',
+  // msw 2 の公式 FAQ の推奨構成。jsdom でも Node の fetch / Request / Response を使えるようにする
+  testEnvironment: 'jest-fixed-jsdom',
   setupFilesAfterEnv: [
     '<rootDir>/__tests__/jest.setup.ts',
     '<rootDir>/__tests__/setup.ts'

@@ -1,4 +1,4 @@
-import { response, rest } from 'msw'; // Import 'response' again
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { handlers } from '../../setup';
 import type { TrainingMenu } from '../../../types/menu';
@@ -93,14 +93,12 @@ describe('メニュー管理機能のテスト', () => {
     // Test case for searching similar menus (UT-011)
     it('類似メニューが正しく検索される (UT-011)', async () => {
       server.use(
-        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
+        http.post('http://localhost/api/search-similar-menus', () => {
           // Simulate API response for similar menus based on query
-          return res(
-            ctx.json({
+          return HttpResponse.json({
               menus: mockMenus,
               similarities: [0.85, 0.65] // Example similarities
-            })
-          );
+            });
         })
       );
 
@@ -118,9 +116,9 @@ describe('メニュー管理機能のテスト', () => {
     // Test case for getting menu history
     it('メニュー履歴が正しく取得される', async () => {
        server.use(
-        rest.get('http://localhost/api/get-menu-history', (req, res, ctx) => {
+        http.get('http://localhost/api/get-menu-history', () => {
           // Simulate API response for menu history
-          return res(ctx.json({ menus: mockMenus })); // Correct usage of res and ctx
+          return HttpResponse.json({ menus: mockMenus }); // Correct usage of res and ctx
         })
       );
 
@@ -142,14 +140,12 @@ describe('メニュー管理機能のテスト', () => {
       }; // Correctly defined object
 
       server.use(
-        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
+        http.post('http://localhost/api/search-similar-menus', () => {
            // Simulate API response for a specific high-similarity menu
-          return res(
-            ctx.json({
+          return HttpResponse.json({
               menus: [mockMenus[0]], // Return the matching menu
               similarities: [0.95]   // High similarity score
-            })
-          );
+            });
         }) // Removed extra closing brackets/parentheses
       );
 
@@ -168,14 +164,12 @@ describe('メニュー管理機能のテスト', () => {
     // Test case for low similarity between different menus
     it('特性が異なるメニュー間の類似度が低い', async () => {
        server.use(
-        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
+        http.post('http://localhost/api/search-similar-menus', () => {
           // Simulate API response for low similarity comparison
-          return res(
-            ctx.json({
+          return HttpResponse.json({
               similarities: [0.3], // Low similarity score
               menus: [comparisonMenu] // Return the comparison menu
-            })
-          );
+            });
         })
       );
 

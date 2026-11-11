@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { NextRequest, NextResponse } from 'next/server';
 import type { GenerateMenuRequest, TrainingMenu } from '../types/menu';
@@ -209,16 +209,13 @@ const BASE_URL = 'http://localhost';
 // MSWハンドラーの定義
 export const handlers = [
   // アプリケーションAPIエンドポイント
-  rest.post(`${BASE_URL}/api/generate-menu`, async (req, res, ctx) => {
-    const auth = req.headers.get('Authorization');
+  http.post(`${BASE_URL}/api/generate-menu`, async ({ request }) => {
+    const auth = request.headers.get('Authorization');
     if (auth === 'Bearer invalid_key' || process.env.OPENAI_API_KEY === 'invalid_key') {
-      return res(
-        ctx.status(401),
-        ctx.json({ success: false, error: 'Invalid API key' })
-      );
+      return HttpResponse.json({ success: false, error: 'Invalid API key' }, { status: 401 });
     }
 
-    const body = await req.text().then(text => JSON.parse(text));
+    const body = await request.text().then(text => JSON.parse(text));
     const requestedTime = Number(body.duration) || Number(body.trainingTime) || 60;
     
     // 時間調整ロジック - 要求時間を超えないように調整
@@ -261,21 +258,18 @@ export const handlers = [
     };
 
     // 実際のAPIレスポンス形式に合わせる
-    return res(
-      ctx.status(200),
-      ctx.json({
+    return HttpResponse.json({
         success: true,
         menuId: menuData.menuId,
         menu: menuData,
         message: "メニューが正常に生成されました"
-      })
-    );
+      }, { status: 200 });
   }),
 
   // upload-menuハンドラーは file-operations.test.ts で独自に定義されるため、ここでは削除
 
-  rest.get(`${BASE_URL}/api/get-menu`, async (req, res, ctx) => {
-    const url = new URL(req.url);
+  http.get(`${BASE_URL}/api/get-menu`, async ({ request }) => {
+    const url = new URL(request.url);
     const menuId = url.searchParams.get('menuId') || url.searchParams.get('id');
     
     if (menuId && menuId.startsWith('mock-')) {
@@ -296,7 +290,7 @@ export const handlers = [
         remainingTime: 0,
         specialNotes: 'テスト用のメニューです'
       };
-      return res(ctx.status(200), ctx.json(mockMenu));
+      return HttpResponse.json(mockMenu, { status: 200 });
     }
     
     // デフォルトのテスト用メニューを返す（パラメータなしの場合）
@@ -317,23 +311,23 @@ export const handlers = [
       remainingTime: 0,
       specialNotes: 'テスト用のメニューです'
     };
-    return res(ctx.status(200), ctx.json(defaultMenu));
+    return HttpResponse.json(defaultMenu, { status: 200 });
   }),
 
-  rest.get(`${BASE_URL}/api/get-menu-history`, async (req, res, ctx) => {
+  http.get(`${BASE_URL}/api/get-menu-history`, async ({ request }) => {
     const mockHistory = [
       { menuId: 'menu-1', title: 'テスト用メニュー1', createdAt: new Date().toISOString() },
       { menuId: 'menu-2', title: 'テスト用メニュー2', createdAt: new Date().toISOString() }
     ];
-    return res(ctx.status(200), ctx.json({ menus: mockHistory }));
+    return HttpResponse.json({ menus: mockHistory }, { status: 200 });
   }),
 
-  rest.post(`${BASE_URL}/api/search-similar-menus`, async (req, res, ctx) => {
-    const { query, searchQuery } = await req.json();
+  http.post(`${BASE_URL}/api/search-similar-menus`, async ({ request }) => {
+    const { query, searchQuery } = (await request.json()) as { query?: string; searchQuery?: string };
     const searchTerm = query || searchQuery;
     
     if (searchTerm === '存在しないメニュー') {
-      return res(ctx.status(200), ctx.json({ menus: [], similarities: [] }));
+      return HttpResponse.json({ menus: [], similarities: [] }, { status: 200 });
     }
 
     const mockMenus = [
@@ -373,84 +367,57 @@ export const handlers = [
     
     // search-similarity.test.tsが期待する配列形式でも返す
     if (searchTerm === 'スプリント' || searchTerm === '高強度') {
-      return res(ctx.status(200), ctx.json(mockMenus));
+      return HttpResponse.json(mockMenus, { status: 200 });
     }
     
     // その他のテストが期待するオブジェクト形式で返す
-    return res(ctx.status(200), ctx.json({
+    return HttpResponse.json({
       menus: mockMenus,
       similarities: similarities
-    }));
+    }, { status: 200 });
   }),
 
-  rest.post(`${BASE_URL}/api/settings/rag`, async (req, res, ctx) => {
-    const { enabled } = await req.json();
-    return res(ctx.status(200), ctx.json({ 
+  http.post(`${BASE_URL}/api/settings/rag`, async ({ request }) => {
+    const { enabled } = (await request.json()) as { enabled?: boolean };
+    return HttpResponse.json({ 
       success: true, 
       enabled: enabled ?? true,
       message: enabled ? 'RAG機能が有効化されました' : 'RAG機能が無効化されました'
-    }));
+    }, { status: 200 });
   }),
 
-  rest.get(`${BASE_URL}/api/settings/rag`, async (req, res, ctx) => {
-    return res(ctx.status(200), ctx.json({ enabled: true }));
+  http.get(`${BASE_URL}/api/settings/rag`, async ({ request }) => {
+    return HttpResponse.json({ enabled: true }, { status: 200 });
   }),
 
-  rest.post(`${BASE_URL}/api/export-pdf`, async (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.set('Content-Type', 'application/pdf'),
-      ctx.body(new Blob(['mock pdf content'], { type: 'application/pdf' }))
-    );
+  http.post(`${BASE_URL}/api/export-pdf`, async ({ request }) => {
+    return new HttpResponse('mock pdf content', { status: 200, headers: { 'Content-Type': 'application/pdf' } });
   }),
 
-  rest.post(`${BASE_URL}/api/export-csv`, async (req, res, ctx) => {
+  http.post(`${BASE_URL}/api/export-csv`, async ({ request }) => {
     const csvContent = 'name,description\nW-up,軽めのフリースタイル';
-    return res(
-      ctx.status(200),
-      ctx.set('Content-Type', 'text/csv'),
-      ctx.set('Content-Disposition', 'attachment; filename="training-menu.csv"'),
-      ctx.body(new Blob([csvContent], { type: 'text/csv' }))
-    );
+    return new HttpResponse(csvContent, { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
   }),
 
-  rest.post(`${BASE_URL}/api/generate-menu/csv`, async (req, res, ctx) => {
+  http.post(`${BASE_URL}/api/generate-menu/csv`, async ({ request }) => {
     const csvContent = 'name,description\nW-up,軽めのフリースタイル';
-    return res(
-      ctx.status(200),
-      ctx.set('Content-Type', 'text/csv'),
-      ctx.set('Content-Disposition', 'attachment; filename="training-menu.csv"'),
-      ctx.body(new Blob([csvContent], { type: 'text/csv' }))
-    );
+    return new HttpResponse(csvContent, { status: 200, headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="training-menu.csv"' } });
   }),
 
-  rest.post(`${BASE_URL}/api/generate-menu/pdf`, async (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.set('Content-Type', 'application/pdf'),
-      ctx.body(new Blob(['mock pdf content'], { type: 'application/pdf' }))
-    );
+  http.post(`${BASE_URL}/api/generate-menu/pdf`, async ({ request }) => {
+    return new HttpResponse('mock pdf content', { status: 200, headers: { 'Content-Type': 'application/pdf' } });
   }),
 
-  rest.post('https://api.openai.com/v1/*', async (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json({ choices: [{ message: { content: 'テストメニュー' } }] })
-    );
+  http.post('https://api.openai.com/v1/*', async ({ request }) => {
+    return HttpResponse.json({ choices: [{ message: { content: 'テストメニュー' } }] }, { status: 200 });
   }),
 
-  rest.post('https://generative-language.googleapis.com/*', async (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json({ candidates: [{ content: 'テストメニュー' }] })
-    );
+  http.post('https://generative-language.googleapis.com/*', async ({ request }) => {
+    return HttpResponse.json({ candidates: [{ content: 'テストメニュー' }] }, { status: 200 });
   }),
 
-  rest.post('https://api.anthropic.com/*', async (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json({ content: [{ text: 'テストメニュー' }] })
-    );
+  http.post('https://api.anthropic.com/*', async ({ request }) => {
+    return HttpResponse.json({ content: [{ text: 'テストメニュー' }] }, { status: 200 });
   }),
 ];
 

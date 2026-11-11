@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { TrainingMenu } from '../../../types/menu';
 
@@ -62,8 +62,8 @@ describe('検索と表示機能のテスト', () => {
   describe('類似メニュー検索機能', () => {
     it('類似メニューが正常に検索される (UT-011)', async () => {
       server.use(
-        rest.post('http://localhost/api/search-similar-menus', (req, res, ctx) => {
-          return res(ctx.json(mockMenus));
+        http.post('http://localhost/api/search-similar-menus', () => {
+          return HttpResponse.json(mockMenus);
         })
       );
 
@@ -85,8 +85,8 @@ describe('検索と表示機能のテスト', () => {
   describe('メニュー履歴表示機能', () => {
     it('メニュー履歴が正常に表示される (UT-012)', async () => {
       server.use(
-        rest.get('http://localhost/api/get-menu-history', (req, res, ctx) => {
-          return res(ctx.json(mockMenus));
+        http.get('http://localhost/api/get-menu-history', () => {
+          return HttpResponse.json(mockMenus);
         })
       );
 
