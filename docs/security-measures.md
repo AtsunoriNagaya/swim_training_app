@@ -9,15 +9,15 @@
 | 仕組み | 設定場所 | 内容 |
 |---|---|---|
 | Dependabot の cooldown | `.github/dependabot.yml` | npm は公開から 7 日（メジャー更新は 14 日）たつまで更新 PR を作らない。GitHub Actions は 7 日 |
-| pnpm の minimumReleaseAge | `pnpm-workspace.yaml` | 公開から 3 日（4320 分）未満のバージョンはインストールしない。手作業での `pnpm add` や、間接的に入る依存にも効く |
+| pnpm の minimumReleaseAge | `pnpm-workspace.yaml` | 依存を解決するとき（`pnpm add`、`pnpm update`、lockfile の作り直し）に、公開から 3 日（4320 分）未満のバージョンを選ばない。間接的に入る依存にも効く |
 
-pnpm 側の日数を Dependabot より短くしているのは、Dependabot の PR がインストールの段階で失敗しないようにするためです。
+pnpm の制限が効くのは依存を解決するときだけです。lockfile がそろっている状態での `pnpm install --frozen-lockfile`（CI や Vercel）では、公開日を改めて確認しません。pnpm 側の日数を Dependabot より短くしているのは、Dependabot が lockfile を更新するときに、この制限に引っかからないようにするためです。
 
-セキュリティ更新は cooldown の対象外なので、修正版が出ればすぐに PR が作られます。ただし、修正版が公開から 3 日未満の場合は、pnpm の制限でインストールに失敗します。その場合は `pnpm-workspace.yaml` の `minimumReleaseAgeExclude` にバージョンを指定して一時的に除外し、3 日たったら削除してください。
+セキュリティ更新は cooldown の対象外なので、修正版が出ればすぐに PR が作られます。修正版が公開から 3 日未満のときに手元で `pnpm add` などを使って取り込む場合は、pnpm の制限で失敗します。その場合は `pnpm-workspace.yaml` の `minimumReleaseAgeExclude` にバージョンを指定して一時的に除外し、3 日たったら削除してください。
 
 ## 2. 更新の自動化と、マージ前のチェック
 
-Dependabot は毎週月曜 9:00（日本時間）に更新を確認します。patch と minor の更新はまとめて 1 本の PR になり、メジャー更新は個別の PR になります。
+Dependabot は毎週月曜 9:00（日本時間）に更新を確認します。npm の通常の更新は、patch と minor をまとめて 1 本の PR にし、メジャー更新は個別の PR にします。GitHub Actions の更新とセキュリティ更新は、このまとめの対象外で、個別の PR になります。
 
 main にはルールセット「main: 必須チェック」を設定していて、次の 2 つが成功しないとマージできません。管理者だけはルールを迂回できます。
 
